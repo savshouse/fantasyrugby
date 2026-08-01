@@ -314,7 +314,7 @@
   @media (prefers-reduced-motion: reduce){.sponsor-carousel-track{animation:none}}
 </style>
   <!-- PWA / Home Screen icon — upload a 180x180 PNG to /images/ons-crest.png for best results -->
-  <link rel="apple-touch-icon" href="https://cswm.me.uk/images/ons-crest.png">
+  <link rel="apple-touch-icon" href="https://fantasyrugby.uk/images/ons-crest.png">
   <link rel="icon" type="image/svg+xml" href="https://upload.wikimedia.org/wikipedia/commons/1/1e/ONsLogoNew-svg.svg">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -800,13 +800,13 @@ async function showWelcome(user){
   el('welcomeLaterBtn').onclick = async ()=>{
     el('welcomeView').classList.add('hide');
     await afterLogin(user);
-    maybeShowOnboarding();
   };
 }
 function maybeShowOnboarding(){
   let seen = false;
   try{ seen = localStorage.getItem(ONBOARD_SEEN_KEY) === '1'; }catch(e){}
-  if(!seen) setTimeout(openOnboarding, 400); // small delay so it appears after the app UI has settled in
+  console.log('[onboarding] maybeShowOnboarding called, seen=', seen);
+  if(!seen) setTimeout(()=>{ console.log('[onboarding] opening now'); openOnboarding(); }, 400);
 }
 
 let mode='signin';
@@ -919,11 +919,13 @@ function renderPayBanner(){
 
 async function afterLogin(user){
   let { data:mgr } = await sb.from('managers').select('*').eq('user_id',user.id).maybeSingle();
+  let isNewManager = false;
   if(!mgr){
     const nm=(user.user_metadata?.name)||(user.email||'').split('@')[0];
     const ins = await sb.from('managers').insert({user_id:user.id,name:nm,email:user.email}).select().single();
     if(ins.error){ el('authMsg').textContent=ins.error.message; return; }
     mgr=ins.data;
+    isNewManager = true;
   }
   if(mgr.active === false){
     el('authMsg').textContent = 'Your account has been archived. Get in touch with the club if you think this is a mistake.';
@@ -945,6 +947,8 @@ async function afterLogin(user){
   initTeamDuty();
   renderPayBanner();
   startIdleTimer();
+  console.log('[onboarding] afterLogin complete, isNewManager=', isNewManager);
+  if(isNewManager){ toast('New manager — showing walkthrough'); maybeShowOnboarding(); }
 }
 
 // ── Tabs ──────────────────────────────────────────────────────

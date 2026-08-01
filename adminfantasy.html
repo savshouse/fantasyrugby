@@ -264,7 +264,7 @@
   #addOverlayResults{flex:1; overflow-y:auto}
 </style>
   <!-- PWA / Home Screen icon — upload a 180x180 PNG to /images/ons-crest.png for best results -->
-  <link rel="apple-touch-icon" href="https://cswm.me.uk/images/ons-crest.png">
+  <link rel="apple-touch-icon" href="https://fantasyrugby.uk/images/ons-crest.png">
   <link rel="icon" type="image/svg+xml" href="https://upload.wikimedia.org/wikipedia/commons/1/1e/ONsLogoNew-svg.svg">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -1426,10 +1426,29 @@ function renderSponsorTypeSelect(){
   sel.innerHTML = '<option value="">Select a type…</option>' + active.map(t=>`<option value="${t.id}" data-amount="${t.default_amount}" data-applies="${t.applies_to}">${esc(t.name)} — £${Number(t.default_amount).toFixed(2)}</option>`).join('');
   if(cur) sel.value = cur;
   const playerSel = el('spitem_player');
-  if(playerSel && !playerSel.dataset.populated){
-    const sorted = (allPlayers||[]).slice().sort((a,b)=>a.name.localeCompare(b.name));
-    playerSel.innerHTML = '<option value="">— none —</option>' + sorted.map(p=>`<option value="${p.id}">${esc(displayNamePlain(p))}</option>`).join('');
-    playerSel.dataset.populated = '1';
+  if(playerSel){
+    const isLadiesTeam = teamId => (allTeams.find(t=>t.id===teamId)?.name||'').toLowerCase().includes('ladies');
+    const populateSpitemPlayers = ()=>{
+      const typeOpt = el('spitem_type').selectedOptions[0];
+      const typeName = (typeOpt ? typeOpt.textContent : '').toLowerCase();
+      const wantsLadies = typeName.includes('women') || typeName.includes('ladies');
+      const wantsMen = typeName.includes('men') && !typeName.includes('women');
+      const alreadySponsored = new Set((allSponsorships||[]).filter(s=>s.player_id).map(s=>s.player_id));
+      const currentInvoiceId = el('spinv_id').value || null;
+      // Don't exclude players sponsored only on the invoice currently being edited
+      const excludedIds = new Set((allSponsorships||[]).filter(s=>s.player_id && s.invoice_id!==currentInvoiceId).map(s=>s.player_id));
+      const pool = (allPlayers||[]).filter(p=>{
+        if(excludedIds.has(p.id)) return false;
+        if(wantsLadies) return isLadiesTeam(p.team_id);
+        if(wantsMen) return !isLadiesTeam(p.team_id);
+        return true;
+      }).sort((a,b)=>a.name.localeCompare(b.name));
+      const cur = playerSel.value;
+      playerSel.innerHTML = '<option value="">— none —</option>' + pool.map(p=>`<option value="${p.id}">${esc(displayNamePlain(p))}</option>`).join('');
+      if(cur && pool.some(p=>p.id===cur)) playerSel.value = cur;
+    };
+    populateSpitemPlayers();
+    playerSel._populateSpitemPlayers = populateSpitemPlayers; // exposed so the type dropdown's change handler can re-run it
     playerSel.onchange = ()=>{
       const wrap = el('spitem_playerDetailsWrap');
       if(wrap) wrap.style.display = playerSel.value ? 'block' : 'none';
@@ -1788,6 +1807,8 @@ el('spitem_type') && (el('spitem_type').onchange = ()=>{
   const opt = el('spitem_type').selectedOptions[0];
   if(opt && opt.dataset.amount){ el('spitem_amount').value = opt.dataset.amount; }
   updateSpitemPlayerVisibility();
+  const playerSel = el('spitem_player');
+  if(playerSel && playerSel._populateSpitemPlayers) playerSel._populateSpitemPlayers();
 });
 el('spitem_add') && (el('spitem_add').onclick = ()=>{
   const typeId = el('spitem_type').value;
