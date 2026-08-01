@@ -16,11 +16,11 @@ jobs:
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
           server: ftp.fasthosts.co.uk
-          username: Legend123
+          username: fantasyrugby.uk
           # Note: Legend123 is the FTP username — password is stored in GitHub Secrets
           password: ${{ secrets.FTP_PASSWORD }}
           local-dir: ./
-          server-dir: /htdocs/app/
+          server-dir: /htdocs/
           protocol: ftps
           port: 21
           exclude: |
