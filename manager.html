@@ -304,7 +304,11 @@
   .sponsor-carousel-title{text-align:center;font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:0 0 10px}
   .sponsor-cta{display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center;padding:14px 18px 2px;border-top:1px solid var(--line);margin-top:12px}
   .sponsor-cta span{font-size:.8rem;color:var(--muted)}
-  .sponsor-cta-btn{display:inline-block;background:var(--crimson);color:#fff;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:.9rem;text-transform:uppercase;letter-spacing:.03em;padding:9px 20px;border-radius:8px;text-decoration:none}
+  .sponsor-cta-btn{display:inline-block;background:var(--crimson);color:#fff;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:.9rem;text-transform:uppercase;letter-spacing:.03em;padding:9px 20px;border-radius:8px;text-decoration:none;border:none;cursor:pointer}
+  .enq-label{display:block; font-size:.72rem; font-weight:700; text-transform:uppercase; letter-spacing:.03em; color:var(--muted); margin:12px 0 5px}
+  .enq-label:first-child{margin-top:0}
+  .enq-input{width:100%; padding:11px 12px; border:1.5px solid var(--line); border-radius:10px; font-size:16px; font-family:'Inter',sans-serif; box-sizing:border-box; background:#fff}
+  textarea.enq-input{resize:vertical}
   .sponsor-carousel{overflow:hidden;position:relative;-webkit-mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent);mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent)}
   .sponsor-carousel-track{display:flex;align-items:center;gap:36px;width:max-content;animation:sponsorScroll 32s linear infinite}
   .sponsor-carousel:hover .sponsor-carousel-track{animation-play-state:paused}
@@ -414,6 +418,38 @@
   </div>
 </div>
 
+<!-- ═══ SPONSOR ENQUIRY MODAL ═══════════════════════════════════ -->
+<div class="pm-overlay" id="enquiryModal" onclick="if(event.target===this)closeSponsorEnquiry()">
+  <div class="pm-card" style="max-width:380px">
+    <div class="pm-head" style="background:linear-gradient(135deg,var(--crimson),var(--navy)); padding:24px 20px 20px; color:#fff; text-align:center; position:relative">
+      <button class="pm-close" onclick="closeSponsorEnquiry()">✕</button>
+      <div class="pm-name" style="font-size:1.15rem">Sponsor enquiry</div>
+      <div class="pm-squad">Tell us what you're interested in</div>
+    </div>
+    <div class="pm-body" id="enquiryBody">
+      <div id="enquiryFormArea">
+        <label class="enq-label" for="enq_name">Your name</label>
+        <input class="enq-input" id="enq_name" placeholder="Full name">
+        <label class="enq-label" for="enq_email">Email address</label>
+        <input class="enq-input" id="enq_email" type="email" placeholder="you@example.com">
+        <label class="enq-label" for="enq_phone">Phone <span style="text-transform:none;font-weight:400">(optional)</span></label>
+        <input class="enq-input" id="enq_phone" placeholder="Optional">
+        <label class="enq-label" for="enq_type">What are you interested in?</label>
+        <select class="enq-input" id="enq_type"><option value="">Loading options…</option></select>
+        <div id="enq_playerWrap" style="display:none">
+          <label class="enq-label" for="enq_player">Which player? <span style="text-transform:none;font-weight:400">(optional)</span></label>
+          <select class="enq-input" id="enq_player"><option value="">— any / not sure —</option></select>
+        </div>
+        <label class="enq-label" for="enq_message">Message <span style="text-transform:none;font-weight:400">(optional)</span></label>
+        <textarea class="enq-input" id="enq_message" rows="3" placeholder="Anything else you'd like to add"></textarea>
+        <div style="height:6px"></div>
+        <button class="sponsor-cta-btn" id="enq_submit" type="button" style="width:100%; padding:12px" onclick="submitSponsorEnquiry()">Send enquiry</button>
+        <p class="muted" id="enq_status" style="font-size:.78rem; margin-top:8px; text-align:center"></p>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- ═══ WELCOME / PAYMENT (post-signup) ══════════════════════════ -->
 <div id="welcomeView" class="hide">
   <div class="auth-wrap">
@@ -459,6 +495,7 @@
           <p><b>6. No-shows are covered.</b> If one of your starters doesn't play in any of the three matches that week, your first bench player who <i>did</i> play automatically steps in and scores for you instead. No action needed from you.</p>
           <p><b>7. Scoring is simple.</b> Points come from appearances, tries, kicks, cards, Man/Defender of the Match, and team wins — wherever your player actually turned out that week, 1st, 2nd or 3rd XV. Here's exactly what everything's worth:</p>
           <div id="howtoScoring"></div>
+          <p style="margin-top:14px"><button class="linkbtn" id="teamHowtoWalkthroughBtn" type="button">🏉 Prefer a guided walkthrough? Tap here</button></p>
         </div>
       </details>
       <div id="teamHead"></div>
@@ -752,6 +789,149 @@ el('onboardBackBtn') && (el('onboardBackBtn').onclick = ()=>{
 });
 el('onboardCloseBtn') && (el('onboardCloseBtn').onclick = closeOnboarding);
 el('showOnboardingBtn') && (el('showOnboardingBtn').onclick = openOnboarding);
+el('teamHowtoWalkthroughBtn') && (el('teamHowtoWalkthroughBtn').onclick = openOnboarding);
+
+// ── Sponsor enquiry form (ported from landing.html — same behaviour, same DB, same notification) ──
+let _enqTypesData = null, _enqPlayersData = null, _enqLoaded = false;
+async function openSponsorEnquiry(){
+  el('enquiryModal').classList.add('show');
+  lockBodyScroll();
+  el('enq_status').textContent = '';
+  if(!_enqLoaded){
+    await loadSponsorEnquiryOptions();
+    _enqLoaded = true;
+  }
+}
+function closeSponsorEnquiry(){
+  el('enquiryModal').classList.remove('show');
+  unlockBodyScroll();
+}
+async function loadSponsorEnquiryOptions(){
+  const typeSel = el('enq_type');
+  typeSel.innerHTML = '<option value="">Loading options…</option>';
+  const [{data:types}, {data:avail}, {data:allPlayersForEnq}, {data:enqTeams}] = await Promise.all([
+    sb.from('sponsorship_types').select('*').eq('active', true).order('sort_order'),
+    sb.rpc('public_sponsorship_availability'),
+    sb.from('players').select('id,name,nickname,position,team_id').eq('active', true),
+    sb.from('teams').select('id,name')
+  ]);
+  _enqTypesData = types || [];
+  _enqPlayersData = allPlayersForEnq || [];
+  const teamById = {}; (enqTeams||[]).forEach(t=>teamById[t.id]=t.name);
+  const isLadiesTeam = teamId => (teamById[teamId]||'').toLowerCase().includes('ladies');
+  const availByType = {}; (avail||[]).forEach(a=>availByType[a.sponsorship_type_id]=a);
+
+  // Only show types that still have room (capacity null = unlimited, or sold < capacity)
+  const openTypes = _enqTypesData.filter(t=>{
+    const a = availByType[t.id];
+    const sold = a ? Number(a.sold_count) : 0;
+    return t.capacity == null || sold < t.capacity;
+  });
+  if(!openTypes.length){
+    typeSel.innerHTML = '<option value="">Nothing available right now — get in touch anyway!</option>';
+  } else {
+    typeSel.innerHTML = '<option value="">Select an option…</option>' +
+      openTypes.map(t=>`<option value="${t.id}" data-applies="${t.applies_to}">${esc(t.name)} — £${Number(t.default_amount).toFixed(2)}</option>`).join('') +
+      '<option value="other">Something else / not sure</option>';
+  }
+  // Build the sponsored-player exclusion set from the availability RPC (all types combined)
+  const sponsoredPlayerIds = new Set();
+  (avail||[]).forEach(a=>{ (a.sponsored_player_ids||[]).forEach(pid=>sponsoredPlayerIds.add(pid)); });
+
+  // Populate the player dropdown for whichever type is currently selected, filtered to the
+  // right squad (e.g. "Player Sponsor — Women" only lists players on a "Ladies" team).
+  function populateEnqPlayers(){
+    const opt = typeSel.selectedOptions[0];
+    const typeName = (opt ? opt.textContent : '').toLowerCase();
+    const wantsLadies = typeName.includes('women') || typeName.includes('ladies');
+    const wantsMen = typeName.includes('men') && !typeName.includes('women');
+    const pool = _enqPlayersData.filter(p=>{
+      if(sponsoredPlayerIds.has(p.id)) return false;
+      if(wantsLadies) return isLadiesTeam(p.team_id);
+      if(wantsMen) return !isLadiesTeam(p.team_id);
+      return true; // type name doesn't specify a squad — show everyone unsponsored
+    }).sort((a,b)=>a.name.localeCompare(b.name));
+    const playerSel = el('enq_player');
+    playerSel.innerHTML = '<option value="">— any / not sure —</option>' +
+      pool.map(p=>`<option value="${p.id}">${esc(p.nickname?`${p.name} "${p.nickname}"`:p.name)}</option>`).join('');
+  }
+  populateEnqPlayers();
+
+  typeSel.onchange = ()=>{
+    const opt = typeSel.selectedOptions[0];
+    const applies = opt ? opt.dataset.applies : '';
+    el('enq_playerWrap').style.display = (applies==='player') ? 'block' : 'none';
+    populateEnqPlayers();
+  };
+}
+async function submitSponsorEnquiry(){
+  const name = el('enq_name').value.trim();
+  const email = el('enq_email').value.trim();
+  const phone = el('enq_phone').value.trim();
+  const typeId = el('enq_type').value;
+  const playerId = el('enq_player').value;
+  const message = el('enq_message').value.trim();
+  const status = el('enq_status');
+  const emailOk = /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email);
+
+  if(!name){ status.textContent = 'Please add your name.'; status.style.color = 'var(--crimson)'; return; }
+  if(!emailOk){ status.textContent = 'Please add a valid email address.'; status.style.color = 'var(--crimson)'; return; }
+
+  const btn = el('enq_submit');
+  btn.disabled = true; btn.textContent = 'Sending…';
+  status.style.color = 'var(--muted)'; status.textContent = '';
+
+  const rec = {
+    name, email,
+    phone: phone || null,
+    sponsorship_type_id: (typeId && typeId !== 'other') ? typeId : null,
+    player_id: playerId || null,
+    message: message || null
+  };
+  const { error } = await sb.from('sponsor_enquiries').insert(rec);
+  if(error){
+    status.textContent = 'Something went wrong — please try again or email treasurer@onrfc.co.uk directly.';
+    status.style.color = 'var(--crimson)';
+    btn.disabled = false; btn.textContent = 'Send enquiry';
+    return;
+  }
+  // Best-effort notification email to the treasurer — the enquiry is already saved even if this fails.
+  // Reuses the existing send-invoice-email Edge Function (already deployed, already proven working).
+  try{
+    const typeName = (typeId && typeId !== 'other') ? (_enqTypesData||[]).find(t=>t.id===typeId)?.name : (typeId==='other' ? 'Something else / not sure' : null);
+    const playerName = playerId ? (_enqPlayersData||[]).find(p=>p.id===playerId)?.name : null;
+    const lines = [
+      `Name: ${name}`,
+      `Email: ${email}`,
+      phone ? `Phone: ${phone}` : null,
+      typeName ? `Interested in: ${typeName}` : null,
+      playerName ? `Player: ${playerName}` : null,
+      message ? `Message: ${message}` : null
+    ].filter(Boolean);
+    const html = `<div style="font-family:Arial,Helvetica,sans-serif; color:#1B2A4A; max-width:520px">
+      <div style="background:#C41E3A; color:#fff; padding:18px 22px; border-radius:8px 8px 0 0">
+        <h2 style="margin:0; font-size:20px">New sponsor enquiry</h2>
+        <p style="margin:4px 0 0; font-size:13px; opacity:.9">via ONs' Fantasy Rugby Manager</p>
+      </div>
+      <div style="padding:22px; border:1px solid #eee; border-top:none">
+        ${lines.map(l=>`<p style="margin:6px 0">${esc(l)}</p>`).join('')}
+        <p style="margin-top:18px; font-size:.85em; color:#666">This enquiry is also saved in the admin Sponsors tab.</p>
+      </div>
+    </div>`;
+    await sb.functions.invoke('send-invoice-email', {
+      body: { to: 'treasurer@onrfc.co.uk', subject: `New sponsor enquiry — ${name}`, html, text: lines.join('\n') }
+    });
+  }catch(e){ /* saved either way — notification is a nice-to-have, not blocking */ }
+
+  el('enquiryFormArea').innerHTML = `
+    <div style="text-align:center; padding:20px 0">
+      <div style="font-size:2rem; margin-bottom:10px">✅</div>
+      <div style="font-family:'Barlow Condensed',sans-serif; font-weight:800; font-size:1.2rem; color:var(--navy); margin-bottom:8px">Thanks, ${esc(name.split(' ')[0])}!</div>
+      <p class="muted">We've received your enquiry and someone will be in touch soon.</p>
+      <button class="sponsor-cta-btn" style="margin-top:14px" onclick="closeSponsorEnquiry()">Close</button>
+    </div>`;
+}
+
 function namePlain(p){ return p.nickname ? `${p.name} "${p.nickname}"` : p.name; }
 function teamLabel(p){ const t = allTeams.find(x=>x.id===p.team_id); return t ? t.name : (p.xv===1?'1st XV':p.xv===2?'2nd XV':p.xv===3?'3rd XV':''); }
 
@@ -805,8 +985,7 @@ async function showWelcome(user){
 function maybeShowOnboarding(){
   let seen = false;
   try{ seen = localStorage.getItem(ONBOARD_SEEN_KEY) === '1'; }catch(e){}
-  console.log('[onboarding] maybeShowOnboarding called, seen=', seen);
-  if(!seen) setTimeout(()=>{ console.log('[onboarding] opening now'); openOnboarding(); }, 400);
+  if(!seen) setTimeout(openOnboarding, 400); // small delay so it appears after the app UI has settled in
 }
 
 let mode='signin';
@@ -947,8 +1126,7 @@ async function afterLogin(user){
   initTeamDuty();
   renderPayBanner();
   startIdleTimer();
-  console.log('[onboarding] afterLogin complete, isNewManager=', isNewManager);
-  if(isNewManager){ toast('New manager — showing walkthrough'); maybeShowOnboarding(); }
+  if(isNewManager) maybeShowOnboarding();
 }
 
 // ── Tabs ──────────────────────────────────────────────────────
@@ -1041,20 +1219,20 @@ async function loadSponsorBanner(){
     if(be) be.innerHTML = cache[pg.botEl];
     // Carousel — shown/hidden per page based on the admin Placements table
     if(place?.show_carousel){
-      buildSponsorCarousel(all, allPlayers, settings?.sponsor_contact_info, pg.carouselSuffix);
+      buildSponsorCarousel(all, allPlayers, pg.carouselSuffix);
     } else {
       const wrap = el('sponsorCarouselWrap_'+pg.carouselSuffix);
       if(wrap) wrap.style.display = 'none';
     }
     if(pg.key === 'team'){
-      _teamCarouselState = place?.show_carousel ? { all, contact: settings?.sponsor_contact_info } : null;
+      _teamCarouselState = place?.show_carousel ? { all } : null;
     }
   });
   // Team page top is always injected directly; footer is via renderPicker cache
   cachedSponsorHTML.top = cache['sponsorBanner'] || '';
   cachedSponsorHTML.bot = cache['sponsorFooter'] || '';
 }
-function buildSponsorCarousel(banners, players, contactInfo, pageSuffix){
+function buildSponsorCarousel(banners, players, pageSuffix){
   const suffix = pageSuffix ? '_'+pageSuffix : '';
   const wrap = document.getElementById('sponsorCarouselWrap'+suffix);
   const track = document.getElementById('sponsorCarousel'+suffix);
@@ -1070,11 +1248,7 @@ function buildSponsorCarousel(banners, players, contactInfo, pageSuffix){
   });
 
   // "Sponsor a player" CTA — always shown (even with zero logos, this becomes the whole point of the block)
-  const contact = (contactInfo||'').trim() || 'treasurer@onrfc.co.uk';
-  const isEmail = /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(contact);
-  const ctaHref = isEmail ? `mailto:${contact}` : contact;
-  const ctaTarget = isEmail ? '' : ' target="_blank" rel="noopener"';
-  const ctaHtml = `<div class="sponsor-cta"><span>Want to sponsor a player or add your logo here?</span><a class="sponsor-cta-btn" href="${esc(ctaHref)}"${ctaTarget}>Get in touch</a></div>`;
+  const ctaHtml = `<div class="sponsor-cta"><span>Want to sponsor a player or add your logo here?</span><button class="sponsor-cta-btn" type="button" onclick="openSponsorEnquiry()">Get in touch</button></div>`;
 
   if(!items.length){
     wrap.querySelector('.sponsor-carousel-title')?.remove();
@@ -1302,7 +1476,7 @@ function renderPicker(){
   // renderPicker() rebuilds this whole page's HTML, wiping any carousel content that
   // loadSponsorBanner() had already injected — re-populate it here using the cached state.
   if(_teamCarouselState){
-    buildSponsorCarousel(_teamCarouselState.all, allPlayers, _teamCarouselState.contact, 'team');
+    buildSponsorCarousel(_teamCarouselState.all, allPlayers, 'team');
   }
 
   box.querySelectorAll('[data-slot]').forEach(b=>b.onclick=()=>{const[g,i]=b.dataset.slot.split('-');openChooser(g,parseInt(i,10));});
