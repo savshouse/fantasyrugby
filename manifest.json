@@ -1,0 +1,24 @@
+{
+  "name": "ONs' Fantasy Rugby Manager",
+  "short_name": "ONs Fantasy",
+  "description": "Old Northamptonians RFC Fantasy Rugby Manager",
+  "start_url": "/manager.html",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#1B2A4A",
+  "theme_color": "#C41E3A",
+  "icons": [
+    {
+      "src": "https://fantasyrugby.uk/images/ons-crest.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "https://fantasyrugby.uk/images/ons-crest.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
