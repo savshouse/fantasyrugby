@@ -8,6 +8,13 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#C41E3A">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="ONs Fantasy">
+<script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
 <style>
   :root{
     --crimson:#C41E3A; --crimson-dark:#9e1830; --navy:#1B2A4A; --navy-light:#243660;
@@ -604,6 +611,10 @@
         </div>
         <p class="muted" id="photoStatus" style="margin-top:8px; font-size:.78rem"></p>
       </div>
+      <div class="card" id="notifyCard">
+        <div class="eyebrow">🔔 Notifications</div>
+        <div id="notifyBody"><p class="muted">Checking…</p></div>
+      </div>
       <div class="card" style="text-align:center">
         <div class="eyebrow">New here, or need a refresher?</div>
         <p class="muted" style="margin-bottom:12px">A quick walkthrough of how the game works.</p>
@@ -726,6 +737,16 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 const ADMIN_URL = 'adminfantasy.html';
 
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// ── OneSignal push notifications ──
+// Init runs as soon as the SDK loads. We do NOT auto-prompt for permission here —
+// iOS requires the prompt to be triggered by a direct user tap (e.g. a "Turn on
+// notifications" button), and prompting unprompted also just annoys people on any platform.
+window.OneSignalDeferred = window.OneSignalDeferred || [];
+OneSignalDeferred.push(async function(OneSignal){
+  await OneSignal.init({ appId: "eff692f2-8774-4086-8688-8b14f10f5520" });
+});
+
 const el = id => document.getElementById(id);
 function toast(m,e){ const t=el('toast'); t.textContent=m; t.className='toast show'+(e?' err':''); setTimeout(()=>t.className='toast',2800); }
 function esc(s){ return (s??'').toString().replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
@@ -933,6 +954,68 @@ async function submitSponsorEnquiry(){
 }
 
 function namePlain(p){ return p.nickname ? `${p.name} "${p.nickname}"` : p.name; }
+
+// ── Push notifications (OneSignal) ──────────────────────────────
+function isIOS(){
+  return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+}
+function isStandalone(){
+  return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+}
+async function renderNotifyCard(){
+  const body = el('notifyBody');
+  if(!body) return;
+
+  if(isIOS() && !isStandalone()){
+    // Push cannot work in a normal Safari tab on iOS — the app must be added to the Home Screen first.
+    body.innerHTML = `
+      <p class="muted" style="margin-bottom:10px">On iPhone, you'll need to add this app to your Home Screen first — then notifications can work even when the app's closed.</p>
+      <div style="background:#faf8f5; border:1px solid #efe9e2; border-radius:10px; padding:12px 14px; font-size:.85rem; line-height:1.6">
+        1. Tap the <b>Share</b> button <span style="font-size:1.1em">⬆️</span> in Safari's toolbar<br>
+        2. Scroll down and tap <b>Add to Home Screen</b><br>
+        3. Open ONs Fantasy from your Home Screen icon, then come back to this page
+      </div>`;
+    return;
+  }
+
+  try{
+    await new Promise(r=>{
+      if(window.OneSignal) return r();
+      window.OneSignalDeferred = window.OneSignalDeferred || [];
+      OneSignalDeferred.push(()=>r());
+      setTimeout(r, 3000); // don't hang forever if the SDK is slow/blocked
+    });
+  }catch(e){}
+
+  if(!window.OneSignal){
+    body.innerHTML = `<p class="muted">Notifications aren't available right now — try again in a moment.</p>`;
+    return;
+  }
+
+  const permission = OneSignal.Notifications.permission;
+  if(permission){
+    body.innerHTML = `<p style="color:#2a7a3b; font-weight:600; font-size:.9rem">✓ Notifications are on for this device</p>
+      <button class="btn ghost" id="notifyOffBtn" style="margin-top:8px">Turn off</button>`;
+    el('notifyOffBtn').onclick = async ()=>{
+      await OneSignal.User.PushSubscription.optOut();
+      if(me?.id){ await sb.from('managers').update({ onesignal_player_id: null }).eq('id', me.id); }
+      renderNotifyCard();
+    };
+  } else {
+    body.innerHTML = `<p class="muted" style="margin-bottom:10px">Get notified when gameweek scores are in, and reminders before your team locks.</p>
+      <button class="btn navy block" id="notifyOnBtn">Turn on notifications</button>`;
+    el('notifyOnBtn').onclick = async ()=>{
+      el('notifyOnBtn').disabled = true; el('notifyOnBtn').textContent = 'Requesting…';
+      await OneSignal.Notifications.requestPermission();
+      const granted = OneSignal.Notifications.permission;
+      if(granted){
+        const playerId = OneSignal.User.PushSubscription.id;
+        if(playerId && me?.id){ await sb.from('managers').update({ onesignal_player_id: playerId }).eq('id', me.id); }
+      }
+      renderNotifyCard();
+    };
+  }
+}
 function teamLabel(p){ const t = allTeams.find(x=>x.id===p.team_id); return t ? t.name : (p.xv===1?'1st XV':p.xv===2?'2nd XV':p.xv===3?'3rd XV':''); }
 
 let me=null, settings=null, allPlayers=[], playerById={}, allTeams=[];
@@ -1126,6 +1209,7 @@ async function afterLogin(user){
   initTeamDuty();
   renderPayBanner();
   startIdleTimer();
+  renderNotifyCard();
   if(isNewManager) maybeShowOnboarding();
 }
 
