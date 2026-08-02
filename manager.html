@@ -1006,13 +1006,26 @@ async function renderNotifyCard(){
       <button class="btn navy block" id="notifyOnBtn">Turn on notifications</button>`;
     el('notifyOnBtn').onclick = async ()=>{
       el('notifyOnBtn').disabled = true; el('notifyOnBtn').textContent = 'Requesting…';
-      await OneSignal.Notifications.requestPermission();
-      const granted = OneSignal.Notifications.permission;
-      if(granted){
-        const playerId = OneSignal.User.PushSubscription.id;
-        if(playerId && me?.id){ await sb.from('managers').update({ onesignal_player_id: playerId }).eq('id', me.id); }
+      try{
+        const result = await Promise.race([
+          OneSignal.Notifications.requestPermission(),
+          new Promise((_,rej)=>setTimeout(()=>rej(new Error('Timed out after 10s — no response from the permission prompt')), 10000))
+        ]);
+        const granted = OneSignal.Notifications.permission;
+        if(granted){
+          const playerId = OneSignal.User.PushSubscription.id;
+          if(playerId && me?.id){ await sb.from('managers').update({ onesignal_player_id: playerId }).eq('id', me.id); }
+          renderNotifyCard();
+        } else {
+          body.innerHTML = `<p class="muted" style="color:var(--crimson)">Permission was not granted (result: ${esc(String(result))}). You can try again, or check Settings → Notifications on your device.</p>
+            <button class="btn navy block" id="notifyOnBtn" style="margin-top:8px">Try again</button>`;
+          el('notifyOnBtn').onclick = renderNotifyCard;
+        }
+      }catch(err){
+        body.innerHTML = `<p class="muted" style="color:var(--crimson)">Something went wrong: ${esc(err.message||String(err))}</p>
+          <button class="btn navy block" id="notifyOnBtn" style="margin-top:8px">Try again</button>`;
+        el('notifyOnBtn').onclick = renderNotifyCard;
       }
-      renderNotifyCard();
     };
   }
 }
