@@ -568,7 +568,7 @@ function buildSponsorBanner(data){
   return `<div class="sponsor-banner-pub">${inner}</div>`;
 }
 
-function buildSponsorCarousel(banners, players, contactInfo){
+function buildSponsorCarousel(banners, players){
   const wrap = document.getElementById('sponsorCarouselWrap');
   const track = document.getElementById('sponsorCarousel');
   if(!wrap || !track) return;
@@ -960,7 +960,7 @@ async function loadAll(){
 
   // Sponsor thank-you carousel — from sponsor_banners + player sponsor logos, only if enabled for this page
   if(placements?.show_carousel){
-    buildSponsorCarousel(allSponsors, players, settings?.sponsor_contact_info);
+    buildSponsorCarousel(allSponsors, players);
   } else {
     const wrap = document.getElementById('sponsorCarouselWrap');
     if(wrap) wrap.style.display = 'none';

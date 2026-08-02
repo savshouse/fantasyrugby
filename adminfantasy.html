@@ -428,18 +428,23 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
         Manager Report
       </button>
-      <button data-tab="sponsorreport">
+      <div class="nav-group-label">Sponsors</div>
+      <button data-tab="sponsors">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
+        Sponsors
+      </button>
+      <button data-tab="sponsorreport">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg>
         Sponsor Report
+      </button>
+      <button data-tab="sponsorsettings">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        Sponsor Settings
       </button>
       <div class="nav-group-label">Settings</div>
       <button data-tab="links">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
         App Links
-      </button>
-      <button data-tab="sponsors">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
-        Sponsors
       </button>
       <button data-tab="settings">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
@@ -666,6 +671,10 @@
           <div id="spenq_list"><div class="empty">Loading…</div></div>
         </div>
       </details>
+    </section>
+
+    <!-- SPONSOR SETTINGS -->
+    <section id="sponsorsettings">
       <details class="card" id="spsettings_details">
         <summary style="cursor:pointer; list-style:none; display:flex; align-items:center; justify-content:space-between">
           <span class="eyebrow" style="margin:0">💳 Invoice payment details</span>
@@ -680,19 +689,6 @@
         <div style="height:12px"></div>
         <button class="btn navy" id="spset_save">Save invoice payment details</button>
         <p class="muted" id="spset_status" style="margin-top:8px; font-size:.82rem"></p>
-      </details>
-
-      <details class="card" id="sprcontact_details">
-        <summary style="cursor:pointer; list-style:none; display:flex; align-items:center; justify-content:space-between">
-          <span class="eyebrow" style="margin:0">📣 Sponsorship enquiries</span>
-          <span class="muted" style="font-size:.78rem">Shown on the public site</span>
-        </summary>
-        <p class="muted" style="margin-top:10px">Where the "Sponsor a player" button on the public landing page sends people. A web link shows as a button; an email address shows as a mailto link. Leave blank to fall back to treasurer@onrfc.co.uk.</p>
-        <label for="sprcontact_info">Link or email</label>
-        <input id="sprcontact_info" placeholder="https://your-enquiry-form.com  OR  treasurer@onrfc.co.uk">
-        <div style="height:12px"></div>
-        <button class="btn navy" id="sprcontact_save">Save sponsorship enquiries link</button>
-        <p class="muted" id="sprcontact_status" style="margin-top:8px; font-size:.82rem"></p>
       </details>
 
       <details class="card" id="spbanner_details">
@@ -1282,7 +1278,8 @@ function wireNavButtons(){
       if(tab==='leaderboard'){ loadLeaderboard(); }
       if(tab==='mgrreport'){ loadMgrReport(); }
       if(tab==='sponsorreport'){ loadSponsorReport(); }
-      if(tab==='sponsors'){ loadSponsorTypes(); loadSponsorships(); loadSponsorPlacements(); loadSponsorEnquiries(); }
+      if(tab==='sponsors'){ loadSponsorTypes(); loadSponsorships(); loadSponsorEnquiries(); }
+      if(tab==='sponsorsettings'){ loadSponsorTypes(); loadSponsorPlacements(); loadSponsors(); }
       if(!document.body.classList.contains('drawer-pinned')){
         el('drawer').classList.remove('open'); el('drawerOverlay').classList.remove('show');
       }
@@ -3910,7 +3907,6 @@ async function loadSettings(){
   if(el('set_membership_note')) el('set_membership_note').value = data.membership_note || '';
   if(el('spset_bank')) el('spset_bank').value = data.sponsor_bank_details || '';
   if(el('spset_payurl')) el('spset_payurl').value = data.sponsor_payment_url || '';
-  if(el('sprcontact_info')) el('sprcontact_info').value = data.sponsor_contact_info || '';
   // Populate season dropdowns
   const { data: seasons } = await sb.from('seasons').select('*').order('created_at');
   window.allSeasons = seasons || [];
@@ -3946,15 +3942,6 @@ el('spset_save') && (el('spset_save').onclick = async ()=>{
   if(error){ el('spset_status').textContent = error.message; toast(error.message, true); return; }
   Object.assign(currentSettings, payload);
   el('spset_status').textContent = 'Invoice payment details saved.';
-  toast('Saved');
-});
-el('sprcontact_save') && (el('sprcontact_save').onclick = async ()=>{
-  if(!currentSettings){ toast('Settings not loaded yet', true); return; }
-  const payload = { sponsor_contact_info: el('sprcontact_info').value.trim() };
-  const { error } = await sb.from('app_settings').update(payload).eq('id', currentSettings.id);
-  if(error){ el('sprcontact_status').textContent = error.message; toast(error.message, true); return; }
-  Object.assign(currentSettings, payload);
-  el('sprcontact_status').textContent = 'Sponsorship enquiries link saved.';
   toast('Saved');
 });
 el('set_save').onclick = ()=>{
