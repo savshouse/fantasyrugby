@@ -645,6 +645,27 @@
           <div id="spinv_list"><div class="empty">Loading…</div></div>
         </div>
       </details>
+      <details class="card" id="spenq_details" open>
+        <summary style="cursor:pointer; list-style:none; display:flex; align-items:center; justify-content:space-between">
+          <span class="eyebrow" style="margin:0">📬 Sponsorship enquiries</span>
+          <span class="muted" style="font-size:.78rem">Tap to collapse</span>
+        </summary>
+        <div class="inline" style="justify-content:flex-end; align-items:center; margin-top:8px">
+          <button class="btn sec small" id="spenq_refresh">&#8635; Refresh</button>
+        </div>
+        <input class="search" id="spenq_search" placeholder="Search name, email, or message…" style="margin-top:8px">
+        <div class="row" style="align-items:center; margin-top:8px">
+          <div style="flex:1"><label>Status</label><select id="spenq_statusFilter">
+            <option value="">All</option>
+            <option value="new">New</option>
+            <option value="actioned">Actioned</option>
+          </select></div>
+        </div>
+        <div id="spenq_topscroll" style="overflow-x:auto; margin-top:10px"><div id="spenq_topscroll_spacer" style="height:1px"></div></div>
+        <div id="spenq_bottomscroll" style="overflow-x:auto">
+          <div id="spenq_list"><div class="empty">Loading…</div></div>
+        </div>
+      </details>
       <details class="card" id="spsettings_details">
         <summary style="cursor:pointer; list-style:none; display:flex; align-items:center; justify-content:space-between">
           <span class="eyebrow" style="margin:0">💳 Invoice payment details</span>
@@ -1261,7 +1282,7 @@ function wireNavButtons(){
       if(tab==='leaderboard'){ loadLeaderboard(); }
       if(tab==='mgrreport'){ loadMgrReport(); }
       if(tab==='sponsorreport'){ loadSponsorReport(); }
-      if(tab==='sponsors'){ loadSponsorTypes(); loadSponsorships(); loadSponsorPlacements(); }
+      if(tab==='sponsors'){ loadSponsorTypes(); loadSponsorships(); loadSponsorPlacements(); loadSponsorEnquiries(); }
       if(!document.body.classList.contains('drawer-pinned')){
         el('drawer').classList.remove('open'); el('drawerOverlay').classList.remove('show');
       }
@@ -4243,6 +4264,129 @@ function renderSponsorPlacements(){
     };
   });
 }
+
+// ── SPONSORSHIP ENQUIRIES ──────────────────────────────────────
+let allSponsorEnquiries = [];
+let spenqSortCol = 'submitted_at', spenqSortDir = -1;
+let spenqExpanded = new Set();
+async function loadSponsorEnquiries(){
+  const box = el('spenq_list'); if(!box) return;
+  const { data, error } = await sb.from('sponsor_enquiries').select('*').order('submitted_at', { ascending:false });
+  if(error){ toast(error.message, true); return; }
+  allSponsorEnquiries = data || [];
+  renderSponsorEnquiries();
+}
+function renderSponsorEnquiries(){
+  const box = el('spenq_list'); if(!box) return;
+  const q = (el('spenq_search').value||'').toLowerCase();
+  const statusF = el('spenq_statusFilter').value;
+  const typeName = id => (allSponsorTypes||[]).find(t=>t.id===id)?.name || '';
+  const playerName = id => id ? displayNamePlain((allPlayers||[]).find(p=>p.id===id)||{name:'Unknown'}) : '';
+
+  let rows = allSponsorEnquiries.map(e=>({
+    ...e,
+    type_name: typeName(e.sponsorship_type_id),
+    player_name: playerName(e.player_id)
+  })).filter(e=>{
+    const matchesQ = !q || e.name.toLowerCase().includes(q) || e.email.toLowerCase().includes(q) || (e.message||'').toLowerCase().includes(q);
+    const matchesStatus = !statusF || e.status === statusF;
+    return matchesQ && matchesStatus;
+  });
+
+  rows.sort((a,b)=>{
+    const av=a[spenqSortCol], bv=b[spenqSortCol];
+    if(typeof av==='string') return (av||'').localeCompare(bv||'') * spenqSortDir;
+    return ((av||0)-(bv||0)) * spenqSortDir;
+  });
+  window._spenqVisibleRows = rows;
+
+  if(!rows.length){ box.innerHTML = '<div class="empty">No enquiries found.</div>'; return; }
+
+  const SPENQ_COLUMNS = [
+    {key:'name', label:'Name'},
+    {key:'email', label:'Email'},
+    {key:'type_name', label:'Interested in'},
+    {key:'player_name', label:'Player'},
+    {key:'submitted_at', label:'Submitted'},
+    {key:'status', label:'Status'}
+  ];
+  const head = SPENQ_COLUMNS.map(c=>`<th data-col="${c.key}" class="${c.key===spenqSortCol?'sorted':''}" style="cursor:pointer">${c.label}${c.key===spenqSortCol?(spenqSortDir===1?' ▲':' ▼'):''}</th>`).join('') + '<th></th>';
+  const body = rows.map(e=>{
+    const expanded = spenqExpanded.has(e.id);
+    const stColor = e.status==='actioned' ? '#2a7a3b' : '#b45309';
+    const submittedFmt = e.submitted_at ? new Date(e.submitted_at).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}) : '';
+    const detailRow = expanded ? `<tr class="mr-detail-row"><td colspan="7" style="padding:12px 8px">
+      ${e.phone?`<div class="muted" style="font-size:.82rem; margin-bottom:6px"><b>Phone:</b> ${esc(e.phone)}</div>`:''}
+      ${e.message?`<div class="muted" style="font-size:.82rem; margin-bottom:10px"><b>Message:</b> ${esc(e.message)}</div>`:'<div class="muted" style="font-size:.82rem; margin-bottom:10px">No message left.</div>'}
+      <label style="font-size:.72rem; text-transform:uppercase; letter-spacing:.03em; color:var(--muted)">Admin notes</label>
+      <textarea data-notes="${e.id}" rows="2" style="font-size:16px;width:100%;padding:8px 10px;border:1.5px solid var(--line);border-radius:8px;font-family:'Inter',sans-serif;box-sizing:border-box;resize:vertical">${esc(e.admin_notes||'')}</textarea>
+      <div style="height:8px"></div>
+      <div style="display:flex; gap:8px; flex-wrap:wrap">
+        <button class="btn sec small" data-save-notes="${e.id}">Save notes</button>
+        ${e.status!=='actioned' ? `<button class="btn sec small" data-mark-actioned="${e.id}">Mark actioned</button>` : `<button class="btn sec small" data-mark-new="${e.id}">Mark as new</button>`}
+      </div>
+    </td></tr>` : '';
+    return `<tr data-toggle-enq="${e.id}" style="cursor:pointer">
+      <td class="name-cell"><b>${expanded?'▾':'▸'} ${esc(e.name)}</b></td>
+      <td>${esc(e.email)}</td>
+      <td>${esc(e.type_name)||'<span class="muted">—</span>'}</td>
+      <td>${e.player_name?esc(e.player_name):'<span class="muted">—</span>'}</td>
+      <td>${submittedFmt}</td>
+      <td><span class="pill" style="background:${stColor}; color:#fff">${e.status==='actioned'?'Actioned':'New'}</span></td>
+      <td></td>
+    </tr>${detailRow}`;
+  }).join('');
+
+  box.innerHTML = `<div class="rp-scroll"><table class="rp-table"><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table></div>`;
+  box.querySelectorAll('th[data-col]').forEach(th=> th.onclick = ()=>{
+    const col = th.dataset.col;
+    if(spenqSortCol===col) spenqSortDir *= -1; else { spenqSortCol = col; spenqSortDir = -1; }
+    renderSponsorEnquiries();
+  });
+  box.querySelectorAll('[data-toggle-enq]').forEach(tr=> tr.onclick = (e)=>{
+    if(e.target.closest('button, textarea')) return;
+    const id = tr.dataset.toggleEnq;
+    if(spenqExpanded.has(id)) spenqExpanded.delete(id); else spenqExpanded.add(id);
+    renderSponsorEnquiries();
+  });
+  box.querySelectorAll('[data-save-notes]').forEach(btn=> btn.onclick = async ()=>{
+    const id = btn.dataset.saveNotes;
+    const textarea = box.querySelector(`[data-notes="${id}"]`);
+    const { error } = await sb.from('sponsor_enquiries').update({ admin_notes: textarea.value.trim() || null }).eq('id', id);
+    if(error){ toast(error.message, true); return; }
+    toast('Notes saved');
+    const local = allSponsorEnquiries.find(x=>x.id===id); if(local) local.admin_notes = textarea.value.trim() || null;
+  });
+  box.querySelectorAll('[data-mark-actioned]').forEach(btn=> btn.onclick = async ()=>{
+    const id = btn.dataset.markActioned;
+    const { error } = await sb.from('sponsor_enquiries').update({ status:'actioned', actioned_at: new Date().toISOString() }).eq('id', id);
+    if(error){ toast(error.message, true); return; }
+    toast('Marked as actioned');
+    await loadSponsorEnquiries();
+  });
+  box.querySelectorAll('[data-mark-new]').forEach(btn=> btn.onclick = async ()=>{
+    const id = btn.dataset.markNew;
+    const { error } = await sb.from('sponsor_enquiries').update({ status:'new', actioned_at: null }).eq('id', id);
+    if(error){ toast(error.message, true); return; }
+    toast('Marked as new');
+    await loadSponsorEnquiries();
+  });
+
+  const tbl = box.querySelector('table');
+  const topS = el('spenq_topscroll'), botS = el('spenq_bottomscroll'), spc = el('spenq_topscroll_spacer');
+  if(tbl && topS && botS && spc){
+    const syncWidth = ()=>{ spc.style.width = tbl.scrollWidth + 'px'; };
+    syncWidth();
+    if(window.ResizeObserver){ new ResizeObserver(syncWidth).observe(tbl); }
+    else { requestAnimationFrame(syncWidth); setTimeout(syncWidth, 300); }
+    let syncing = false;
+    topS.onscroll = ()=>{ if(syncing) return; syncing = true; botS.scrollLeft = topS.scrollLeft; syncing = false; };
+    botS.onscroll = ()=>{ if(syncing) return; syncing = true; topS.scrollLeft = botS.scrollLeft; syncing = false; };
+  }
+}
+el('spenq_search') && (el('spenq_search').oninput = renderSponsorEnquiries);
+el('spenq_statusFilter') && (el('spenq_statusFilter').onchange = renderSponsorEnquiries);
+el('spenq_refresh') && (el('spenq_refresh').onclick = ()=>{ loadSponsorEnquiries(); toast('Refreshed'); });
 
 // ── CSV BULK FIXTURE UPLOAD ────────────────────────────────────
 el('gw_csv_template') && (el('gw_csv_template').onclick = ()=>{
