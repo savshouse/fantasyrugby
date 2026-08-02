@@ -962,6 +962,47 @@ function isIOS(){
 function isStandalone(){
   return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
 }
+async function runPushDiagnostics(){
+  const lines = [];
+  lines.push('User agent: ' + navigator.userAgent);
+  lines.push('isIOS(): ' + isIOS());
+  lines.push('isStandalone(): ' + isStandalone());
+  lines.push('display-mode standalone match: ' + window.matchMedia('(display-mode: standalone)').matches);
+  lines.push('navigator.standalone: ' + window.navigator.standalone);
+  lines.push('Notification API exists: ' + ('Notification' in window));
+  if('Notification' in window){
+    lines.push('Notification.permission (native): ' + Notification.permission);
+  }
+  lines.push('serviceWorker supported: ' + ('serviceWorker' in navigator));
+  if('serviceWorker' in navigator){
+    try{
+      const regs = await navigator.serviceWorker.getRegistrations();
+      lines.push('Service worker registrations: ' + regs.length);
+      regs.forEach((r,i)=> lines.push(`  [${i}] scope=${r.scope} active=${!!r.active} scriptURL=${r.active?.scriptURL||'(none)'}`));
+    }catch(e){ lines.push('serviceWorker.getRegistrations() error: ' + e.message); }
+  }
+  try{
+    const manifestResp = await fetch('/manifest.json', { cache:'no-store' });
+    lines.push('manifest.json fetch status: ' + manifestResp.status);
+    const manifestText = await manifestResp.text();
+    lines.push('manifest.json content-type: ' + manifestResp.headers.get('content-type'));
+    lines.push('manifest.json body starts: ' + manifestText.slice(0,80).replace(/\n/g,' '));
+  }catch(e){ lines.push('manifest.json fetch error: ' + e.message); }
+  try{
+    const swResp = await fetch('/OneSignalSDKWorker.js', { cache:'no-store' });
+    lines.push('OneSignalSDKWorker.js fetch status: ' + swResp.status);
+    const swText = await swResp.text();
+    lines.push('OneSignalSDKWorker.js content-type: ' + swResp.headers.get('content-type'));
+    lines.push('OneSignalSDKWorker.js body: ' + swText.slice(0,120).replace(/\n/g,' '));
+  }catch(e){ lines.push('OneSignalSDKWorker.js fetch error: ' + e.message); }
+  lines.push('window.OneSignal loaded: ' + !!window.OneSignal);
+  if(window.OneSignal){
+    try{ lines.push('OneSignal.Notifications.permission: ' + OneSignal.Notifications.permission); }catch(e){ lines.push('OneSignal.Notifications.permission error: ' + e.message); }
+    try{ lines.push('OneSignal.User.PushSubscription.id: ' + OneSignal.User.PushSubscription.id); }catch(e){ lines.push('PushSubscription.id error: ' + e.message); }
+    try{ lines.push('OneSignal.User.PushSubscription.optedIn: ' + OneSignal.User.PushSubscription.optedIn); }catch(e){ lines.push('optedIn error: ' + e.message); }
+  }
+  return lines.join('\n');
+}
 async function renderNotifyCard(){
   const body = el('notifyBody');
   if(!body) return;
@@ -974,7 +1015,14 @@ async function renderNotifyCard(){
         1. Tap the <b>Share</b> button <span style="font-size:1.1em">⬆️</span> in Safari's toolbar<br>
         2. Scroll down and tap <b>Add to Home Screen</b><br>
         3. Open ONs Fantasy from your Home Screen icon, then come back to this page
-      </div>`;
+      </div>
+      <button class="btn ghost" id="notifyDiagBtn" style="margin-top:10px; font-size:.78rem">Run diagnostics</button>
+      <pre id="notifyDiagOutput" style="display:none; font-size:.68rem; white-space:pre-wrap; background:#1a1a2e; color:#9f9; padding:10px; border-radius:8px; margin-top:8px; max-height:300px; overflow-y:auto"></pre>`;
+    el('notifyDiagBtn').onclick = async ()=>{
+      el('notifyDiagOutput').style.display = 'block';
+      el('notifyDiagOutput').textContent = 'Running…';
+      el('notifyDiagOutput').textContent = await runPushDiagnostics();
+    };
     return;
   }
 
@@ -988,7 +1036,14 @@ async function renderNotifyCard(){
   }catch(e){}
 
   if(!window.OneSignal){
-    body.innerHTML = `<p class="muted">Notifications aren't available right now — try again in a moment.</p>`;
+    body.innerHTML = `<p class="muted">Notifications aren't available right now — try again in a moment.</p>
+      <button class="btn ghost" id="notifyDiagBtn" style="margin-top:10px; font-size:.78rem">Run diagnostics</button>
+      <pre id="notifyDiagOutput" style="display:none; font-size:.68rem; white-space:pre-wrap; background:#1a1a2e; color:#9f9; padding:10px; border-radius:8px; margin-top:8px; max-height:300px; overflow-y:auto"></pre>`;
+    el('notifyDiagBtn').onclick = async ()=>{
+      el('notifyDiagOutput').style.display = 'block';
+      el('notifyDiagOutput').textContent = 'Running…';
+      el('notifyDiagOutput').textContent = await runPushDiagnostics();
+    };
     return;
   }
 
@@ -1003,7 +1058,14 @@ async function renderNotifyCard(){
     };
   } else {
     body.innerHTML = `<p class="muted" style="margin-bottom:10px">Get notified when gameweek scores are in, and reminders before your team locks.</p>
-      <button class="btn navy block" id="notifyOnBtn">Turn on notifications</button>`;
+      <button class="btn navy block" id="notifyOnBtn">Turn on notifications</button>
+      <button class="btn ghost" id="notifyDiagBtn" style="margin-top:10px; font-size:.78rem">Run diagnostics</button>
+      <pre id="notifyDiagOutput" style="display:none; font-size:.68rem; white-space:pre-wrap; background:#1a1a2e; color:#9f9; padding:10px; border-radius:8px; margin-top:8px; max-height:300px; overflow-y:auto"></pre>`;
+    el('notifyDiagBtn').onclick = async ()=>{
+      el('notifyDiagOutput').style.display = 'block';
+      el('notifyDiagOutput').textContent = 'Running…';
+      el('notifyDiagOutput').textContent = await runPushDiagnostics();
+    };
     el('notifyOnBtn').onclick = async ()=>{
       el('notifyOnBtn').disabled = true; el('notifyOnBtn').textContent = 'Requesting…';
       try{
@@ -1023,8 +1085,15 @@ async function renderNotifyCard(){
         }
       }catch(err){
         body.innerHTML = `<p class="muted" style="color:var(--crimson)">Something went wrong: ${esc(err.message||String(err))}</p>
-          <button class="btn navy block" id="notifyOnBtn" style="margin-top:8px">Try again</button>`;
+          <button class="btn navy block" id="notifyOnBtn" style="margin-top:8px">Try again</button>
+          <button class="btn ghost" id="notifyDiagBtn2" style="margin-top:8px; font-size:.78rem">Run diagnostics</button>
+          <pre id="notifyDiagOutput" style="display:none; font-size:.68rem; white-space:pre-wrap; background:#1a1a2e; color:#9f9; padding:10px; border-radius:8px; margin-top:8px; max-height:300px; overflow-y:auto"></pre>`;
         el('notifyOnBtn').onclick = renderNotifyCard;
+        el('notifyDiagBtn2').onclick = async ()=>{
+          el('notifyDiagOutput').style.display = 'block';
+          el('notifyDiagOutput').textContent = 'Running…';
+          el('notifyDiagOutput').textContent = await runPushDiagnostics();
+        };
       }
     };
   }
