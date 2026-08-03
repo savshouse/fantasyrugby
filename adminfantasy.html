@@ -1518,7 +1518,7 @@ function renderMessages(){
     {key:'is_broadcast', label:'Audience'},
     {key:'push_sent', label:'Push'}
   ];
-  const head = cols.map(c=>`<th data-col="${c.key}" style="cursor:pointer" class="${c.key===msgSortCol?'sorted':''}">${c.label}${c.key===msgSortCol?(msgSortDir===1?' ▲':' ▼'):''}</th>`).join('');
+  const head = cols.map(c=>`<th data-col="${c.key}" style="cursor:pointer" class="${c.key===msgSortCol?'sorted':''}">${c.label}${c.key===msgSortCol?(msgSortDir===1?' ▲':' ▼'):''}</th>`).join('') + '<th></th>';
   const body = rows.map(m=>{
     const sentFmt = m.sent_at ? new Date(m.sent_at).toLocaleDateString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}) : '';
     const audience = m.is_broadcast ? '<span class="pill" style="background:var(--navy);color:#fff">Broadcast</span>' : `<span class="pill">${esc(m.managers?.name||'Individual')}</span>`;
@@ -1528,11 +1528,20 @@ function renderMessages(){
       <td><b>${esc(m.title)}</b><div class="muted" style="font-size:.78rem">${esc(m.message)}</div></td>
       <td>${audience}</td>
       <td style="text-align:center">${push}</td>
+      <td><button class="btn sec small" style="color:var(--crimson)" data-delete-msg="${m.id}">Delete</button></td>
     </tr>`;
   }).join('');
   box.innerHTML = `<div style="overflow-x:auto"><table class="rp-table"><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table></div>`;
   box.querySelectorAll('th[data-col]').forEach(th=>th.onclick=()=>{
     if(msgSortCol===th.dataset.col) msgSortDir*=-1; else { msgSortCol=th.dataset.col; msgSortDir=-1; }
+    renderMessages();
+  });
+  box.querySelectorAll('[data-delete-msg]').forEach(btn=>btn.onclick=async()=>{
+    if(!confirm('Delete this message? Managers who haven\'t read it yet will no longer see it.')) return;
+    const { error } = await sb.from('notification_log').delete().eq('id', btn.dataset.deleteMsg);
+    if(error){ toast(error.message, true); return; }
+    toast('Message deleted');
+    allMessages = allMessages.filter(m=>m.id!==btn.dataset.deleteMsg);
     renderMessages();
   });
 }
