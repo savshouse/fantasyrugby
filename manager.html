@@ -3,6 +3,17 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<script>
+// Applied here, before any CSS/body renders, so there's no visible "jump" once the
+// page loads — the whole app is sized in rem, so scaling the root font-size scales everything.
+(function(){
+  try{
+    var saved = localStorage.getItem('textSizePref');
+    var scales = { small:'100%', medium:'112%', large:'125%', xlarge:'140%' };
+    document.documentElement.style.fontSize = scales[saved] || scales.medium;
+  }catch(e){}
+})();
+</script>
 <title>ONs' Fantasy Rugby Manager</title>
 <link rel="icon" type="image/png" href="data:image/png;base64,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">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -615,6 +626,11 @@
         <div class="eyebrow">🔔 Notifications</div>
         <div id="notifyBody"><p class="muted">Checking…</p></div>
       </div>
+      <div class="card" id="textSizeCard">
+        <div class="eyebrow">🔤 Text size</div>
+        <p class="muted" style="margin-bottom:10px">Make everything in the app bigger or smaller — this is saved on this device.</p>
+        <div id="textSizeButtons" style="display:flex; gap:8px"></div>
+      </div>
       <div class="card" style="text-align:center">
         <div class="eyebrow">New here, or need a refresher?</div>
         <p class="muted" style="margin-bottom:12px">A quick walkthrough of how the game works.</p>
@@ -1098,6 +1114,39 @@ async function renderNotifyCard(){
     };
   }
 }
+
+// ── Text size preference ────────────────────────────────────────
+const TEXT_SIZE_OPTIONS = [
+  { key:'small',  label:'A',  scale:'100%' },
+  { key:'medium', label:'A',  scale:'112%' },
+  { key:'large',  label:'A',  scale:'125%' },
+  { key:'xlarge', label:'A',  scale:'140%' }
+];
+function getTextSizePref(){
+  try{ return localStorage.getItem('textSizePref') || 'medium'; }catch(e){ return 'medium'; }
+}
+function setTextSizePref(key){
+  const opt = TEXT_SIZE_OPTIONS.find(o=>o.key===key);
+  if(!opt) return;
+  document.documentElement.style.fontSize = opt.scale;
+  try{ localStorage.setItem('textSizePref', key); }catch(e){}
+  renderTextSizeButtons();
+}
+function renderTextSizeButtons(){
+  const box = el('textSizeButtons');
+  if(!box) return;
+  const current = getTextSizePref();
+  box.innerHTML = TEXT_SIZE_OPTIONS.map((o,i)=>{
+    const isActive = o.key === current;
+    // Each button's own label is shown at a size matching its option, so the
+    // buttons themselves preview roughly how big that setting will feel.
+    const previewSize = 14 + (i*3);
+    return `<button type="button" class="btn ${isActive?'navy':'ghost'}" data-size="${o.key}" style="flex:1; font-size:${previewSize}px; padding:10px 0">${o.label}</button>`;
+  }).join('');
+  box.querySelectorAll('[data-size]').forEach(btn=>{
+    btn.onclick = ()=> setTextSizePref(btn.dataset.size);
+  });
+}
 function teamLabel(p){ const t = allTeams.find(x=>x.id===p.team_id); return t ? t.name : (p.xv===1?'1st XV':p.xv===2?'2nd XV':p.xv===3?'3rd XV':''); }
 
 let me=null, settings=null, allPlayers=[], playerById={}, allTeams=[];
@@ -1292,6 +1341,7 @@ async function afterLogin(user){
   renderPayBanner();
   startIdleTimer();
   renderNotifyCard();
+  renderTextSizeButtons();
   if(isNewManager) maybeShowOnboarding();
 }
 
