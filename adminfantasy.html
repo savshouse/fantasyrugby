@@ -2444,6 +2444,26 @@ function renderGwStatusBox(){
     if(res.error){ toast(res.error.message, true); return; }
     toast(reopening ? `Week ${gw.number} reopened — old points cleared` : `Week ${gw.number} updated`);
     await loadGameweeks(); renderGwStatusBox(); loadLeaderboard();
+
+    // Notify subscribed managers the moment a gameweek is genuinely marked scored for the first time
+    // (not on reopen, not on a deadline-only edit while already scored).
+    const justScored = newStatus === 'scored' && gw.status !== 'scored';
+    if(justScored){
+      try{
+        const { data: subs } = await sb.from('managers').select('onesignal_player_id').eq('active', true).not('onesignal_player_id', 'is', null);
+        const ids = (subs||[]).map(m=>m.onesignal_player_id).filter(Boolean);
+        if(ids.length){
+          await sb.functions.invoke('send-push-notification', {
+            body: {
+              playerIds: ids,
+              title: `Gameweek ${gw.number} scores are in!`,
+              message: `See how your team did on the leaderboard.`,
+              url: 'https://fantasyrugby.uk/manager.html'
+            }
+          });
+        }
+      }catch(e){ /* notification is a nice-to-have — never block the actual scoring action on it failing */ }
+    }
   };
 }
 async function renderFixtures(){
