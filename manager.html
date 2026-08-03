@@ -1468,7 +1468,7 @@ document.querySelectorAll('.tab-bar button').forEach(b=> b.onclick=()=>{
   if(tab==='players') { reloadMgrPlayerStats(); }
   if(tab==='totw')    { loadMgrTotw(); }
   if(tab==='duty')    { loadDutyForm(); }
-  if(tab==='inbox')   { markAllInboxRead(); }
+  if(tab==='inbox')   { loadInbox(); markAllInboxRead(); }
   if(tab==='profile') { loadMyRequests && loadMyRequests(); }
   if(tab==='links')   { loadLinks(); }
 });
