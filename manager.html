@@ -1258,6 +1258,9 @@ function markAllInboxRead(){
   box.querySelectorAll('.inbox-msg').forEach(div=> div.classList.add('inbox-read'));
   const badge = el('inboxBadge');
   if(badge) badge.style.display = 'none';
+  // Also clear the OS-level app icon badge (the one set by the service worker on push receive)
+  // navigator.clearAppBadge() is available in the page context on iOS Safari PWA (16.4+)
+  if('clearAppBadge' in navigator) navigator.clearAppBadge().catch(()=>{});
 }
 
 let me=null, settings=null, allPlayers=[], playerById={}, allTeams=[];
