@@ -323,6 +323,9 @@
   .sponsor-cta{display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center;padding:14px 18px 2px;border-top:1px solid var(--line);margin-top:12px}
   .sponsor-cta span{font-size:.8rem;color:var(--muted)}
   .sponsor-cta-btn{display:inline-block;background:var(--crimson);color:#fff;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:.9rem;text-transform:uppercase;letter-spacing:.03em;padding:9px 20px;border-radius:8px;text-decoration:none;border:none;cursor:pointer}
+  .inbox-msg{padding:12px 0; border-bottom:1px solid var(--line);}
+  .inbox-msg:last-child{border-bottom:none;}
+  .inbox-read .muted{opacity:.7}
   .enq-label{display:block; font-size:.72rem; font-weight:700; text-transform:uppercase; letter-spacing:.03em; color:var(--muted); margin:12px 0 5px}
   .enq-label:first-child{margin-top:0}
   .enq-input{width:100%; padding:11px 12px; border:1.5px solid var(--line); border-radius:10px; font-size:16px; font-family:'Inter',sans-serif; box-sizing:border-box; background:#fff}
@@ -599,6 +602,14 @@
       </div>
     </section>
 
+    <!-- ═══ INBOX ═══════════════════════════════════════════════ -->
+    <section id="inbox">
+      <div class="card">
+        <div class="eyebrow">🔔 Inbox</div>
+        <div id="inboxList"><p class="muted">Loading…</p></div>
+      </div>
+    </section>
+
     <section id="profile">
       <div id="linksSponsorTop"></div>
       <div class="card" style="background:#f7f6f4; border:1.5px solid #e0dbd4">
@@ -725,6 +736,13 @@
     <button data-tab="duty" id="dutyTabBtn" style="display:none">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
       Team Duty
+    </button>
+    <button data-tab="inbox" id="inboxTabBtn">
+      <span style="position:relative; display:inline-block">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" style="width:22px;height:22px"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        <span id="inboxBadge" style="display:none; position:absolute; top:-4px; right:-6px; background:var(--crimson); color:#fff; font-size:.55rem; font-weight:800; border-radius:10px; padding:1px 4px; min-width:14px; text-align:center; line-height:1.4">0</span>
+      </span>
+      Inbox
     </button>
     <button data-tab="profile">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
@@ -1150,6 +1168,98 @@ function renderTextSizeButtons(){
 }
 function teamLabel(p){ const t = allTeams.find(x=>x.id===p.team_id); return t ? t.name : (p.xv===1?'1st XV':p.xv===2?'2nd XV':p.xv===3?'3rd XV':''); }
 
+// ── Manager inbox ─────────────────────────────────────────────
+// Read state is tracked in localStorage (keyed by notification_log id) rather than
+// a per-manager DB column — simpler, no extra round-trips, and good enough since
+// "read" is a per-device preference rather than something that needs to sync.
+const INBOX_READ_KEY = 'inboxRead_v1';
+function getReadIds(){ try{ return new Set(JSON.parse(localStorage.getItem(INBOX_READ_KEY)||'[]')); }catch(e){ return new Set(); } }
+function markRead(ids){ try{ const s=getReadIds(); ids.forEach(id=>s.add(id)); localStorage.setItem(INBOX_READ_KEY, JSON.stringify([...s])); }catch(e){} }
+
+async function loadInbox(){
+  const box = el('inboxList'); if(!box) return;
+  // Fetch broadcasts + messages addressed to this specific manager
+  const { data, error } = await sb.from('notification_log')
+    .select('*')
+    .order('sent_at', { ascending: false })
+    .limit(50);
+  if(error){ box.innerHTML = `<p class="muted">Couldn't load messages.</p>`; return; }
+  renderInbox(data||[]);
+}
+
+function renderInbox(messages){
+  const box = el('inboxList'); if(!box) return;
+  const readIds = getReadIds();
+  const unread = messages.filter(m=>!readIds.has(m.id));
+
+  // Update badge
+  const badge = el('inboxBadge');
+  if(badge){
+    if(unread.length > 0){
+      badge.textContent = unread.length > 9 ? '9+' : String(unread.length);
+      badge.style.display = 'inline-block';
+    } else {
+      badge.style.display = 'none';
+    }
+  }
+
+  if(!messages.length){ box.innerHTML = '<p class="muted">No messages yet.</p>'; return; }
+
+  box.innerHTML = messages.map(m=>{
+    const isRead = readIds.has(m.id);
+    const sentFmt = m.sent_at ? new Date(m.sent_at).toLocaleDateString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}) : '';
+    return `<div class="inbox-msg ${isRead?'inbox-read':''}" data-msg-id="${m.id}" ${m.url?`onclick="markMsgRead('${m.id}'); window.location.href='${esc(m.url)}'"`:''} style="cursor:${m.url?'pointer':'default'}">
+      <div style="display:flex; align-items:flex-start; gap:10px">
+        <div style="flex:1">
+          <div style="font-weight:${isRead?'400':'700'}; font-size:.92rem">${esc(m.title)}</div>
+          <div class="muted" style="font-size:.82rem; margin-top:3px">${esc(m.message)}</div>
+        </div>
+        ${!isRead?`<span style="width:8px;height:8px;border-radius:50%;background:var(--crimson);flex-shrink:0;margin-top:4px"></span>`:''}
+      </div>
+      <div class="muted" style="font-size:.72rem; margin-top:6px">${sentFmt}</div>
+    </div>`;
+  }).join('');
+
+  // Wire up read-on-tap for messages without a URL
+  box.querySelectorAll('.inbox-msg').forEach(div=>{
+    if(!div.getAttribute('onclick')){
+      div.onclick = ()=> markMsgRead(div.dataset.msgId);
+    }
+  });
+}
+
+function markMsgRead(id){
+  markRead([id]);
+  // Re-render to update badge + read state
+  const box = el('inboxList');
+  if(box) box.querySelectorAll('.inbox-msg').forEach(div=>{
+    if(div.dataset.msgId === id){
+      div.classList.add('inbox-read');
+      div.querySelector('span[style*="border-radius:50%"]')?.remove();
+      div.querySelector('div[style*="font-weight:700"]')?.removeAttribute('style');
+    }
+  });
+  // Recalculate badge
+  const readIds = getReadIds();
+  const allMsgs = [...(el('inboxList')?.querySelectorAll('.inbox-msg')||[])];
+  const unread = allMsgs.filter(d=>!readIds.has(d.dataset.msgId));
+  const badge = el('inboxBadge');
+  if(badge){
+    badge.textContent = unread.length > 9 ? '9+' : String(unread.length);
+    badge.style.display = unread.length > 0 ? 'inline-block' : 'none';
+  }
+}
+
+// Mark all as read when the inbox tab is opened
+function markAllInboxRead(){
+  const box = el('inboxList'); if(!box) return;
+  const ids = [...box.querySelectorAll('.inbox-msg')].map(d=>d.dataset.msgId).filter(Boolean);
+  markRead(ids);
+  box.querySelectorAll('.inbox-msg').forEach(div=> div.classList.add('inbox-read'));
+  const badge = el('inboxBadge');
+  if(badge) badge.style.display = 'none';
+}
+
 let me=null, settings=null, allPlayers=[], playerById={}, allTeams=[];
 let activeGw=null, baselineIds=new Set(), editable=false;
 let slots={ F:[null,null,null,null], B:[null,null,null], X:[null,null,null] };
@@ -1343,6 +1453,7 @@ async function afterLogin(user){
   startIdleTimer();
   renderNotifyCard();
   renderTextSizeButtons();
+  loadInbox();
   if(isNewManager) maybeShowOnboarding();
 }
 
@@ -1357,6 +1468,7 @@ document.querySelectorAll('.tab-bar button').forEach(b=> b.onclick=()=>{
   if(tab==='players') { reloadMgrPlayerStats(); }
   if(tab==='totw')    { loadMgrTotw(); }
   if(tab==='duty')    { loadDutyForm(); }
+  if(tab==='inbox')   { markAllInboxRead(); }
   if(tab==='profile') { loadMyRequests && loadMyRequests(); }
   if(tab==='links')   { loadLinks(); }
 });

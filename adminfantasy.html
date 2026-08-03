@@ -415,6 +415,10 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M9 9h1"/><path d="M9 13h1"/><path d="M14 9h1"/><path d="M14 13h1"/></svg>
         Teams
       </button>
+      <button data-tab="messages">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        Messages
+      </button>
       <div class="nav-group-label">Reports</div>
       <button data-tab="pastseasons">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 8v4l3 3"/><circle cx="12" cy="12" r="10"/></svg>
@@ -763,6 +767,48 @@
         <div id="sptype_list" style="margin-top:14px"></div>
       </details>
 
+    </section>
+
+    <!-- MESSAGES -->
+    <section id="messages">
+      <details class="card" id="msg_compose_details" open>
+        <summary style="cursor:pointer; list-style:none; display:flex; align-items:center; justify-content:space-between">
+          <span class="eyebrow" style="margin:0">✉️ Send a message</span>
+          <span class="muted" style="font-size:.78rem">Tap to collapse</span>
+        </summary>
+        <div style="height:10px"></div>
+        <label for="msg_title">Title</label>
+        <input id="msg_title" placeholder="e.g. Season starts Saturday!">
+        <label for="msg_body">Message</label>
+        <textarea id="msg_body" rows="3" placeholder="Your message to managers…"></textarea>
+        <label for="msg_url">Link (optional)</label>
+        <input id="msg_url" placeholder="https://… (e.g. deep link into the app)">
+        <div class="row" style="align-items:center; margin-top:10px">
+          <div style="flex:1">
+            <label for="msg_audience">Send to</label>
+            <select id="msg_audience">
+              <option value="broadcast">All managers (broadcast)</option>
+            </select>
+          </div>
+        </div>
+        <div class="inline" style="gap:10px; margin-top:12px; align-items:center; flex-wrap:wrap">
+          <label style="display:flex; align-items:center; gap:6px; font-size:.85rem; cursor:pointer">
+            <input type="checkbox" id="msg_push" class="chk" checked>
+            Also send as push notification
+          </label>
+        </div>
+        <div style="height:12px"></div>
+        <button class="btn navy" id="msg_send">Send message</button>
+        <p class="muted" id="msg_status" style="margin-top:8px; font-size:.82rem"></p>
+      </details>
+      <div class="card">
+        <div class="inline" style="justify-content:space-between; align-items:center">
+          <div class="eyebrow">Sent messages</div>
+          <button class="btn sec small" id="msg_refresh">&#8635; Refresh</button>
+        </div>
+        <input class="search" id="msg_search" placeholder="Search messages…" style="margin-top:8px">
+        <div id="msg_list" style="margin-top:10px"><div class="empty">Loading…</div></div>
+      </div>
     </section>
 
     <!-- APPROVALS -->
@@ -1271,6 +1317,7 @@ function wireNavButtons(){
       b.classList.add('active');
       const sec = el(tab); if(sec) sec.classList.add('active');
       if(tab==='inbox'){ loadApprovals(); loadProfileRequests(); }
+      if(tab==='messages'){ loadMessages(); populateMsgAudience(); }
       if(tab==='pastseasons'){ loadPastSeason(); }
       if(tab==='playerstats'){ loadPlayerStats(); }
       if(tab==='totw'){ loadTotw(); }
@@ -1428,7 +1475,122 @@ el('tm_save').onclick = async ()=>{
   toast(id?'Team updated':'Team added'); el('tm_clear').click(); await loadTeams(); loadGameweeks();
 };
 
-// ---------- Sponsorship types ----------
+// ---------- Messages ----------
+let allMessages = [];
+let msgSortCol = 'sent_at', msgSortDir = -1;
+
+async function populateMsgAudience(){
+  const sel = el('msg_audience');
+  if(!sel || sel.dataset.populated) return;
+  // Populate individual manager options if managers are loaded
+  const sorted = (allManagers||[]).filter(m=>m.active).slice().sort((a,b)=>a.name.localeCompare(b.name));
+  sel.innerHTML = '<option value="broadcast">All managers (broadcast)</option>' +
+    sorted.map(m=>`<option value="${m.id}">${esc(m.name)}</option>`).join('');
+  sel.dataset.populated = '1';
+}
+
+async function loadMessages(){
+  const box = el('msg_list'); if(!box) return;
+  box.innerHTML = '<div class="empty">Loading…</div>';
+  const { data, error } = await sb.from('notification_log').select('*, managers(name)').order('sent_at', { ascending:false });
+  if(error){ toast(error.message, true); return; }
+  allMessages = data || [];
+  renderMessages();
+  await populateMsgAudience();
+}
+
+function renderMessages(){
+  const box = el('msg_list'); if(!box) return;
+  const q = (el('msg_search')?.value||'').toLowerCase();
+  let rows = allMessages.filter(m=>
+    !q || m.title.toLowerCase().includes(q) || m.message.toLowerCase().includes(q) ||
+    (m.managers?.name||'').toLowerCase().includes(q)
+  );
+  rows.sort((a,b)=>{
+    const av=a[msgSortCol], bv=b[msgSortCol];
+    if(typeof av==='string') return (av||'').localeCompare(bv||'') * msgSortDir;
+    return ((av||0)-(bv||0)) * msgSortDir;
+  });
+  if(!rows.length){ box.innerHTML='<div class="empty">No messages sent yet.</div>'; return; }
+  const cols = [
+    {key:'sent_at', label:'Sent'},
+    {key:'title', label:'Title'},
+    {key:'is_broadcast', label:'Audience'},
+    {key:'push_sent', label:'Push'}
+  ];
+  const head = cols.map(c=>`<th data-col="${c.key}" style="cursor:pointer" class="${c.key===msgSortCol?'sorted':''}">${c.label}${c.key===msgSortCol?(msgSortDir===1?' ▲':' ▼'):''}</th>`).join('');
+  const body = rows.map(m=>{
+    const sentFmt = m.sent_at ? new Date(m.sent_at).toLocaleDateString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}) : '';
+    const audience = m.is_broadcast ? '<span class="pill" style="background:var(--navy);color:#fff">Broadcast</span>' : `<span class="pill">${esc(m.managers?.name||'Individual')}</span>`;
+    const push = m.push_sent ? '✓' : '—';
+    return `<tr>
+      <td style="white-space:nowrap">${sentFmt}</td>
+      <td><b>${esc(m.title)}</b><div class="muted" style="font-size:.78rem">${esc(m.message)}</div></td>
+      <td>${audience}</td>
+      <td style="text-align:center">${push}</td>
+    </tr>`;
+  }).join('');
+  box.innerHTML = `<div style="overflow-x:auto"><table class="rp-table"><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table></div>`;
+  box.querySelectorAll('th[data-col]').forEach(th=>th.onclick=()=>{
+    if(msgSortCol===th.dataset.col) msgSortDir*=-1; else { msgSortCol=th.dataset.col; msgSortDir=-1; }
+    renderMessages();
+  });
+}
+
+el('msg_search') && (el('msg_search').oninput = renderMessages);
+el('msg_refresh') && (el('msg_refresh').onclick = loadMessages);
+
+el('msg_send') && (el('msg_send').onclick = async ()=>{
+  const title = el('msg_title').value.trim();
+  const body = el('msg_body').value.trim();
+  const url = el('msg_url').value.trim();
+  const audience = el('msg_audience').value;
+  const doPush = el('msg_push').checked;
+  const status = el('msg_status');
+
+  if(!title){ status.textContent='Please add a title.'; status.style.color='var(--crimson)'; return; }
+  if(!body){ status.textContent='Please add a message.'; status.style.color='var(--crimson)'; return; }
+
+  const btn = el('msg_send');
+  btn.disabled=true; btn.textContent='Sending…';
+  status.style.color='var(--muted)'; status.textContent='';
+
+  try{
+    const isBroadcast = audience === 'broadcast';
+    const managerId = isBroadcast ? null : audience;
+
+    if(doPush){
+      // Get the right player IDs — either all subscribed managers or just this one
+      let query = sb.from('managers').select('onesignal_player_id').eq('active',true).not('onesignal_player_id','is',null);
+      if(!isBroadcast) query = query.eq('id', managerId);
+      const { data: subs } = await query;
+      const ids = (subs||[]).map(m=>m.onesignal_player_id).filter(Boolean);
+      // Send via push function — which also logs to notification_log
+      const { error } = await sb.functions.invoke('send-push-notification', {
+        body: { playerIds: ids, title, message: body, url: url||undefined, logEntry: true, managerId }
+      });
+      if(error) throw error;
+    } else {
+      // No push — just write directly to notification_log
+      const { error } = await sb.from('notification_log').insert({
+        title, message: body, url: url||null,
+        is_broadcast: isBroadcast,
+        manager_id: managerId,
+        push_sent: false
+      });
+      if(error) throw error;
+    }
+
+    toast(isBroadcast ? 'Message sent to all managers' : `Message sent to ${(allManagers||[]).find(m=>m.id===managerId)?.name||'manager'}`);
+    el('msg_title').value=''; el('msg_body').value=''; el('msg_url').value='';
+    status.textContent=''; btn.disabled=false; btn.textContent='Send message';
+    await loadMessages();
+  }catch(err){
+    status.textContent=err?.message||'Something went wrong — please try again.';
+    status.style.color='var(--crimson)';
+    btn.disabled=false; btn.textContent='Send message';
+  }
+});
 let allSponsorTypes = [];
 async function loadSponsorTypes(){
   const { data, error } = await sb.from('sponsorship_types').select('*').order('sort_order');
@@ -4879,7 +5041,7 @@ boot();
 // ── Role-based nav filtering ────────────────────────────────────────────────
 const ROLE_TABS = {
   scorer:     ['leaderboard','score','squads','stats','playerstats','totw'],
-  registrar:  ['leaderboard','inbox','weeks','subs','players','teams','mgrreport'],
+  registrar:  ['leaderboard','inbox','weeks','subs','players','teams','mgrreport','messages'],
   viewer:     ['leaderboard','playerstats','totw','reports','pastseasons','mgrreport'],
   commercial: ['leaderboard','sponsors','sponsorreport']
 };
