@@ -9,7 +9,7 @@
 (function(){
   try{
     var saved = localStorage.getItem('textSizePref');
-    var scales = { small:'100%', medium:'112%', large:'125%', xlarge:'140%' };
+    var scales = { xsmall:'75%', small:'100%', medium:'112%', large:'125%', xlarge:'140%' };
     document.documentElement.style.fontSize = scales[saved] || scales.medium;
   }catch(e){}
 })();
@@ -1117,6 +1117,7 @@ async function renderNotifyCard(){
 
 // ── Text size preference ────────────────────────────────────────
 const TEXT_SIZE_OPTIONS = [
+  { key:'xsmall', label:'A',  scale:'75%' },
   { key:'small',  label:'A',  scale:'100%' },
   { key:'medium', label:'A',  scale:'112%' },
   { key:'large',  label:'A',  scale:'125%' },
@@ -1140,7 +1141,7 @@ function renderTextSizeButtons(){
     const isActive = o.key === current;
     // Each button's own label is shown at a size matching its option, so the
     // buttons themselves preview roughly how big that setting will feel.
-    const previewSize = 14 + (i*3);
+    const previewSize = 13 + (i*3);
     return `<button type="button" class="btn ${isActive?'navy':'ghost'}" data-size="${o.key}" style="flex:1; font-size:${previewSize}px; padding:10px 0">${o.label}</button>`;
   }).join('');
   box.querySelectorAll('[data-size]').forEach(btn=>{
