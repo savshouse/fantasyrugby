@@ -648,26 +648,31 @@
         <button class="btn navy block" id="showOnboardingBtn">🏉 How it works</button>
       </div>
       <div class="card">
-        <div class="eyebrow">Request a profile change</div>
-        <p class="muted">Wrong nickname? Want a photo added? Let the admin know and they'll update it.</p>
-        <p style="background:#fff3d6; color:#8a6215; border-radius:8px; padding:10px 12px; font-size:.8rem; margin:10px 0">
-          For genuine requests about your own or a teammate's profile only. Misusing this form may lead to removal from the competition without a refund of membership.
-        </p>
-        <label for="req_player">Which player is this about?</label>
-        <select id="req_player"><option value="">— General / not sure —</option></select>
-        <label for="req_message">What would you like changed?</label>
-        <input id="req_message" placeholder="e.g. Please add nickname 'Bomber'">
-        <label style="margin-top:12px">Suggested photo <span style="text-transform:none; font-weight:400">(optional)</span></label>
-        <div class="upload-row">
-          <label class="btn ghost" style="flex:1; text-align:center; cursor:pointer">
-            Choose photo
-            <input type="file" id="req_photo" accept="image/*">
-          </label>
+        <div class="eyebrow">✉️ Contact admin</div>
+        <p class="muted" style="margin-bottom:10px">Got a question, or something you'd like changed? Send a message to the admin team.</p>
+        <label for="msg_type_mgr">What's this about?</label>
+        <select id="msg_type_mgr" onchange="onMgrMsgTypeChange()">
+          <option value="general">General query</option>
+          <option value="payment">Payment query</option>
+          <option value="profile_change">Profile change request</option>
+        </select>
+        <div id="msg_profile_fields" style="display:none">
+          <label for="req_player">Which player is this about?</label>
+          <select id="req_player"><option value="">— General / not sure —</option></select>
+          <label style="margin-top:12px">Suggested photo <span style="text-transform:none; font-weight:400">(optional)</span></label>
+          <div class="upload-row">
+            <label class="btn ghost" style="flex:1; text-align:center; cursor:pointer">
+              Choose photo
+              <input type="file" id="req_photo" accept="image/*">
+            </label>
+          </div>
+          <p class="muted" id="req_photo_name" style="font-size:.78rem; margin-top:4px"></p>
         </div>
-        <p class="muted" id="req_photo_name" style="font-size:.78rem; margin-top:4px"></p>
+        <label for="mgr_message" style="margin-top:12px">Message</label>
+        <textarea id="mgr_message" rows="3" placeholder="Tell us what you need…"></textarea>
         <div style="height:10px"></div>
-        <button class="btn navy block" id="req_submit">Send request</button>
-        <p class="muted" id="req_status" style="margin-top:8px; font-size:.8rem"></p>
+        <button class="btn navy block" id="mgr_msg_submit">Send message</button>
+        <p class="muted" id="mgr_msg_status" style="margin-top:8px; font-size:.8rem"></p>
         <div id="req_mine" style="margin-top:12px"></div>
       </div>
       <div class="card" id="adminLinkCard" style="display:none">
@@ -1601,47 +1606,63 @@ function buildSponsorCarousel(banners, players, pageSuffix){
   wrap.style.display = 'block';
 }
 
-// ── Profile change requests ────────────────────────────────────
+// ── Contact admin (unified manager messages) ──────────────────
 function populateRequestPlayerSelect(){
   const sel = el('req_player'); if(!sel) return;
   const opts = allPlayers.slice().sort((a,b)=>a.name.localeCompare(b.name))
     .map(p=>`<option value="${p.id}">${esc(namePlain(p))}</option>`).join('');
   sel.innerHTML = '<option value="">— General / not sure —</option>' + opts;
 }
+function onMgrMsgTypeChange(){
+  const type = el('msg_type_mgr')?.value;
+  const profileFields = el('msg_profile_fields');
+  if(profileFields) profileFields.style.display = type === 'profile_change' ? 'block' : 'none';
+}
 // req_photo change is handled by the cropper (see IIFE at bottom of file)
-el('req_submit') && (el('req_submit').onclick = async ()=>{
-  const message = el('req_message').value.trim();
-  if(!message){ toast('Add a short description of the change', true); return; }
-  el('req_status').textContent = 'Sending…';
-  const playerId = el('req_player').value || null;
+el('mgr_msg_submit') && (el('mgr_msg_submit').onclick = async ()=>{
+  const type = el('msg_type_mgr').value;
+  const message = el('mgr_message').value.trim();
+  if(!message){ el('mgr_msg_status').textContent = 'Please add a message.'; return; }
+  el('mgr_msg_status').textContent = 'Sending…';
+  el('mgr_msg_submit').disabled = true;
   let photoUrl = null;
-  const file = window._pendingReqPhoto || el('req_photo').files[0];
-  if(file){
-    const ext = 'jpg';
-    const path = `${me.user_id}/${Date.now()}.${ext}`;
-    const up = await sb.storage.from('request-photos').upload(path, file, { upsert:true, cacheControl:'3600' });
-    if(up.error){ el('req_status').textContent = up.error.message; return; }
-    const { data:pub } = sb.storage.from('request-photos').getPublicUrl(path);
-    photoUrl = pub.publicUrl;
+  if(type === 'profile_change'){
+    const file = window._pendingReqPhoto || el('req_photo')?.files[0];
+    if(file){
+      const path = `${me.user_id}/${Date.now()}.jpg`;
+      const up = await sb.storage.from('request-photos').upload(path, file, { upsert:true, cacheControl:'3600' });
+      if(up.error){ el('mgr_msg_status').textContent = up.error.message; el('mgr_msg_submit').disabled=false; return; }
+      const { data:pub } = sb.storage.from('request-photos').getPublicUrl(path);
+      photoUrl = pub.publicUrl;
+    }
   }
-  const ins = await sb.from('profile_requests').insert({ requested_by: me.id, player_id: playerId, message, photo_url: photoUrl });
-  if(ins.error){ el('req_status').textContent = ins.error.message; return; }
-  el('req_status').textContent = 'Sent — an admin will action it soon.';
-  el('req_message').value=''; el('req_photo').value=''; el('req_player').value=''; el('req_photo_name').textContent=''; window._pendingReqPhoto=null;
+  const rec = {
+    manager_id: me.id,
+    type,
+    message,
+    photo_url: photoUrl,
+  };
+  const { error } = await sb.from('manager_messages').insert(rec);
+  if(error){ el('mgr_msg_status').textContent = error.message; el('mgr_msg_submit').disabled=false; return; }
+  el('mgr_msg_status').textContent = '✓ Sent — the admin team will be in touch soon.';
+  el('mgr_message').value='';
+  if(el('req_photo')) el('req_photo').value='';
+  if(el('req_player')) el('req_player').value='';
+  if(el('req_photo_name')) el('req_photo_name').textContent='';
+  window._pendingReqPhoto=null;
+  el('mgr_msg_submit').disabled=false;
   loadMyRequests();
 });
 async function loadMyRequests(){
   const box = el('req_mine'); if(!box) return;
-  const { data } = await sb.from('profile_requests').select('*').eq('requested_by', me.id).order('created_at', {ascending:false}).limit(5);
+  const { data } = await sb.from('manager_messages').select('*').eq('manager_id', me.id).order('sent_at', {ascending:false}).limit(5);
   if(!data || !data.length){ box.innerHTML=''; return; }
-  box.innerHTML = '<p class="muted" style="font-size:.72rem; text-transform:uppercase; letter-spacing:.06em; font-weight:700; margin-bottom:6px">Your recent requests</p>' +
-    data.map(r=>{
-      const p = allPlayers.find(x=>x.id===r.player_id);
-      return `<div class="link-row" style="cursor:default">
-        <span>${p?esc(p.name)+': ':''}${esc(r.message)}</span>
-        <span class="duty-status-badge ${r.status}">${r.status}</span>
-      </div>`;
-    }).join('');
+  const typeLabel = { profile_change:'Profile change', general:'General query', payment:'Payment query' };
+  box.innerHTML = '<p class="muted" style="font-size:.72rem; text-transform:uppercase; letter-spacing:.06em; font-weight:700; margin-bottom:6px">Your recent messages</p>' +
+    data.map(r=>`<div class="link-row" style="cursor:default">
+      <span>${typeLabel[r.type]||r.type}: ${esc(r.message)}</span>
+      <span class="duty-status-badge ${r.status}">${r.status}</span>
+    </div>`).join('');
 }
 
 // ── Profile photo ─────────────────────────────────────────────
@@ -2262,9 +2283,10 @@ el('shareTotwBtn') && (el('shareTotwBtn').onclick = generateTotwCard);
 // ── DELETE ACCOUNT REQUEST ────────────────────────────────────
 el('deleteAccountBtn') && (el('deleteAccountBtn').onclick = async ()=>{
   if(!confirm('This will send an account deletion request to the admin. You will remain active until they action it.\n\nAre you sure you want to request deletion?')) return;
-  const { error } = await sb.from('profile_requests').insert({
-    requested_by: me.id, player_id: null,
-    message: '⚠️ ACCOUNT DELETION REQUEST — manager has requested their account be removed from the competition.', status:'pending'
+  const { error } = await sb.from('manager_messages').insert({
+    manager_id: me.id,
+    type: 'general',
+    message: '⚠️ ACCOUNT DELETION REQUEST — manager has requested their account be removed from the competition.'
   });
   if(error){ toast(error.message, true); return; }
   el('deleteAccountStatus').textContent = 'Request sent — the admin will be in touch.';
