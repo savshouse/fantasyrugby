@@ -3221,8 +3221,7 @@ boot();
         photoInput.value = '';
         const croppedFile = new File([blob], 'avatar.jpg', { type:'image/jpeg' });
         document.getElementById('photoStatus').textContent = 'Uploading…';
-        const ext = 'jpg';
-        const path = `${me.user_id}/avatar.${ext}`;
+        const path = `${me.user_id}/avatar.jpg`;
         const up = await sb.storage.from('manager-photos').upload(path, croppedFile, { upsert:true, cacheControl:'3600' });
         if(up.error){ document.getElementById('photoStatus').textContent = up.error.message; toast(up.error.message, true); return; }
         const { data:pub } = sb.storage.from('manager-photos').getPublicUrl(path);

@@ -2601,8 +2601,7 @@ el('pl_save').onclick = async ()=>{
 
   if(pendingPhotoFile){
     el('pl_photo_status').textContent = 'Uploading photo…';
-    const ext = (pendingPhotoFile.name.split('.').pop()||'jpg').toLowerCase();
-    const path = `${savedPlayer.id}/photo.${ext}`;
+    const path = `${savedPlayer.id}/photo.jpg`;
     const up = await sb.storage.from('player-photos').upload(path, pendingPhotoFile, { upsert:true, cacheControl:'3600' });
     if(up.error){ toast(up.error.message, true); }
     else{
