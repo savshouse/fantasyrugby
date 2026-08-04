@@ -19,7 +19,16 @@ body{font-family:'Inter',sans-serif;color:var(--ink);background:#fff;font-size:1
 h1,h2,h3,h4{font-family:'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:.04em}
 a{color:inherit;text-decoration:none}
 
-/* ── HERO ── */
+/* ── CROSS-SITE NAV ── */
+.site-nav{position:fixed;top:0;left:0;right:0;z-index:50;background:var(--navy);display:flex;align-items:center;gap:0;padding:0 16px;border-bottom:2px solid var(--gold)}
+.site-nav-logo{display:flex;align-items:center;gap:10px;padding:10px 0;text-decoration:none;color:#fff;margin-right:auto}
+.site-nav-logo img{width:32px;height:32px;object-fit:contain;filter:drop-shadow(0 1px 3px rgba(0,0,0,.4))}
+.site-nav-logo-text{font-family:'Barlow Condensed',sans-serif;font-size:.85rem;font-weight:800;text-transform:uppercase;letter-spacing:.06em;opacity:.9;line-height:1.2}
+.site-nav-logo-sub{font-size:.6rem;opacity:.55;text-transform:uppercase;letter-spacing:.1em}
+.site-nav-links{display:flex;align-items:stretch;gap:0}
+.site-nav-link{display:flex;align-items:center;padding:0 14px;height:52px;font-family:'Barlow Condensed',sans-serif;font-size:.82rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:rgba(255,255,255,.6);text-decoration:none;border-bottom:2px solid transparent;margin-bottom:-2px;transition:color .15s}
+.site-nav-link:hover{color:#fff}
+.site-nav-link.active{color:var(--gold);border-bottom-color:var(--gold)}
 .hero{
   position:relative; overflow:hidden; color:#fff;
   background:linear-gradient(135deg,#6b0f1f 0%,var(--crimson) 40%,var(--navy) 100%);
@@ -32,10 +41,6 @@ a{color:inherit;text-decoration:none}
 }
 .hero-circles{position:absolute;inset:0;pointer-events:none;overflow:hidden}
 .hero-circles svg{position:absolute;right:-120px;top:-80px;width:600px;opacity:.07}
-.hero-nav{position:relative;z-index:2;display:flex;align-items:center;gap:14px;padding:16px 20px}
-.hero-logo{width:52px;height:52px;object-fit:contain;filter:drop-shadow(0 2px 6px rgba(0,0,0,.4))}
-.hero-nav-title{font-family:'Barlow Condensed',sans-serif;font-size:1.1rem;font-weight:800;text-transform:uppercase;letter-spacing:.06em;opacity:.92}
-.hero-nav-sub{font-size:.72rem;opacity:.6;text-transform:uppercase;letter-spacing:.1em}
 .hero-body{position:relative;z-index:2;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:32px 20px 48px}
 .hero-eyebrow{font-size:.78rem;letter-spacing:.18em;text-transform:uppercase;opacity:.65;margin-bottom:10px}
 .hero h1{font-size:clamp(2.4rem,9vw,4.8rem);font-weight:900;line-height:.95;margin-bottom:14px}
@@ -251,7 +256,22 @@ footer a{color:var(--gold)}
 <body>
 
 <!-- ── HERO ── -->
-<div class="hero">
+<nav class="site-nav">
+  <a class="site-nav-logo" href="landing.html">
+    <img src="https://upload.wikimedia.org/wikipedia/commons/1/1e/ONsLogoNew-svg.svg" alt="ONs RFC">
+    <div>
+      <div class="site-nav-logo-text">Old Northamptonians RFC</div>
+      <div class="site-nav-logo-sub">Fantasy Rugby Manager</div>
+    </div>
+  </a>
+  <div class="site-nav-links">
+    <a href="landing.html" class="site-nav-link active">Home</a>
+    <a href="sponsor.html" class="site-nav-link">Sponsorship</a>
+    <a href="manager.html" class="site-nav-link">Manager app</a>
+  </div>
+</nav>
+
+<div class="hero" style="padding-top:54px">
   <div class="hero-bg"></div>
   <div class="hero-circles">
     <svg viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
@@ -260,13 +280,6 @@ footer a{color:var(--gold)}
       <circle cx="200" cy="200" r="90" fill="none" stroke="white" stroke-width="1"/>
       <circle cx="200" cy="200" r="40" fill="none" stroke="white" stroke-width="1"/>
     </svg>
-  </div>
-  <div class="hero-nav">
-    <img class="hero-logo" src="https://upload.wikimedia.org/wikipedia/commons/1/1e/ONsLogoNew-svg.svg" alt="Old Northamptonians RFC">
-    <div>
-      <div class="hero-nav-title">Old Northamptonians RFC</div>
-      <div class="hero-nav-sub">Fantasy Rugby Manager</div>
-    </div>
   </div>
   <div class="hero-body">
     <p class="hero-eyebrow">Old Northamptonians RFC</p>

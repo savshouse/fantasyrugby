@@ -87,9 +87,10 @@
   section{display:none} section.active{display:block}
   .card{background:var(--card); border:1px solid var(--line); border-radius:14px; padding:16px; margin-bottom:12px}
   label{display:block; font-size:.75rem; font-weight:600; color:var(--muted); margin:10px 0 4px; text-transform:uppercase; letter-spacing:.04em}
-  input,select{width:100%; padding:11px 12px; border:1.5px solid var(--line); border-radius:10px;
+  input,select,textarea{width:100%; padding:11px 12px; border:1.5px solid var(--line); border-radius:10px;
     font-size:16px; font-family:'Inter',sans-serif; background:#fff; color:var(--ink); transition:border-color .15s; min-height:46px; box-sizing:border-box}
-  input:focus,select:focus{outline:none; border-color:var(--crimson)}
+  input:focus,select:focus,textarea:focus{outline:none; border-color:var(--crimson)}
+  textarea{min-height:unset; resize:vertical}
   .row{display:flex; gap:10px; flex-wrap:wrap} .row>*{flex:1 1 110px; min-width:0}
   .row input[type=datetime-local]{min-width:0; max-width:100%; width:100%; -webkit-appearance:none; appearance:none; box-sizing:border-box}
   input[type=datetime-local]{-webkit-appearance:none; appearance:none; box-sizing:border-box; max-width:100%}
@@ -1827,7 +1828,7 @@ el('sptype_save') && (el('sptype_save').onclick = async ()=>{
     toast('Uploading image…');
     const ext = imageFile.name.split('.').pop() || 'jpg';
     const path = `sptype-${Date.now()}.${ext}`;
-    const { error: upErr } = await sb.storage.from('sponsor-banners').upload(path, imageFile, { upsert:true, cacheControl:'3600' });
+    const { error: upErr } = await sb.storage.from('sponsorship-types').upload(path, imageFile, { upsert:true, cacheControl:'3600' });
     if(upErr){ toast(upErr.message, true); return; }
     const { data: pub } = sb.storage.from('sponsor-banners').getPublicUrl(path);
     image_url = pub.publicUrl;
@@ -4534,7 +4535,8 @@ const SPPLACE_PAGES = [
   { key:'profile',     label:'Profile (more menu)' },
   { key:'links',       label:'Links (more menu)' },
   { key:'info',        label:'Info & how it works (more menu)' },
-  { key:'landing',     label:'Public landing page' }
+  { key:'landing',     label:'Public landing page' },
+  { key:'sponsor',     label:'Sponsor landing page (sponsor.html)' }
 ];
 let allSponsorPlacements = [];
 async function loadSponsorPlacements(){
