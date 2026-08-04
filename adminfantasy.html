@@ -1865,6 +1865,11 @@ const SPINV_COLUMNS = [
   {key:'due_date', label:'Due', type:'text'},
   {key:'status_label', label:'Status', type:'text'}
 ];
+function todayISO(){ return new Date().toISOString().slice(0,10); }
+function addDaysISO(dateStr, days){
+  const d = new Date(dateStr+'T00:00:00'); d.setDate(d.getDate()+days);
+  return d.toISOString().slice(0,10);
+}
 function populateExistingSponsorDropdown(){
   const sel = el('spinv_existing_sponsor'); if(!sel) return;
   // Build unique sponsors from existing invoices, sorted alphabetically
