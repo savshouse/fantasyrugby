@@ -579,6 +579,11 @@
           <span class="muted" style="font-size:.78rem">Tap to collapse</span>
         </summary>
         <input type="hidden" id="spinv_id">
+        <label for="spinv_existing_sponsor">Copy from existing sponsor <span style="font-weight:400; text-transform:none">(optional — pre-fills name, email, address)</span></label>
+        <select id="spinv_existing_sponsor">
+          <option value="">— New sponsor / type below —</option>
+        </select>
+        <div style="height:10px"></div>
         <label for="spinv_sponsorName">Sponsor name</label>
         <input id="spinv_sponsorName" placeholder="e.g. Acme Builders Ltd, or Mr John Smith">
         <div class="row">
@@ -1860,26 +1865,51 @@ const SPINV_COLUMNS = [
   {key:'due_date', label:'Due', type:'text'},
   {key:'status_label', label:'Status', type:'text'}
 ];
-function todayISO(){ return new Date().toISOString().slice(0,10); }
+function populateExistingSponsorDropdown(){
+  const sel = el('spinv_existing_sponsor'); if(!sel) return;
+  // Build unique sponsors from existing invoices, sorted alphabetically
+  const seen = new Map(); // sponsor_name → most recent invoice data
+  (allInvoices||[]).slice().reverse().forEach(inv=>{
+    if(inv.sponsor_name) seen.set(inv.sponsor_name, inv);
+  });
+  const sponsors = [...seen.values()].sort((a,b)=>a.sponsor_name.localeCompare(b.sponsor_name));
+  sel.innerHTML = '<option value="">— New sponsor / type below —</option>' +
+    sponsors.map(inv=>`<option value="${esc(inv.sponsor_name)}" data-email="${esc(inv.sponsor_email||'')}" data-phone="${esc(inv.sponsor_phone||'')}" data-address="${esc(inv.sponsor_address||'')}">${esc(inv.sponsor_name)}</option>`).join('');
+}
+el('spinv_existing_sponsor') && (el('spinv_existing_sponsor').onchange = function(){
+  const opt = this.selectedOptions[0];
+  if(!opt || !opt.value) return;
+  el('spinv_sponsorName').value = opt.value;
+  el('spinv_email').value = opt.dataset.email || '';
+  el('spinv_phone').value = opt.dataset.phone || '';
+  el('spinv_address').value = opt.dataset.address || '';
+  // Warn if this sponsor has an open unpaid invoice
+  const open = (allInvoices||[]).filter(inv=>
+    inv.sponsor_name === opt.value && inv.status_key !== 'paid'
+  );
+  if(open.length){
+    toast(`Note: ${opt.value} already has ${open.length} unpaid invoice${open.length>1?'s':''}`, false);
+  }
+});
 function addDaysISO(dateStr, days){
   const d = new Date(dateStr+'T00:00:00'); d.setDate(d.getDate()+days);
   return d.toISOString().slice(0,10);
 }
 async function nextInvoiceNumber(){
   const year = new Date().getFullYear();
-  const prefix = `INV-${year}-`;
-  const { data } = await sb.from('invoices')
-    .select('invoice_number')
-    .like('invoice_number', prefix+'%')
-    .order('invoice_number', { ascending:false })
-    .limit(1);
-  let seq = 1;
-  if(data && data.length){
-    const last = data[0].invoice_number; // e.g. INV-2026-007
-    const n = parseInt(last.split('-').pop(), 10);
-    if(!isNaN(n)) seq = n + 1;
-  }
-  return prefix + String(seq).padStart(3,'0');
+  // Use a global ever-incrementing sequence stored in app_settings.
+  // This ensures invoice numbers are NEVER reused even across year boundaries
+  // or if old invoices are deleted — the counter only ever goes up.
+  const { data, error } = await sb.from('app_settings')
+    .select('last_invoice_seq')
+    .limit(1).single();
+  if(error) throw new Error('Could not read invoice sequence: ' + error.message);
+  const nextSeq = ((data?.last_invoice_seq) || 0) + 1;
+  // Increment the counter atomically before returning
+  const { error: updateErr } = await sb.from('app_settings')
+    .update({ last_invoice_seq: nextSeq });
+  if(updateErr) throw new Error('Could not update invoice sequence: ' + updateErr.message);
+  return `INV-${year}-${String(nextSeq).padStart(3,'0')}`;
 }
 async function loadSponsorships(){
   const box = el('spinv_list'); if(!box) return;
@@ -1893,6 +1923,7 @@ async function loadSponsorships(){
   allSponsorships = items || [];
   renderSponsorshipsList();
   renderSponsorTypesList();
+  populateExistingSponsorDropdown();
 }
 function invoiceStatus(inv){
   if(inv.status === 'paid') return 'paid';
@@ -2367,6 +2398,7 @@ function editInvoice(id){
 }
 el('spinv_clear') && (el('spinv_clear').onclick = ()=>{
   el('spinv_id').value=''; el('spinv_sponsorName').value=''; el('spinv_email').value=''; el('spinv_phone').value=''; el('spinv_address').value='';
+  if(el('spinv_existing_sponsor')) el('spinv_existing_sponsor').value='';
   el('spinv_notes').value=''; el('spinv_status').textContent='';
   el('spitem_type').value=''; el('spitem_amount').value=''; el('spitem_player').value='';
   el('spinv_invDate').value = todayISO();
