@@ -609,6 +609,7 @@
 
     <!-- ═══ INBOX ═══════════════════════════════════════════════ -->
     <section id="inbox">
+      <div id="inboxSponsorTop"></div>
       <div class="card">
         <div class="eyebrow">🔔 Inbox</div>
         <div id="inboxList"><p class="muted">Loading…</p></div>
@@ -641,9 +642,15 @@
         <p class="muted" id="mgr_msg_status" style="margin-top:8px; font-size:.8rem"></p>
         <div id="req_mine" style="margin-top:12px"></div>
       </div>
+      <div id="inboxSponsorBot"></div>
+      <div class="sponsor-carousel-wrap" id="sponsorCarouselWrap_inbox" style="display:none">
+        <p class="sponsor-carousel-title">Thank you to our sponsors</p>
+        <div class="sponsor-carousel" id="sponsorCarousel_inbox"></div>
+      </div>
     </section>
 
     <section id="profile">
+      <div id="profileSponsorTop"></div>
       <div class="card profile-head">
         <div class="avatar-lg" id="profAvatarWrap"></div>
         <h2 id="profName"></h2>
@@ -702,6 +709,7 @@
 
     <!-- ═══ INFO ══════════════════════════════════════════════════ -->
     <section id="info">
+      <div id="infoSponsorTop"></div>
       <div class="card" style="background:#f7f6f4; border:1.5px solid #e0dbd4">
         <div class="eyebrow" style="color:var(--muted)">Competition terms</div>
         <p style="font-size:.8rem; color:var(--ink); line-height:1.5; margin:6px 0 0">
@@ -715,6 +723,11 @@
         <div class="eyebrow">New here, or need a refresher?</div>
         <p class="muted" style="margin-bottom:12px">A quick walkthrough of how the game works.</p>
         <button class="btn navy block" id="showOnboardingBtn">🏉 How it works</button>
+      </div>
+      <div id="infoSponsorBot"></div>
+      <div class="sponsor-carousel-wrap" id="sponsorCarouselWrap_info" style="display:none">
+        <p class="sponsor-carousel-title">Thank you to our sponsors</p>
+        <div class="sponsor-carousel" id="sponsorCarousel_info"></div>
       </div>
     </section>
 
@@ -1586,11 +1599,14 @@ async function loadSponsorBanner(){
 
   const pages = [
     { key:'team',        topEl:'sponsorBanner',      botEl:'sponsorFooter',       carouselSuffix:'team' },
-    { key:'leaderboard',  topEl:'lbSponsorTop',       botEl:'lbSponsorBot',        carouselSuffix:'leaderboard' },
+    { key:'leaderboard', topEl:'lbSponsorTop',       botEl:'lbSponsorBot',        carouselSuffix:'leaderboard' },
     { key:'players',     topEl:'playersSponsorTop',  botEl:'playersSponsorBot',   carouselSuffix:'players' },
     { key:'totw',        topEl:'totwSponsorTop',     botEl:'totwSponsorBot',      carouselSuffix:'totw' },
     { key:'duty',        topEl:'dutySponsorTop',     botEl:'dutySponsorBot',      carouselSuffix:'duty' },
-    { key:'profile',     topEl:'linksSponsorTop',    botEl:'linksSponsorBot',     carouselSuffix:'profile' },
+    { key:'inbox',       topEl:'inboxSponsorTop',    botEl:'inboxSponsorBot',     carouselSuffix:'inbox' },
+    { key:'profile',     topEl:'profileSponsorTop',  botEl:'profileSponsorBot',   carouselSuffix:'profile' },
+    { key:'links',       topEl:'linksSponsorTop',    botEl:'linksSponsorBot',     carouselSuffix:'links' },
+    { key:'info',        topEl:'infoSponsorTop',     botEl:'infoSponsorBot',      carouselSuffix:'info' },
   ];
   const cache = {};
   pages.forEach(pg=>{
