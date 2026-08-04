@@ -1242,9 +1242,13 @@
         <div style="height:12px"></div>
         <button class="btn sec" id="set_reset_btn" style="border-color:var(--crimson); color:var(--crimson)">Review season reset</button>
       </div>
+      <div class="card">
+        <div class="eyebrow">🔒 Data retention</div>
+        <p class="muted" style="margin-top:4px; margin-bottom:12px">Under our privacy notice, manager personal data (name, email, phone, photo) is anonymised two years after a season is archived. This tool shows what is eligible and lets you action it.</p>
+        <button class="btn sec small" id="retention_scan">Scan for eligible records</button>
+        <div id="retention_list" style="margin-top:14px"></div>
+      </div>
     </section>
-
-    <!-- PAST SEASONS -->
     <section id="pastseasons">
       <div class="card">
         <div class="inline" style="justify-content:space-between; align-items:center">
@@ -4269,6 +4273,102 @@ el('lk_save').onclick = async ()=>{
 
 // ── SETTINGS ──────────────────────────────────────────────────
 let currentSettings = null;
+
+// ── Data retention ───────────────────────────────────────────
+el('retention_scan') && (el('retention_scan').onclick = scanRetention);
+
+async function scanRetention(){
+  const box = el('retention_list'); if(!box) return;
+  box.innerHTML = '<div class="empty">Scanning…</div>';
+  el('retention_scan').disabled = true;
+
+  // Find seasons archived more than 2 years ago
+  const twoYearsAgo = new Date();
+  twoYearsAgo.setFullYear(twoYearsAgo.getFullYear() - 2);
+
+  const { data: seasons, error: sErr } = await sb.from('seasons')
+    .select('id, label, archived_at')
+    .not('archived_at', 'is', null)
+    .lt('archived_at', twoYearsAgo.toISOString())
+    .order('archived_at');
+
+  if(sErr){ box.innerHTML = `<div class="empty">Error: ${esc(sErr.message)}</div>`; el('retention_scan').disabled=false; return; }
+
+  if(!seasons || !seasons.length){
+    box.innerHTML = '<div class="empty">✓ No seasons are past the 2-year retention window yet. Nothing to anonymise.</div>';
+    el('retention_scan').disabled=false; return;
+  }
+
+  // For each eligible season, find managers who participated and still have PII
+  let html = '';
+  for(const season of seasons){
+    const archivedDate = new Date(season.archived_at).toLocaleDateString('en-GB', {day:'numeric', month:'long', year:'numeric'});
+    const cutoffDate = new Date(season.archived_at);
+    cutoffDate.setFullYear(cutoffDate.getFullYear() + 2);
+
+    // Find managers who had point_log entries in this season and still have identifiable data
+    const { data: mgrs } = await sb.from('managers')
+      .select('id, name, email')
+      .or('name.not.is.null,email.not.is.null')
+      .eq('active', false); // only inactive (former) managers — active ones are still participants
+
+    // Count how many managers were in this season via point_log
+    const { count } = await sb.from('point_log')
+      .select('*', {count:'exact', head:true})
+      .eq('season_id', season.id);
+
+    html += `<div class="card" style="background:var(--paper); margin-bottom:10px; border:1.5px solid var(--crimson)">
+      <div class="eyebrow" style="color:var(--crimson)">⚠️ Eligible for anonymisation</div>
+      <div style="margin:8px 0"><b>${esc(season.label)}</b></div>
+      <div class="muted" style="font-size:.82rem">Archived: ${archivedDate}</div>
+      <div class="muted" style="font-size:.82rem; margin-bottom:10px">Retention deadline was: ${cutoffDate.toLocaleDateString('en-GB', {day:'numeric',month:'long',year:'numeric'})}</div>
+      <p style="font-size:.85rem; margin-bottom:12px">Inactive managers from this season who still have personal data on record should be anonymised.</p>
+      <button class="btn danger small" data-anonymise-season="${esc(season.id)}" data-season-label="${esc(season.label)}">
+        Anonymise inactive managers from ${esc(season.label)}
+      </button>
+    </div>`;
+  }
+
+  box.innerHTML = html || '<div class="empty">✓ No records eligible for anonymisation.</div>';
+
+  box.querySelectorAll('[data-anonymise-season]').forEach(btn => btn.onclick = async () => {
+    const label = btn.dataset.seasonLabel;
+    if(!confirm(`This will permanently remove the name, email, phone, photo and notification token from all inactive managers who participated in ${label}.\n\nTheir points history and team selections are kept.\n\nThis cannot be undone. Continue?`)) return;
+
+    btn.disabled = true; btn.textContent = 'Anonymising…';
+
+    // Get managers who had activity in this season
+    const { data: logs } = await sb.from('point_log')
+      .select('manager_id')
+      .eq('season_id', btn.dataset.anonymiseSeason);
+
+    const managerIds = [...new Set((logs||[]).map(l => l.manager_id))];
+    if(!managerIds.length){
+      toast('No managers found for this season');
+      btn.disabled = false; return;
+    }
+
+    // Only anonymise inactive managers (active current participants are excluded)
+    const { error } = await sb.from('managers')
+      .update({
+        name: '[Anonymised]',
+        email: null,
+        phone: null,
+        avatar_url: null,
+        onesignal_player_id: null,
+      })
+      .in('id', managerIds)
+      .eq('active', false);
+
+    if(error){ toast(error.message, true); btn.disabled=false; return; }
+
+    toast(`✓ Anonymised inactive managers from ${label}`);
+    btn.textContent = '✓ Done';
+    await scanRetention();
+  });
+
+  el('retention_scan').disabled = false;
+}
 
 async function loadSettings(){
   const { data } = await sb.from('app_settings').select('*').limit(1).single();

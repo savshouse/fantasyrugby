@@ -394,6 +394,12 @@
       <p style="margin-top:8px; font-size:.82rem" id="forgotWrap">
         <button class="linkbtn" id="forgotBtn" type="button">Forgot your password?</button>
       </p>
+      <div id="signupConsent" class="hide" style="margin-top:12px; padding:12px 14px; background:#f7f6f4; border:1.5px solid var(--line); border-radius:10px; font-size:.82rem; line-height:1.5; color:var(--ink)">
+        <label style="display:flex; align-items:flex-start; gap:10px; cursor:pointer">
+          <input type="checkbox" id="consentCheck" style="margin-top:2px; flex-shrink:0; accent-color:var(--crimson)">
+          <span>I have read and agree to the <a href="privacy.html" target="_blank" style="color:var(--crimson); font-weight:600">Privacy Notice</a>. I understand that my name, photo, and fantasy points will be visible to other competition participants, and that my data will be held for up to two years after the season ends.</span>
+        </label>
+      </div>
       <div style="height:8px"></div>
       <button class="btn primary block" id="authBtn">Sign in</button>
       <p class="muted" id="authMsg" style="margin-top:10px; font-size:.82rem"></p>
@@ -723,6 +729,12 @@
         <div class="eyebrow">New here, or need a refresher?</div>
         <p class="muted" style="margin-bottom:12px">A quick walkthrough of how the game works.</p>
         <button class="btn navy block" id="showOnboardingBtn">🏉 How it works</button>
+      </div>
+      <div class="card" style="text-align:center; background:#f7f6f4">
+        <p class="muted" style="font-size:.82rem">
+          <a href="privacy.html" target="_blank" style="color:var(--crimson); font-weight:600">Privacy Notice</a>
+          · Old Northamptonians RFC
+        </p>
       </div>
       <div id="infoSponsorBot"></div>
       <div class="sponsor-carousel-wrap" id="sponsorCarouselWrap_info" style="display:none">
@@ -1380,6 +1392,7 @@ el('switchBtn').onclick = ()=>{
   el('authBtn').textContent = up?'Create account':'Sign in';
   el('nameWrap').classList.toggle('hide',!up);
   el('signupNote').classList.toggle('hide',!up);
+  el('signupConsent').classList.toggle('hide',!up);
   if(up) renderSignupNote();
   el('switchText').textContent = up?'Already registered? ':'New here? ';
   el('switchBtn').textContent = up?'Sign in':'Create an account';
@@ -1393,6 +1406,7 @@ el('authBtn').onclick = async ()=>{
   if(mode==='signup'){
     const name=el('name').value.trim();
     if(!name){ el('authMsg').textContent='Please add your name.'; return; }
+    if(!el('consentCheck').checked){ el('authMsg').textContent='Please read and accept the Privacy Notice to continue.'; return; }
     el('authMsg').textContent='Creating your account…';
     const { data, error } = await sb.auth.signUp({ email, password:pw, options:{data:{name}} });
     if(error){ el('authMsg').textContent=error.message; return; }
