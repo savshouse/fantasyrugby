@@ -679,6 +679,21 @@
 
     <!-- SPONSOR SETTINGS -->
     <section id="sponsorsettings">
+      <details class="card" id="spintro_details" open>
+        <summary style="cursor:pointer; list-style:none; display:flex; align-items:center; justify-content:space-between">
+          <span class="eyebrow" style="margin:0">🌐 Sponsor landing page intro</span>
+          <span class="muted" style="font-size:.78rem">Shown at the top of sponsor.html</span>
+        </summary>
+        <p class="muted" style="margin-top:10px">The headline and intro paragraph that appear above the sponsorship packages on the public sponsor page. Keep it punchy — the packages do the selling below.</p>
+        <label for="spintro_headline">Headline</label>
+        <input id="spintro_headline" placeholder="e.g. Sponsor ONs' Fantasy Rugby">
+        <label for="spintro_body">Intro paragraph</label>
+        <textarea id="spintro_body" rows="3" placeholder="e.g. Support the club and get your brand in front of our members all season long."></textarea>
+        <div style="height:12px"></div>
+        <button class="btn navy" id="spintro_save">Save intro</button>
+        <p class="muted" id="spintro_status" style="margin-top:8px; font-size:.82rem"></p>
+      </details>
+
       <details class="card" id="spsettings_details">
         <summary style="cursor:pointer; list-style:none; display:flex; align-items:center; justify-content:space-between">
           <span class="eyebrow" style="margin:0">💳 Invoice payment details</span>
@@ -744,7 +759,7 @@
           <span class="eyebrow" style="margin:0">Sponsorship types &amp; prices</span>
           <span class="muted" style="font-size:.78rem">Tap to expand</span>
         </summary>
-        <p class="muted" style="margin-top:10px">The default options managers see when you create an invoice. Add new types any time, retire old ones, or change prices — no coding needed.</p>
+        <p class="muted" style="margin-top:10px">The default options managers see when you create an invoice. Add new types any time, retire old ones, or change prices — no coding needed. The description, perks and artwork appear on the public sponsor landing page.</p>
         <input type="hidden" id="sptype_id">
         <label for="sptype_name">Type name</label>
         <input id="sptype_name" placeholder="e.g. Player Sponsor — Women">
@@ -757,8 +772,26 @@
           </select></div>
         </div>
         <label for="sptype_capacity">Maximum available (optional)</label>
-        <input id="sptype_capacity" type="number" inputmode="numeric" min="0" placeholder="Leave blank for unlimited — e.g. 50 for banner slots">
-        <label class="inline" style="margin-top:12px"><input type="checkbox" class="chk" id="sptype_active" checked> Active (shown when creating new invoices)</label>
+        <input id="sptype_capacity" type="number" inputmode="numeric" min="0" placeholder="Leave blank for unlimited">
+        <label for="sptype_description">Description (shown on sponsor landing page)</label>
+        <textarea id="sptype_description" rows="2" placeholder="e.g. Your brand on every player card, seen by all managers every week of the season."></textarea>
+        <label for="sptype_perks">What's included — one perk per line (shown on sponsor landing page)</label>
+        <textarea id="sptype_perks" rows="4" placeholder="e.g.&#10;Logo on player card&#10;Social media mention&#10;Matchday programme feature"></textarea>
+        <label>Artwork image (shown on sponsor landing page)</label>
+        <div class="upload-row">
+          <label class="btn ghost" style="flex:1; text-align:center; cursor:pointer">
+            Choose image
+            <input type="file" id="sptype_image_file" accept="image/*">
+          </label>
+          <button class="btn sec small" id="sptype_image_clear" type="button">Clear</button>
+        </div>
+        <p class="muted" id="sptype_image_name" style="font-size:.78rem; margin-top:4px"></p>
+        <div id="sptype_image_preview" style="margin-top:8px"></div>
+        <input type="hidden" id="sptype_image_url">
+        <div class="inline" style="gap:16px; margin-top:12px; flex-wrap:wrap">
+          <label class="inline" style="margin:0"><input type="checkbox" class="chk" id="sptype_active" checked> Active (shown when creating invoices)</label>
+          <label class="inline" style="margin:0"><input type="checkbox" class="chk" id="sptype_highlight"> ⭐ Featured / most popular</label>
+        </div>
         <div style="height:12px"></div>
         <div class="row">
           <button class="btn" id="sptype_save">Save type</button>
@@ -1316,7 +1349,7 @@ function wireNavButtons(){
       if(tab==='mgrreport'){ loadMgrReport(); }
       if(tab==='sponsorreport'){ loadSponsorReport(); }
       if(tab==='sponsors'){ loadSponsorTypes(); loadSponsorships(); loadSponsorEnquiries(); }
-      if(tab==='sponsorsettings'){ loadSponsorTypes(); loadSponsorPlacements(); loadSponsors(); }
+      if(tab==='sponsorsettings'){ loadSponsorTypes(); loadSponsorPlacements(); loadSponsors(); loadSponsorPageIntro(); }
       if(!document.body.classList.contains('drawer-pinned')){
         el('drawer').classList.remove('open'); el('drawerOverlay').classList.remove('show');
       }
@@ -1661,6 +1694,40 @@ async function loadSponsorTypes(){
   renderSponsorTypeSelect();
   renderSponsorTypesList();
 }
+
+// Sponsor type image file picker — preview on select
+el('sptype_image_file') && (el('sptype_image_file').onchange = function(){
+  const file = this.files[0]; if(!file) return;
+  el('sptype_image_name').textContent = file.name;
+  const reader = new FileReader();
+  reader.onload = e => {
+    el('sptype_image_preview').innerHTML = `<img src="${e.target.result}" style="max-width:100%; max-height:120px; border-radius:8px; margin-top:4px">`;
+  };
+  reader.readAsDataURL(file);
+});
+el('sptype_image_clear') && (el('sptype_image_clear').onclick = ()=>{
+  el('sptype_image_url').value=''; el('sptype_image_name').textContent='';
+  el('sptype_image_preview').innerHTML='';
+  if(el('sptype_image_file')) el('sptype_image_file').value='';
+});
+
+// Sponsor page intro (sponsor_page_content table — one row, id=1)
+async function loadSponsorPageIntro(){
+  const { data } = await sb.from('sponsor_page_content').select('*').eq('id',1).single();
+  if(data){
+    el('spintro_headline') && (el('spintro_headline').value = data.headline||'');
+    el('spintro_body') && (el('spintro_body').value = data.intro||'');
+  }
+}
+el('spintro_save') && (el('spintro_save').onclick = async ()=>{
+  const headline = el('spintro_headline').value.trim();
+  const intro = el('spintro_body').value.trim();
+  if(!headline){ el('spintro_status').textContent='Please add a headline.'; return; }
+  const { error } = await sb.from('sponsor_page_content').upsert({ id:1, headline, intro, updated_at: new Date().toISOString() });
+  if(error){ el('spintro_status').textContent=error.message; return; }
+  el('spintro_status').textContent='✓ Saved';
+  setTimeout(()=>{ el('spintro_status').textContent=''; }, 2500);
+});
 function renderSponsorTypeSelect(){
   const sel = el('spitem_type'); if(!sel) return;
   const cur = sel.value;
@@ -1728,11 +1795,21 @@ function editSponsorType(id){
   el('sptype_id').value=t.id; el('sptype_name').value=t.name; el('sptype_amount').value=t.default_amount;
   el('sptype_applies').value=t.applies_to; el('sptype_active').checked=t.active;
   el('sptype_capacity').value = t.capacity!=null ? t.capacity : '';
+  el('sptype_description').value = t.description||'';
+  el('sptype_perks').value = t.perks||'';
+  el('sptype_highlight').checked = t.highlight||false;
+  el('sptype_image_url').value = t.image_url||'';
+  el('sptype_image_name').textContent = t.image_url ? 'Current image saved' : '';
+  el('sptype_image_preview').innerHTML = t.image_url ? `<img src="${esc(t.image_url)}" style="max-width:100%; max-height:120px; border-radius:8px; margin-top:4px">` : '';
+  el('sptype_details').open = true;
   window.scrollTo({top:0, behavior:'smooth'});
 }
 el('sptype_clear') && (el('sptype_clear').onclick = ()=>{
   el('sptype_id').value=''; el('sptype_name').value=''; el('sptype_amount').value='';
   el('sptype_applies').value='player'; el('sptype_active').checked=true; el('sptype_capacity').value='';
+  el('sptype_description').value=''; el('sptype_perks').value=''; el('sptype_highlight').checked=false;
+  el('sptype_image_url').value=''; el('sptype_image_name').textContent=''; el('sptype_image_preview').innerHTML='';
+  if(el('sptype_image_file')) el('sptype_image_file').value='';
 });
 el('sptype_save') && (el('sptype_save').onclick = async ()=>{
   const name = el('sptype_name').value.trim();
@@ -1742,7 +1819,28 @@ el('sptype_save') && (el('sptype_save').onclick = async ()=>{
   const capRaw = el('sptype_capacity').value.trim();
   const capacity = capRaw === '' ? null : parseInt(capRaw, 10);
   if(capRaw !== '' && (isNaN(capacity) || capacity < 0)){ toast('Enter a valid capacity, or leave blank for unlimited', true); return; }
-  const rec = { name, default_amount: amount, applies_to: el('sptype_applies').value, active: el('sptype_active').checked, capacity };
+
+  // Handle image upload if a new file was chosen
+  let image_url = el('sptype_image_url').value || null;
+  const imageFile = el('sptype_image_file').files[0];
+  if(imageFile){
+    toast('Uploading image…');
+    const ext = imageFile.name.split('.').pop() || 'jpg';
+    const path = `sptype-${Date.now()}.${ext}`;
+    const { error: upErr } = await sb.storage.from('sponsor-banners').upload(path, imageFile, { upsert:true, cacheControl:'3600' });
+    if(upErr){ toast(upErr.message, true); return; }
+    const { data: pub } = sb.storage.from('sponsor-banners').getPublicUrl(path);
+    image_url = pub.publicUrl;
+  }
+
+  const rec = {
+    name, default_amount: amount, applies_to: el('sptype_applies').value,
+    active: el('sptype_active').checked, capacity,
+    description: el('sptype_description').value.trim() || null,
+    perks: el('sptype_perks').value.trim() || null,
+    highlight: el('sptype_highlight').checked,
+    image_url
+  };
   const id = el('sptype_id').value;
   const res = id
     ? await sb.from('sponsorship_types').update(rec).eq('id',id)
