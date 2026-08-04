@@ -11,18 +11,42 @@
 :root{--crimson:#C41E3A;--navy:#1B2A4A;--gold:#D4A017;--muted:#6b7280;--line:#e5e0d8;--bg:#faf8f5}
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Inter',sans-serif;color:#1a1a2e;background:var(--bg);font-size:16px;line-height:1.6}
-.site-nav{position:fixed;top:0;left:0;right:0;z-index:50;background:var(--navy);display:flex;align-items:center;padding:0 16px;border-bottom:2px solid var(--gold)}
-.site-nav-logo{display:flex;align-items:center;gap:10px;padding:10px 0;text-decoration:none;color:#fff;margin-right:auto}
-.site-nav-logo img{width:32px;height:32px;object-fit:contain}
-.site-nav-logo-text{font-family:'Barlow Condensed',sans-serif;font-size:.85rem;font-weight:800;text-transform:uppercase;letter-spacing:.06em;opacity:.9;line-height:1.2}
-.site-nav-logo-sub{font-size:.6rem;opacity:.55;text-transform:uppercase;letter-spacing:.1em}
-.site-nav-links{display:flex;align-items:stretch}
-.site-nav-link{display:flex;align-items:center;padding:0 14px;height:52px;font-family:'Barlow Condensed',sans-serif;font-size:.82rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:rgba(255,255,255,.6);text-decoration:none;border-bottom:2px solid transparent;margin-bottom:-2px;transition:color .15s}
-.site-nav-link:hover{color:#fff}
-.page{max-width:680px;margin:0 auto;padding:80px 20px 60px}
-.page-hero{background:linear-gradient(135deg,#6b0f1f,var(--crimson));color:#fff;padding:40px 20px 36px;text-align:center;margin-bottom:0}
-.page-hero h1{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:clamp(1.8rem,6vw,2.8rem);text-transform:uppercase;letter-spacing:.04em;margin-top:54px}
-.page-hero p{font-size:.9rem;opacity:.8;margin-top:8px}
+a{color:var(--crimson)}
+
+/* ── NAV ── */
+.site-nav{position:fixed;top:0;left:0;right:0;z-index:50;background:var(--navy);display:flex;align-items:center;padding:0 16px;border-bottom:2px solid var(--gold);height:54px}
+.site-nav-logo{display:flex;align-items:center;gap:10px;text-decoration:none;color:#fff;margin-right:auto;min-width:0;overflow:hidden}
+.site-nav-logo img{width:32px;height:32px;object-fit:contain;flex-shrink:0}
+.site-nav-logo-text{font-family:'Barlow Condensed',sans-serif;font-size:.85rem;font-weight:800;text-transform:uppercase;letter-spacing:.06em;opacity:.9;line-height:1.2;white-space:nowrap}
+.site-nav-logo-sub{font-size:.6rem;opacity:.55;text-transform:uppercase;letter-spacing:.1em;white-space:nowrap}
+.site-nav-links{display:flex;align-items:stretch;gap:0}
+.site-nav-link{display:flex;align-items:center;padding:0 14px;height:54px;font-family:'Barlow Condensed',sans-serif;font-size:.82rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:rgba(255,255,255,.6);text-decoration:none;border-bottom:2px solid transparent;margin-bottom:-2px;transition:color .15s;white-space:nowrap}
+.site-nav-link:hover,.site-nav-link.active{color:var(--gold)}
+.site-nav-link.active{border-bottom-color:var(--gold)}
+.nav-hamburger{display:none;flex-direction:column;justify-content:center;gap:5px;background:none;border:none;cursor:pointer;padding:8px 4px;margin-left:8px;height:54px}
+.nav-hamburger span{display:block;width:22px;height:2px;background:rgba(255,255,255,.8);border-radius:2px}
+.nav-drawer{display:none;position:fixed;top:54px;left:0;right:0;background:var(--navy);border-bottom:2px solid var(--gold);z-index:49;flex-direction:column;padding:6px 0 10px}
+.nav-drawer.open{display:flex}
+.nav-drawer a{display:block;padding:12px 20px;font-family:'Barlow Condensed',sans-serif;font-size:1rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:rgba(255,255,255,.7);text-decoration:none}
+.nav-drawer a:hover,.nav-drawer a.active{color:var(--gold)}
+@media(max-width:540px){.site-nav-links{display:none}.nav-hamburger{display:flex}}
+
+/* ── HERO — matches landing.html ── */
+.hero{
+  position:relative;overflow:hidden;color:#fff;
+  background:linear-gradient(135deg,#6b0f1f 0%,var(--crimson) 40%,var(--navy) 100%);
+  padding-top:54px;
+}
+.hero-bg{position:absolute;inset:0;background:url('https://fantasyrugby.uk/images/trophies.png') center/cover no-repeat;opacity:.18;pointer-events:none}
+.hero-circles{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.hero-circles svg{position:absolute;right:-120px;top:-80px;width:500px;opacity:.07}
+.hero-body{position:relative;z-index:1;padding:40px 20px 48px;text-align:center}
+.hero-eyebrow{font-size:.78rem;letter-spacing:.18em;text-transform:uppercase;color:rgba(255,255,255,.65);margin-bottom:12px}
+.hero h1{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:clamp(2.2rem,8vw,3.6rem);text-transform:uppercase;letter-spacing:.04em;color:#fff;line-height:.95;margin-bottom:14px}
+.hero h1 span{color:var(--gold)}
+.hero-sub{font-size:.95rem;color:rgba(255,255,255,.8);max-width:480px;margin:0 auto}
+
+/* ── CONTENT ── */
 .content{max-width:680px;margin:0 auto;padding:36px 20px 60px}
 h2{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:1.25rem;text-transform:uppercase;letter-spacing:.04em;color:var(--navy);margin:32px 0 10px;padding-bottom:6px;border-bottom:2px solid var(--line)}
 h2:first-child{margin-top:0}
@@ -30,19 +54,19 @@ p{margin-bottom:12px;color:#374151;font-size:.92rem}
 ul{margin:0 0 12px 20px;color:#374151;font-size:.92rem}
 ul li{margin-bottom:6px}
 .highlight-box{background:#fff;border:1.5px solid var(--line);border-radius:12px;padding:16px 18px;margin:16px 0}
-.highlight-box.important{border-color:var(--crimson);background:#fdf3f5}
 .contact-card{background:var(--navy);color:#fff;border-radius:12px;padding:20px 22px;margin-top:32px}
 .contact-card h3{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:1.1rem;text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px;color:var(--gold)}
 .contact-card p{color:rgba(255,255,255,.8);font-size:.88rem;margin-bottom:6px}
 .contact-card a{color:var(--gold)}
 .updated{font-size:.78rem;color:var(--muted);text-align:center;margin-top:32px}
-footer{background:var(--navy);color:rgba(255,255,255,.5);text-align:center;padding:20px 16px;font-size:.78rem;margin-top:0}
+footer{background:var(--navy);color:rgba(255,255,255,.5);text-align:center;padding:20px 16px;font-size:.78rem}
 footer a{color:var(--gold)}
 footer b{color:#fff}
 </style>
 </head>
 <body>
 
+<!-- NAV -->
 <nav class="site-nav">
   <a class="site-nav-logo" href="landing.html">
     <img src="https://upload.wikimedia.org/wikipedia/commons/1/1e/ONsLogoNew-svg.svg" alt="ONs RFC">
@@ -56,13 +80,35 @@ footer b{color:#fff}
     <a href="sponsor.html" class="site-nav-link">Sponsorship</a>
     <a href="manager.html" class="site-nav-link">Manager app</a>
   </div>
+  <button class="nav-hamburger" id="hamburger" aria-label="Menu">
+    <span></span><span></span><span></span>
+  </button>
 </nav>
-
-<div class="page-hero">
-  <h1>Privacy Notice</h1>
-  <p>ONs' Fantasy Rugby Manager — Old Northamptonians RFC</p>
+<div class="nav-drawer" id="navDrawer">
+  <a href="landing.html">Home</a>
+  <a href="sponsor.html">Sponsorship</a>
+  <a href="manager.html">Manager app</a>
 </div>
 
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-circles">
+    <svg viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="200" cy="200" r="190" fill="none" stroke="white" stroke-width="1"/>
+      <circle cx="200" cy="200" r="140" fill="none" stroke="white" stroke-width="1"/>
+      <circle cx="200" cy="200" r="90" fill="none" stroke="white" stroke-width="1"/>
+      <circle cx="200" cy="200" r="40" fill="none" stroke="white" stroke-width="1"/>
+    </svg>
+  </div>
+  <div class="hero-body">
+    <p class="hero-eyebrow">Old Northamptonians RFC</p>
+    <h1>Privacy <span>Notice</span></h1>
+    <p class="hero-sub">ONs' Fantasy Rugby Manager</p>
+  </div>
+</div>
+
+<!-- CONTENT -->
 <div class="content">
 
   <div class="highlight-box">
@@ -114,7 +160,7 @@ footer b{color:#fff}
   <h2>How long we keep your data</h2>
   <div class="highlight-box">
     <p><strong>Active participants:</strong> Your data is kept for the duration of the competition and for two years after the season ends, to allow for historical records and any queries.</p>
-    <p style="margin-bottom:0"><strong>After two years:</strong> Personal identifiers (name, email, photo) are removed and replaced with anonymised references. Match statistics and points history are kept for the permanent season archive.</p>
+    <p style="margin-bottom:0"><strong>After two years:</strong> Personal identifiers (name, email, phone, photo) are removed and replaced with anonymised references. Match statistics and points history are kept for the permanent season archive.</p>
   </div>
   <p>Sponsor invoicing records are kept for six years in line with standard accounting requirements.</p>
 
@@ -156,5 +202,15 @@ footer b{color:#fff}
   <a href="landing.html">Home</a>
 </footer>
 
+<script>
+const hamburger = document.getElementById('hamburger');
+const navDrawer = document.getElementById('navDrawer');
+hamburger.onclick = () => navDrawer.classList.toggle('open');
+document.addEventListener('click', e => {
+  if(!hamburger.contains(e.target) && !navDrawer.contains(e.target)){
+    navDrawer.classList.remove('open');
+  }
+});
+</script>
 </body>
 </html>

@@ -29,6 +29,13 @@ a{color:inherit;text-decoration:none}
 .site-nav-link{display:flex;align-items:center;padding:0 14px;height:52px;font-family:'Barlow Condensed',sans-serif;font-size:.82rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:rgba(255,255,255,.6);text-decoration:none;border-bottom:2px solid transparent;margin-bottom:-2px;transition:color .15s}
 .site-nav-link:hover{color:#fff}
 .site-nav-link.active{color:var(--gold);border-bottom-color:var(--gold)}
+.nav-hamburger{display:none;flex-direction:column;justify-content:center;gap:5px;background:none;border:none;cursor:pointer;padding:8px 4px;margin-left:8px;height:52px}
+.nav-hamburger span{display:block;width:22px;height:2px;background:rgba(255,255,255,.8);border-radius:2px}
+.nav-drawer{display:none;position:fixed;top:54px;left:0;right:0;background:var(--navy);border-bottom:2px solid var(--gold);z-index:49;flex-direction:column;padding:6px 0 10px}
+.nav-drawer.open{display:flex}
+.nav-drawer a{display:block;padding:12px 20px;font-family:'Barlow Condensed',sans-serif;font-size:1rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:rgba(255,255,255,.7);text-decoration:none}
+.nav-drawer a:hover,.nav-drawer a.active{color:var(--gold)}
+@media(max-width:540px){.site-nav-links{display:none}.nav-hamburger{display:flex}}
 
 /* ── HERO (identical structure to landing.html) ── */
 .hero{
@@ -146,7 +153,15 @@ footer a{color:var(--gold)}
     <a href="sponsor.html" class="site-nav-link active">Sponsorship</a>
     <a href="manager.html" class="site-nav-link">Manager app</a>
   </div>
+  <button class="nav-hamburger" id="hamburger" aria-label="Menu">
+    <span></span><span></span><span></span>
+  </button>
 </nav>
+<div class="nav-drawer" id="navDrawer">
+  <a href="landing.html">Home</a>
+  <a href="sponsor.html">Sponsorship</a>
+  <a href="manager.html">Manager app</a>
+</div>
 
 <!-- HERO -->
 <div class="hero" style="padding-top:54px">
@@ -441,6 +456,16 @@ async function submitSponsorEnquiry(){
 }
 
 loadAll();
+</script>
+<script>
+const hamburger = document.getElementById('hamburger');
+const navDrawer = document.getElementById('navDrawer');
+if(hamburger) hamburger.onclick = () => navDrawer.classList.toggle('open');
+document.addEventListener('click', e => {
+  if(hamburger && !hamburger.contains(e.target) && !navDrawer.contains(e.target)){
+    navDrawer.classList.remove('open');
+  }
+});
 </script>
 </body>
 </html>
