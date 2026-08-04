@@ -89,6 +89,11 @@
   .tab-bar button svg{width:20px; height:20px; stroke-width:2}
   .tab-bar button.active{color:var(--gold)}
   .tab-bar button.active svg{filter:drop-shadow(0 0 4px rgba(212,160,23,.5))}
+  .more-item{display:flex; align-items:center; gap:14px; width:100%; padding:16px 24px;
+    background:none; border:0; border-top:1px solid var(--line); font-family:'Inter',sans-serif;
+    font-size:.95rem; font-weight:500; color:var(--navy); cursor:pointer; text-align:left}
+  .more-item:first-of-type{border-top:none}
+  .more-item svg{width:22px; height:22px; stroke-width:1.8; flex-shrink:0; color:var(--muted)}
 
   main{flex:1; padding:14px 12px calc(80px + var(--pad)); max-width:620px; margin:0 auto; width:100%}
   section{display:none} section.active{display:block}
@@ -639,16 +644,6 @@
     </section>
 
     <section id="profile">
-      <div id="linksSponsorTop"></div>
-      <div class="card" style="background:#f7f6f4; border:1.5px solid #e0dbd4">
-        <div class="eyebrow" style="color:var(--muted)">Competition terms</div>
-        <p style="font-size:.8rem; color:var(--ink); line-height:1.5; margin:6px 0 0">
-          By entering this competition and uploading your personal details and profile picture, you agree to them being shared with all managers, other participants, and associated club social media channels.
-        </p>
-        <p style="font-size:.8rem; color:var(--ink); line-height:1.5; margin:8px 0 0">
-          The competition organisers reserve the right to remove any participant who is not a paid-up member of the club, or who uses offensive language or imagery in connection with their account.
-        </p>
-      </div>
       <div class="card profile-head">
         <div class="avatar-lg" id="profAvatarWrap"></div>
         <h2 id="profName"></h2>
@@ -670,11 +665,6 @@
         <p class="muted" style="margin-bottom:10px">Make everything in the app bigger or smaller — this is saved on this device.</p>
         <div id="textSizeButtons" style="display:flex; gap:8px"></div>
       </div>
-      <div class="card" style="text-align:center">
-        <div class="eyebrow">New here, or need a refresher?</div>
-        <p class="muted" style="margin-bottom:12px">A quick walkthrough of how the game works.</p>
-        <button class="btn navy block" id="showOnboardingBtn">🏉 How it works</button>
-      </div>
       <div class="card" id="adminLinkCard" style="display:none">
         <div class="eyebrow">Admin access</div>
         <p class="muted" style="margin-bottom:10px">You have admin rights on this competition.</p>
@@ -686,6 +676,16 @@
         <button class="btn sec block" id="deleteAccountBtn" style="color:var(--crimson); border-color:var(--crimson)">Request account deletion</button>
         <p class="muted" id="deleteAccountStatus" style="font-size:.78rem; margin-top:6px; text-align:center"></p>
       </div>
+      <div id="profileSponsorBot"></div>
+      <div class="sponsor-carousel-wrap" id="sponsorCarouselWrap_profile" style="display:none">
+        <p class="sponsor-carousel-title">Thank you to our sponsors</p>
+        <div class="sponsor-carousel" id="sponsorCarousel_profile"></div>
+      </div>
+    </section>
+
+    <!-- ═══ LINKS ════════════════════════════════════════════════ -->
+    <section id="links">
+      <div id="linksSponsorTop"></div>
       <div class="card" id="linksCard" style="display:none">
         <div class="eyebrow">Useful links</div>
         <div id="linksList"></div>
@@ -694,9 +694,27 @@
         <div class="empty">No links set up yet — check back later.</div>
       </div>
       <div id="linksSponsorBot"></div>
-      <div class="sponsor-carousel-wrap" id="sponsorCarouselWrap_profile" style="display:none">
+      <div class="sponsor-carousel-wrap" id="sponsorCarouselWrap_links" style="display:none">
         <p class="sponsor-carousel-title">Thank you to our sponsors</p>
-        <div class="sponsor-carousel" id="sponsorCarousel_profile"></div>
+        <div class="sponsor-carousel" id="sponsorCarousel_links"></div>
+      </div>
+    </section>
+
+    <!-- ═══ INFO ══════════════════════════════════════════════════ -->
+    <section id="info">
+      <div class="card" style="background:#f7f6f4; border:1.5px solid #e0dbd4">
+        <div class="eyebrow" style="color:var(--muted)">Competition terms</div>
+        <p style="font-size:.8rem; color:var(--ink); line-height:1.5; margin:6px 0 0">
+          By entering this competition and uploading your personal details and profile picture, you agree to them being shared with all managers, other participants, and associated club social media channels.
+        </p>
+        <p style="font-size:.8rem; color:var(--ink); line-height:1.5; margin:8px 0 0">
+          The competition organisers reserve the right to remove any participant who is not a paid-up member of the club, or who uses offensive language or imagery in connection with their account.
+        </p>
+      </div>
+      <div class="card" style="text-align:center">
+        <div class="eyebrow">New here, or need a refresher?</div>
+        <p class="muted" style="margin-bottom:12px">A quick walkthrough of how the game works.</p>
+        <button class="btn navy block" id="showOnboardingBtn">🏉 How it works</button>
       </div>
     </section>
 
@@ -738,22 +756,41 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
       Team of Week
     </button>
-    <button data-tab="duty" id="dutyTabBtn" style="display:none">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
-      Team Duty
-    </button>
     <button data-tab="inbox" id="inboxTabBtn">
       <span style="position:relative; display:inline-block">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" style="width:22px;height:22px"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" style="width:22px;height:22px"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
         <span id="inboxBadge" style="display:none; position:absolute; top:-4px; right:-6px; background:var(--crimson); color:#fff; font-size:.55rem; font-weight:800; border-radius:10px; padding:1px 4px; min-width:14px; text-align:center; line-height:1.4">0</span>
       </span>
-      Inbox
+      Messages
     </button>
-    <button data-tab="profile">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-      Profile
+    <button id="moreBtn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
+      More
     </button>
   </nav>
+
+  <!-- ═══ MORE OVERFLOW PANEL ══════════════════════════════════ -->
+  <div id="moreOverlay" style="display:none; position:fixed; inset:0; z-index:200; background:rgba(0,0,0,.45)" onclick="if(event.target===this)closeMore()">
+    <div id="morePanel" style="position:absolute; bottom:0; left:0; right:0; background:#fff; border-radius:18px 18px 0 0; padding:12px 0 calc(12px + env(safe-area-inset-bottom))">
+      <div style="width:36px; height:4px; background:#ddd; border-radius:2px; margin:0 auto 16px"></div>
+      <button class="more-item" onclick="navTo('profile')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        Profile
+      </button>
+      <button class="more-item" id="moreDutyBtn" onclick="navTo('duty')" style="display:none">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+        Team Duty
+      </button>
+      <button class="more-item" onclick="navTo('links')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+        Links
+      </button>
+      <button class="more-item" onclick="navTo('info')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        Info &amp; how it works
+      </button>
+    </div>
+  </div>
 </div>
 
 <div class="overlay" id="overlay">
@@ -1466,20 +1503,31 @@ async function afterLogin(user){
 }
 
 // ── Tabs ──────────────────────────────────────────────────────
-document.querySelectorAll('.tab-bar button').forEach(b=> b.onclick=()=>{
-  document.querySelectorAll('.tab-bar button').forEach(x=>x.classList.remove('active'));
+// ── Navigation ────────────────────────────────────────────────
+function openMore(){
+  el('moreOverlay').style.display = 'block';
+  requestAnimationFrame(()=> el('morePanel').style.transform = 'translateY(0)');
+}
+function closeMore(){
+  el('moreOverlay').style.display = 'none';
+}
+function navTo(tab){
+  closeMore();
+  document.querySelectorAll('.tab-bar button[data-tab]').forEach(x=>x.classList.remove('active'));
   document.querySelectorAll('section').forEach(s=>s.classList.remove('active'));
-  b.classList.add('active'); el(b.dataset.tab).classList.add('active');
-  const tab = b.dataset.tab;
+  const btn = document.querySelector(`.tab-bar button[data-tab="${tab}"]`);
+  if(btn) btn.classList.add('active');
+  const sec = el(tab); if(sec) sec.classList.add('active');
   if(tab==='team')    { renderPicker(); }
   if(tab==='table')   { loadLeaderboard(); loadMyPoints(); }
   if(tab==='players') { reloadMgrPlayerStats(); }
   if(tab==='totw')    { loadMgrTotw(); }
   if(tab==='duty')    { loadDutyForm(); }
   if(tab==='inbox')   { loadInbox(); markAllInboxRead(); }
-  if(tab==='profile') { loadMyRequests && loadMyRequests(); }
   if(tab==='links')   { loadLinks(); }
-});
+}
+document.querySelectorAll('.tab-bar button[data-tab]').forEach(b=> b.onclick=()=> navTo(b.dataset.tab));
+el('moreBtn').onclick = openMore;
 el('signOutBtn2').onclick = async ()=>{ await sb.auth.signOut(); location.reload(); };
 
 async function loadLinks(){
@@ -2491,7 +2539,7 @@ async function initTeamDuty(){
   const { data } = await sb.from('team_managers').select('team_id').eq('manager_id', me.id);
   managedTeamIds = (data||[]).map(r=>r.team_id);
   if(!managedTeamIds.length) return;
-  el('dutyTabBtn').style.display = '';
+  const moreDuty = el('moreDutyBtn'); if(moreDuty) moreDuty.style.display = '';
 
   const { data: fixData } = await sb.from('fixtures').select('*, gameweeks(number)').in('team_id', managedTeamIds).order('gameweek_id', {ascending:false});
   dutyFixtures = (fixData||[]).sort((a,b)=> (b.gameweeks?.number||0) - (a.gameweeks?.number||0));
