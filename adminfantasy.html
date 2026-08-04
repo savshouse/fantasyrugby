@@ -2085,8 +2085,22 @@ async function emailInvoice(invoiceId){
   renderSponsorshipsList();
 }
 
+async function syncToQuickFile(invoiceId, btn){
+  const orig = btn.textContent;
+  btn.disabled = true; btn.textContent = 'Syncing…';
+  try{
+    const { error, data } = await sb.functions.invoke('quickfile-sync', { body: { invoiceId } });
+    if(error) throw error;
+    toast(`✓ Pushed to QuickFile${data?.quickfileInvoiceId ? ' — QF ID '+data.quickfileInvoiceId : ''}`);
+    btn.textContent = '✓ QF'; btn.style.color = '#2a7a3b';
+    await loadSponsorships(); // refresh to show updated QF status
+  }catch(err){
+    toast(err?.message || 'QuickFile sync failed', true);
+    btn.textContent = orig;
+  }
+  btn.disabled = false;
+}
 async function generateInvoicePdf(invoiceId){
-  let built;
   try{
     built = await buildInvoicePdfBytes(invoiceId);
   }catch(err){
@@ -2247,6 +2261,9 @@ function renderSponsorshipsList(){
         <button class="btn sec small" data-edit-spinv="${inv.id}">Edit</button>
         <button class="btn sec small" data-pdf-spinv="${inv.id}">PDF</button>
         <button class="btn sec small" data-email-spinv="${inv.id}">${inv.emailed_at?'Re-send':'Email'}</button>
+        <button class="btn sec small" data-qf-sync="${inv.id}" title="${inv.quickfile_invoice_id ? 'Synced to QuickFile (click to re-sync)' : 'Push to QuickFile'}" style="${inv.quickfile_invoice_id ? 'color:#2a7a3b' : ''}">
+          ${inv.quickfile_invoice_id ? '✓ QF' : 'Push to QF'}
+        </button>
         <button class="btn sec small" data-delete-spinv="${inv.id}" style="color:var(--crimson); border-color:var(--crimson)">Delete</button>
       </td>
     </tr>${detailRows}`;
@@ -2301,6 +2318,7 @@ function renderSponsorshipsList(){
   box.querySelectorAll('[data-pdf-spinv]').forEach(b=>b.onclick=()=>generateInvoicePdf(b.dataset.pdfSpinv));
   box.querySelectorAll('[data-email-spinv]').forEach(b=>b.onclick=()=>emailInvoice(b.dataset.emailSpinv));
   box.querySelectorAll('[data-delete-spinv]').forEach(b=>b.onclick=()=>deleteInvoice(b.dataset.deleteSpinv));
+  box.querySelectorAll('[data-qf-sync]').forEach(b=>b.onclick=()=>syncToQuickFile(b.dataset.qfSync, b));
 
   const tbl = box.querySelector('table');
   const topS = el('spinv_topscroll'), botS = el('spinv_bottomscroll'), spc = el('spinv_topscroll_spacer');
