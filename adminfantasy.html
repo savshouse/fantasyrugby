@@ -1696,20 +1696,12 @@ async function loadSponsorTypes(){
   renderSponsorTypesList();
 }
 
-// Sponsor type image file picker — preview on select
-el('sptype_image_file') && (el('sptype_image_file').onchange = function(){
-  const file = this.files[0]; if(!file) return;
-  el('sptype_image_name').textContent = file.name;
-  const reader = new FileReader();
-  reader.onload = e => {
-    el('sptype_image_preview').innerHTML = `<img src="${e.target.result}" style="max-width:100%; max-height:120px; border-radius:8px; margin-top:4px">`;
-  };
-  reader.readAsDataURL(file);
-});
+// Sponsor type image — handled by the cropper (wired in the IIFE at the bottom of the file)
 el('sptype_image_clear') && (el('sptype_image_clear').onclick = ()=>{
   el('sptype_image_url').value=''; el('sptype_image_name').textContent='';
   el('sptype_image_preview').innerHTML='';
   if(el('sptype_image_file')) el('sptype_image_file').value='';
+  window._pendingSptypeImage = null;
 });
 
 // Sponsor page intro (sponsor_page_content table — one row, id=1)
@@ -1811,6 +1803,7 @@ el('sptype_clear') && (el('sptype_clear').onclick = ()=>{
   el('sptype_description').value=''; el('sptype_perks').value=''; el('sptype_highlight').checked=false;
   el('sptype_image_url').value=''; el('sptype_image_name').textContent=''; el('sptype_image_preview').innerHTML='';
   if(el('sptype_image_file')) el('sptype_image_file').value='';
+  window._pendingSptypeImage = null;
 });
 el('sptype_save') && (el('sptype_save').onclick = async ()=>{
   const name = el('sptype_name').value.trim();
@@ -1823,15 +1816,16 @@ el('sptype_save') && (el('sptype_save').onclick = async ()=>{
 
   // Handle image upload if a new file was chosen
   let image_url = el('sptype_image_url').value || null;
-  const imageFile = el('sptype_image_file').files[0];
+  const imageFile = window._pendingSptypeImage || null;
   if(imageFile){
     toast('Uploading image…');
-    const ext = imageFile.name.split('.').pop() || 'jpg';
+    const ext = 'jpg';
     const path = `sptype-${Date.now()}.${ext}`;
     const { error: upErr } = await sb.storage.from('sponsorship-types').upload(path, imageFile, { upsert:true, cacheControl:'3600' });
     if(upErr){ toast(upErr.message, true); return; }
-    const { data: pub } = sb.storage.from('sponsor-banners').getPublicUrl(path);
+    const { data: pub } = sb.storage.from('sponsorship-types').getPublicUrl(path);
     image_url = pub.publicUrl;
+    window._pendingSptypeImage = null;
   }
 
   const rec = {
@@ -5330,6 +5324,24 @@ document.getElementById('rolesSaveBtn').onclick = async () => {
         const url = URL.createObjectURL(pendingPhotoFile);
         document.getElementById('pl_photo_preview').innerHTML = `<img class="avatar-lg" src="${url}">`;
         document.getElementById('pl_photo_status').textContent = 'Photo cropped — will upload on save.';
+      });
+    };
+  }
+
+  // ── Sponsorship type artwork — 16:9 landscape crop ──
+  const sptypeImgInput = document.getElementById('sptype_image_file');
+  if(sptypeImgInput){
+    sptypeImgInput.onchange = null; // remove the simple preview handler we set earlier
+    sptypeImgInput.onchange = (e)=>{
+      const file = e.target.files[0]; if(!file) return;
+      openCropper(file, 16/9, (blob)=>{
+        sptypeImgInput.value = '';
+        const croppedFile = new File([blob], 'artwork.jpg', { type:'image/jpeg' });
+        // Store cropped blob for upload on save
+        window._pendingSptypeImage = croppedFile;
+        const url = URL.createObjectURL(croppedFile);
+        el('sptype_image_name').textContent = 'Image cropped — will upload on save.';
+        el('sptype_image_preview').innerHTML = `<img src="${url}" style="max-width:100%; border-radius:8px; margin-top:4px">`;
       });
     };
   }
