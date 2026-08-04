@@ -608,6 +608,34 @@
         <div class="eyebrow">🔔 Inbox</div>
         <div id="inboxList"><p class="muted">Loading…</p></div>
       </div>
+      <div class="card">
+        <div class="eyebrow">✉️ Messages</div>
+        <p class="muted" style="margin-bottom:10px">Got a question, or something you'd like changed? Send a message to the admin team.</p>
+        <label for="msg_type_mgr">What's this about?</label>
+        <select id="msg_type_mgr" onchange="onMgrMsgTypeChange()">
+          <option value="general">General query</option>
+          <option value="payment">Payment query</option>
+          <option value="profile_change">Profile change request</option>
+        </select>
+        <div id="msg_profile_fields" style="display:none">
+          <label for="req_player">Which player is this about?</label>
+          <select id="req_player"><option value="">— General / not sure —</option></select>
+          <label style="margin-top:12px">Suggested photo <span style="text-transform:none; font-weight:400">(optional)</span></label>
+          <div class="upload-row">
+            <label class="btn ghost" style="flex:1; text-align:center; cursor:pointer">
+              Choose photo
+              <input type="file" id="req_photo" accept="image/*">
+            </label>
+          </div>
+          <p class="muted" id="req_photo_name" style="font-size:.78rem; margin-top:4px"></p>
+        </div>
+        <label for="mgr_message" style="margin-top:12px">Message</label>
+        <textarea id="mgr_message" rows="3" placeholder="Tell us what you need…"></textarea>
+        <div style="height:10px"></div>
+        <button class="btn navy block" id="mgr_msg_submit">Send message</button>
+        <p class="muted" id="mgr_msg_status" style="margin-top:8px; font-size:.8rem"></p>
+        <div id="req_mine" style="margin-top:12px"></div>
+      </div>
     </section>
 
     <section id="profile">
@@ -646,34 +674,6 @@
         <div class="eyebrow">New here, or need a refresher?</div>
         <p class="muted" style="margin-bottom:12px">A quick walkthrough of how the game works.</p>
         <button class="btn navy block" id="showOnboardingBtn">🏉 How it works</button>
-      </div>
-      <div class="card">
-        <div class="eyebrow">✉️ Contact admin</div>
-        <p class="muted" style="margin-bottom:10px">Got a question, or something you'd like changed? Send a message to the admin team.</p>
-        <label for="msg_type_mgr">What's this about?</label>
-        <select id="msg_type_mgr" onchange="onMgrMsgTypeChange()">
-          <option value="general">General query</option>
-          <option value="payment">Payment query</option>
-          <option value="profile_change">Profile change request</option>
-        </select>
-        <div id="msg_profile_fields" style="display:none">
-          <label for="req_player">Which player is this about?</label>
-          <select id="req_player"><option value="">— General / not sure —</option></select>
-          <label style="margin-top:12px">Suggested photo <span style="text-transform:none; font-weight:400">(optional)</span></label>
-          <div class="upload-row">
-            <label class="btn ghost" style="flex:1; text-align:center; cursor:pointer">
-              Choose photo
-              <input type="file" id="req_photo" accept="image/*">
-            </label>
-          </div>
-          <p class="muted" id="req_photo_name" style="font-size:.78rem; margin-top:4px"></p>
-        </div>
-        <label for="mgr_message" style="margin-top:12px">Message</label>
-        <textarea id="mgr_message" rows="3" placeholder="Tell us what you need…"></textarea>
-        <div style="height:10px"></div>
-        <button class="btn navy block" id="mgr_msg_submit">Send message</button>
-        <p class="muted" id="mgr_msg_status" style="margin-top:8px; font-size:.8rem"></p>
-        <div id="req_mine" style="margin-top:12px"></div>
       </div>
       <div class="card" id="adminLinkCard" style="display:none">
         <div class="eyebrow">Admin access</div>
