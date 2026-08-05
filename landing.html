@@ -251,6 +251,20 @@ textarea.enq-input{resize:vertical}
 footer{background:var(--navy);color:rgba(255,255,255,.5);text-align:center;padding:24px 16px;font-size:.8rem}
 footer b{color:#fff}
 footer a{color:var(--gold)}
+
+/* ── WALKTHROUGH ── */
+.step-tour{cursor:pointer;border:2px dashed var(--gold)}
+.step-tour:hover{background:#fff}
+.wt-slide{padding:34px 24px 6px;text-align:center}
+.wt-icon{font-size:2.6rem;margin-bottom:10px}
+.wt-title{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:1.4rem;color:var(--navy);margin-bottom:8px}
+.wt-body{font-size:.92rem;color:var(--muted);line-height:1.6}
+.wt-body b{color:var(--ink)}
+.wt-dot{width:8px;height:8px;border-radius:50%;background:var(--line)}
+.wt-dot.active{background:var(--crimson)}
+.btn-wt{border:none;border-radius:10px;padding:11px;font-weight:700;font-size:.9rem;cursor:pointer;font-family:inherit}
+.btn-wt.ghost{flex:1;background:var(--paper);color:var(--navy)}
+.btn-wt.primary{flex:2;background:var(--crimson);color:#fff}
 </style>
   <!-- PWA / Home Screen icon — upload a 180x180 PNG to /images/ons-crest.png for best results -->
   <link rel="apple-touch-icon" href="https://fantasyrugby.uk/images/ons-crest.png">
@@ -373,6 +387,19 @@ footer a{color:var(--gold)}
 
   <hr class="divider">
 
+  <!-- ── ENTRY (moved above How it works to hero the cost) ── -->
+  <div class="section">
+    <h2 class="section-title">Entry</h2>
+    <p class="section-sub">Open to all paid-up members of Old Northamptonians RFC.</p>
+    <div class="cost-wrap">
+      <div class="cost-amount">£10</div>
+      <div style="font-size:1.1rem;opacity:.8;margin-top:6px">per manager, per season</div>
+      <div class="cost-note">All entry fees go directly into the prize fund, split across the top-placed managers and the highest-scoring players on the pitch. Payment details will be confirmed on sign-up.</div>
+    </div>
+  </div>
+
+  <hr class="divider">
+
   <!-- ── HOW IT WORKS ── -->
   <div class="section" id="how">
     <h2 class="section-title">How it works</h2>
@@ -393,6 +420,11 @@ footer a{color:var(--gold)}
         <h3>Compete all season</h3>
         <p>Make transfers, set your captain, and chase the top of the leaderboard. Points accumulate across the whole season.</p>
       </div>
+      <div class="step step-tour" onclick="openWalkthrough()" role="button" tabindex="0">
+        <div class="step-num" style="background:var(--gold)">▶</div>
+        <h3>Take the guided tour</h3>
+        <p>New to fantasy rugby? Tap for a quick walkthrough of how it all works, step by step.</p>
+      </div>
     </div>
   </div>
 
@@ -402,6 +434,11 @@ footer a{color:var(--gold)}
   <div class="section">
     <h2 class="section-title">The rules</h2>
     <p class="section-sub">Built around the club's own fixtures — forwards, backs, and every XV counts.</p>
+    <div class="collapsible-head" id="rulesToggle" onclick="toggleCollapsible('rules')">
+      <h3>Squad, transfers &amp; points</h3>
+      <span class="collapsible-caret">▼</span>
+    </div>
+    <div class="collapsible-body" id="rulesBody-wrap">
     <div class="rules-grid">
       <div class="rule-card">
         <h4>Your squad</h4>
@@ -431,6 +468,7 @@ footer a{color:var(--gold)}
         </ul>
       </div>
     </div>
+    </div>
 
     <!-- Collapsible scoring -->
     <div class="collapsible-head" id="scoringToggle" onclick="toggleCollapsible('scoring')">
@@ -445,18 +483,6 @@ footer a{color:var(--gold)}
     </div>
   </div>
 
-  <hr class="divider">
-
-  <!-- ── ENTRY ── -->
-  <div class="section">
-    <h2 class="section-title">Entry</h2>
-    <p class="section-sub">Open to all paid-up members of Old Northamptonians RFC.</p>
-    <div class="cost-wrap">
-      <div class="cost-amount">£10</div>
-      <div style="font-size:1.1rem;opacity:.8;margin-top:6px">per manager, per season</div>
-      <div class="cost-note">All entry fees go directly into the prize fund, split across the top-placed managers and the highest-scoring players on the pitch. Payment details will be confirmed on sign-up.</div>
-    </div>
-  </div>
 
   <hr class="divider">
 
@@ -556,6 +582,21 @@ footer a{color:var(--gold)}
 </div>
 
 <!-- ── FLOATING LOGIN BUTTON (shows on scroll past the hero) ── -->
+<!-- ── WALKTHROUGH MODAL (ported from manager.html onboarding) ── -->
+<div class="modal-overlay" id="walkthroughModal" onclick="if(event.target===this)closeWalkthrough()">
+  <div class="modal-card" style="max-width:360px;position:relative">
+    <button class="modal-close" style="background:rgba(0,0,0,.12);color:var(--navy)" onclick="closeWalkthrough()">✕</button>
+    <div id="wtSlides"></div>
+    <div style="padding:0 20px 20px">
+      <div id="wtDots" style="display:flex;justify-content:center;gap:6px;margin-bottom:14px"></div>
+      <div style="display:flex;gap:10px">
+        <button class="btn-wt ghost" id="wtBackBtn" type="button">Back</button>
+        <button class="btn-wt primary" id="wtNextBtn" type="button">Next</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <a href="manager.html" class="floating-login-btn" id="floatingLoginBtn">Manager login</a>
 
 <script>
@@ -582,6 +623,27 @@ function toggleCollapsible(key){
   const open=body.classList.toggle('show');
   head.classList.toggle('open',open);
 }
+
+// ── Walkthrough (ported from manager.html onboarding) ──
+const WT_SLIDES=[
+  {icon:'🏉',title:'Welcome to the game',body:`Pick a squad of real ONs players. They score you points based on how they actually play each week — the better they do on the pitch, the higher you climb the table.`},
+  {icon:'📋',title:'Build your squad',body:`Choose <b>7 starters</b> (4 forwards + 3 backs) and <b>3 bench</b> players, all within your budget. No position rule on the bench — pick anyone.`},
+  {icon:'👑',title:'Captain &amp; vice-captain',body:`Your captain's points are <b>doubled</b> that week. If they don't play in any of the three matches, your vice-captain gets the double instead.`},
+  {icon:'🔄',title:'Transfers &amp; deadlines',body:`Your team carries over automatically each week — you don't start from scratch. You get <b>2 free transfers</b> a week, and picks lock at <b>Friday at 22:00</b> once team sheets are out.`},
+  {icon:'🧭',title:"You're ready",body:`Sign up, pick your squad, and you're in — then chase the top of the table all season. £10 to enter, every penny into the prize fund.`}
+];
+let wtIdx=0;
+function renderWt(){
+  const s=WT_SLIDES[wtIdx];
+  document.getElementById('wtSlides').innerHTML=`<div class="wt-slide"><div class="wt-icon">${s.icon}</div><div class="wt-title">${s.title}</div><div class="wt-body">${s.body}</div></div>`;
+  document.getElementById('wtDots').innerHTML=WT_SLIDES.map((_,i)=>`<div class="wt-dot${i===wtIdx?' active':''}"></div>`).join('');
+  document.getElementById('wtBackBtn').style.visibility=wtIdx===0?'hidden':'visible';
+  document.getElementById('wtNextBtn').textContent=wtIdx===WT_SLIDES.length-1?'Sign up':'Next';
+}
+function openWalkthrough(){wtIdx=0;renderWt();document.getElementById('walkthroughModal').classList.add('show');}
+function closeWalkthrough(){document.getElementById('walkthroughModal').classList.remove('show');}
+document.getElementById('wtNextBtn').onclick=()=>{ if(wtIdx<WT_SLIDES.length-1){wtIdx++;renderWt();} else { window.location.href='manager.html'; } };
+document.getElementById('wtBackBtn').onclick=()=>{ if(wtIdx>0){wtIdx--;renderWt();} };
 
 // ── Sponsor banners ──
 function buildSponsorBanner(data){
@@ -951,7 +1013,7 @@ function openManagerModal(m){
   document.getElementById('managerModal').classList.add('show');
 }
 function closeManagerModal(){document.getElementById('managerModal').classList.remove('show');}
-document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeModal();closeManagerModal();}});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeModal();closeManagerModal();closeWalkthrough();}});
 
 // ── Main load ──
 async function loadAll(){
