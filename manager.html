@@ -1592,7 +1592,14 @@ function buildSponsorHTML(data, slot, placement){
   const mh=(mhRaw!=null)?mhRaw:(mode==='compact'?90:(mode==='banner_only'?140:180));
   const showText = mode!=='banner_only';
   let imageBlock = '';
-  if(data.banner_url){
+  if(mode==='banner_only'){
+    // Fill the placeholder edge-to-edge; rounded corners from the container; no background.
+    const src=data.banner_url||data.logo_url;
+    if(src){
+      const fit = mhRaw!=null ? `height:${mhRaw}px;object-fit:cover` : 'height:auto';
+      imageBlock = `<div class="sponsor-img-wrap" style="padding:0;min-height:0;border-radius:14px;overflow:hidden"><img class="sponsor-logo" src="${esc(src)}" alt="${esc(data.name||'')}" style="width:100%;max-width:100%;display:block;${fit}"></div>`;
+    }
+  } else if(data.banner_url){
     imageBlock = `<div class="sponsor-img-wrap" style="background:${esc(bg)};${imgRadius}"><img class="sponsor-logo" src="${esc(data.banner_url)}" alt="${esc(data.name||'')}" style="max-width:100%; max-height:${mh}px; width:auto; object-fit:contain; display:block"></div>`;
   } else if(data.logo_url){
     const logoStyle = (mhRaw!=null) ? ` style="max-height:${mhRaw}px; object-fit:contain"` : '';

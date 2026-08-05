@@ -266,9 +266,9 @@ function sponsorEff(data, placement){
   const pm=(placement&&placement.display_mode&&placement.display_mode!=='inherit')?placement.display_mode:null;
   const mode=pm||(data&&data.display_mode)||'standard';
   const ph=(placement&&placement.max_height!=null)?placement.max_height:null;
-  const mh=(ph!=null)?ph:((data&&data.max_height!=null)?data.max_height:null);
+  const mhRaw=(ph!=null)?ph:((data&&data.max_height!=null)?data.max_height:null);
   const def=mode==='compact'?90:(mode==='banner_only'?140:180);
-  return {mode, h:(mh!=null?mh:def)};
+  return {mode, h:(mhRaw!=null?mhRaw:def), hExplicit:mhRaw};
 }
 function buildSponsorBanner(data, placement){
   if(!data) return '';
@@ -276,8 +276,18 @@ function buildSponsorBanner(data, placement){
   const eff=sponsorEff(data, placement);
   const showText = eff.mode!=='banner_only';
   let img='';
-  if(data.banner_url) img=`<div class="sponsor-img-wrap-pub" style="background:${esc(bg)}"><img src="${esc(data.banner_url)}" alt="${esc(data.name||'')}" style="width:100%;max-height:${eff.h}px;object-fit:contain;display:block"></div>`;
-  else if(data.logo_url) img=`<div class="sponsor-img-wrap-pub" style="background:rgba(255,255,255,.08)"><img src="${esc(data.logo_url)}" alt="${esc(data.name||'')}" style="width:100%;max-height:${eff.h}px;object-fit:contain;display:block"></div>`;
+  if(eff.mode==='banner_only'){
+    // Fill the placeholder edge-to-edge; rounded corners come from the container; no background.
+    const src=data.banner_url||data.logo_url;
+    if(src){
+      const fit = eff.hExplicit!=null ? `height:${eff.h}px;object-fit:cover` : 'height:auto';
+      img=`<div class="sponsor-img-wrap-pub" style="padding:0;min-height:0"><img src="${esc(src)}" alt="${esc(data.name||'')}" style="width:100%;display:block;${fit}"></div>`;
+    }
+  } else if(data.banner_url){
+    img=`<div class="sponsor-img-wrap-pub" style="background:${esc(bg)}"><img src="${esc(data.banner_url)}" alt="${esc(data.name||'')}" style="width:100%;max-height:${eff.h}px;object-fit:contain;display:block"></div>`;
+  } else if(data.logo_url){
+    img=`<div class="sponsor-img-wrap-pub" style="background:rgba(255,255,255,.08)"><img src="${esc(data.logo_url)}" alt="${esc(data.name||'')}" style="width:100%;max-height:${eff.h}px;object-fit:contain;display:block"></div>`;
+  }
   const hasName=!!(data.name&&data.name.trim()), hasTag=!!(data.tagline&&data.tagline.trim());
   const txt=(showText&&(hasName||hasTag))?`<div class="sponsor-text-pub" style="background:${esc(bg)}">${hasName?`<span class="sponsor-label-pub">Proudly sponsored by</span><span class="sponsor-name-pub">${esc(data.name)}</span>`:''} ${hasTag?`<span class="sponsor-tag-pub">${esc(data.tagline)}</span>`:''}</div>`:'';
   if(!img&&!txt) return '';
