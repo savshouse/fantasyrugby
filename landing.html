@@ -453,7 +453,7 @@ footer a{color:var(--gold)}
         <h4>Transfers</h4>
         <ul>
           <li>2 free transfers per week</li>
-          <li>Deadline: Friday at 22:00</li>
+          <li id="rulesDeadline">Deadline: Friday at 22:00</li>
           <li>Players from all ONs' XVs eligible</li>
           <li>Price balances performance differences</li>
         </ul>
@@ -481,13 +481,8 @@ footer a{color:var(--gold)}
         <tbody id="scoringBody"><tr><td colspan="2" class="loading">Loading…</td></tr></tbody>
       </table>
     </div>
-  </div>
 
-
-  <hr class="divider">
-
-  <!-- ── T&Cs (collapsible) ── -->
-  <div class="section">
+    <!-- Terms & conditions (moved into the rules group) -->
     <div class="collapsible-head" id="tcToggle" onclick="toggleCollapsible('tc')">
       <h3>Terms &amp; conditions</h3>
       <span class="collapsible-caret">▼</span>
@@ -500,6 +495,8 @@ footer a{color:var(--gold)}
       <p>The prize fund is formed from all entry fees collected. Distribution across top-placed managers and players will be confirmed before the season begins.</p>
     </div>
   </div>
+
+
 
 </div>
 
@@ -625,24 +622,26 @@ function toggleCollapsible(key){
 }
 
 // ── Walkthrough (ported from manager.html onboarding) ──
-const WT_SLIDES=[
+let gwDeadlineText='Friday at 22:00'; // updated from app_settings in loadAll()
+function wtSlides(){ return [
   {icon:'🏉',title:'Welcome to the game',body:`Pick a squad of real ONs players. They score you points based on how they actually play each week — the better they do on the pitch, the higher you climb the table.`},
   {icon:'📋',title:'Build your squad',body:`Choose <b>7 starters</b> (4 forwards + 3 backs) and <b>3 bench</b> players, all within your budget. No position rule on the bench — pick anyone.`},
   {icon:'👑',title:'Captain &amp; vice-captain',body:`Your captain's points are <b>doubled</b> that week. If they don't play in any of the three matches, your vice-captain gets the double instead.`},
-  {icon:'🔄',title:'Transfers &amp; deadlines',body:`Your team carries over automatically each week — you don't start from scratch. You get <b>2 free transfers</b> a week, and picks lock at <b>Friday at 22:00</b> once team sheets are out.`},
+  {icon:'🔄',title:'Transfers &amp; deadlines',body:`Your team carries over automatically each week — you don't start from scratch. You get <b>2 free transfers</b> a week, and picks lock at <b>${esc(gwDeadlineText)}</b> once team sheets are out.`},
   {icon:'🧭',title:"You're ready",body:`Sign up, pick your squad, and you're in — then chase the top of the table all season. £10 to enter, every penny into the prize fund.`}
-];
+]; }
 let wtIdx=0;
 function renderWt(){
-  const s=WT_SLIDES[wtIdx];
+  const slides=wtSlides();
+  const s=slides[wtIdx];
   document.getElementById('wtSlides').innerHTML=`<div class="wt-slide"><div class="wt-icon">${s.icon}</div><div class="wt-title">${s.title}</div><div class="wt-body">${s.body}</div></div>`;
-  document.getElementById('wtDots').innerHTML=WT_SLIDES.map((_,i)=>`<div class="wt-dot${i===wtIdx?' active':''}"></div>`).join('');
+  document.getElementById('wtDots').innerHTML=slides.map((_,i)=>`<div class="wt-dot${i===wtIdx?' active':''}"></div>`).join('');
   document.getElementById('wtBackBtn').style.visibility=wtIdx===0?'hidden':'visible';
-  document.getElementById('wtNextBtn').textContent=wtIdx===WT_SLIDES.length-1?'Sign up':'Next';
+  document.getElementById('wtNextBtn').textContent=wtIdx===slides.length-1?'Sign up':'Next';
 }
 function openWalkthrough(){wtIdx=0;renderWt();document.getElementById('walkthroughModal').classList.add('show');}
 function closeWalkthrough(){document.getElementById('walkthroughModal').classList.remove('show');}
-document.getElementById('wtNextBtn').onclick=()=>{ if(wtIdx<WT_SLIDES.length-1){wtIdx++;renderWt();} else { window.location.href='manager.html'; } };
+document.getElementById('wtNextBtn').onclick=()=>{ const n=wtSlides().length; if(wtIdx<n-1){wtIdx++;renderWt();} else { window.location.href='manager.html'; } };
 document.getElementById('wtBackBtn').onclick=()=>{ if(wtIdx>0){wtIdx--;renderWt();} };
 
 // ── Sponsor banners ──
@@ -1019,11 +1018,17 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeModal();closeM
 async function loadAll(){
   // Settings + seasons
   const [{data:settings},{data:allSponsors},{data:placements}]=await Promise.all([
-    sb.from('app_settings').select('current_season,sponsor_contact_info').limit(1).single(),
+    sb.from('app_settings').select('current_season,sponsor_contact_info,deadline_weekday,deadline_time').limit(1).single(),
     sb.from('sponsor_banners').select('*').eq('active',true).order('sort_order'),
     sb.from('sponsor_placements').select('*').eq('page_key','landing').maybeSingle()
   ]);
   const season=settings?.current_season||'Season 1';
+  // Deadline text from app_settings (updated regularly) → rules card + walkthrough
+  const _days=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  if(settings && settings.deadline_weekday!=null && settings.deadline_time){
+    gwDeadlineText=(_days[settings.deadline_weekday]||'Friday')+' at '+String(settings.deadline_time).slice(0,5);
+  }
+  const _dlEl=document.getElementById('rulesDeadline'); if(_dlEl) _dlEl.textContent='Deadline: '+gwDeadlineText;
   // Sponsor banners — driven by the admin Placements table, not a per-sponsor slot
   const byId={}; (allSponsors||[]).forEach(s=>byId[s.id]=s);
   const topSp = placements?.banner_top_id ? byId[placements.banner_top_id] : null;
