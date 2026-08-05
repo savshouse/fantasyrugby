@@ -861,14 +861,11 @@ function nameHtml(p){ return p.nickname ? `${esc(p.name)} <span style="font-styl
 // ── Onboarding walkthrough ──────────────────────────────────────
 const ONBOARD_SEEN_KEY = 'onboard_seen_v1';
 let onboardSlideIdx = 0;
+let gwDeadlineText = 'Friday at 22:00'; // set from the next gameweek deadline in loadSettings()
 function onboardSlideContent(){
   const transfers = (settings?.transfers_per_week!=null) ? settings.transfers_per_week : 2;
   const transferWord = transfers===1 ? 'free transfer' : 'free transfers';
-  let deadlineText = 'Friday at 22:00';
-  if(settings?.deadline_weekday!=null && settings?.deadline_time){
-    const days=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-    deadlineText = (days[settings.deadline_weekday]||'Friday') + ' at ' + settings.deadline_time.slice(0,5);
-  }
+  const deadlineText = gwDeadlineText;
   return [
     { icon:'🏉', title:'Welcome to the game', body:`Pick a squad of real ONs players. They score you points based on how they actually play each week — the better they do on the pitch, the higher you climb the table.` },
     { icon:'📋', title:'Build your squad', body:`Choose <b>7 starters</b> (4 forwards + 3 backs) and <b>3 bench</b> players, all within your budget. No position rule on the bench — pick anyone.` },
@@ -1770,11 +1767,23 @@ async function loadSettings(){  const {data}=await sb.from('app_settings').selec
   if(settings){
     const n = settings.transfers_per_week;
     el('howtoTransfers').textContent = n + (n===1?' free transfer':' free transfers');
-    const days=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-    const dayName = days[settings.deadline_weekday] || 'Friday';
-    const time = (settings.deadline_time||'22:00').slice(0,5);
-    el('howtoDeadline').textContent = dayName + ' at ' + time;
   }
+  // Deadline: prefer the actual next gameweek deadline (same source as the Week banner),
+  // then the app_settings template, then a default.
+  const days=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  let dl=null;
+  try{
+    const nowMs=Date.now();
+    const {data:gws}=await sb.from('gameweeks').select('deadline_at,status,number').order('number');
+    const ag=(gws||[]).find(g=>g.deadline_at && new Date(g.deadline_at).getTime()>nowMs && (g.status==='upcoming'||g.status==='open'));
+    if(ag) dl=new Date(ag.deadline_at);
+  }catch(e){}
+  if(dl){
+    gwDeadlineText = days[dl.getDay()] + ' at ' + dl.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',hour12:false});
+  } else if(settings && settings.deadline_weekday!=null && settings.deadline_time){
+    gwDeadlineText = (days[settings.deadline_weekday]||'Friday') + ' at ' + settings.deadline_time.slice(0,5);
+  }
+  if(el('howtoDeadline')) el('howtoDeadline').textContent = gwDeadlineText;
 }
 async function loadPlayers(){
   const seasonId = settings?.current_season || 'Season 1';

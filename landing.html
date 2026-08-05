@@ -1023,11 +1023,20 @@ async function loadAll(){
     sb.from('sponsor_placements').select('*').eq('page_key','landing').maybeSingle()
   ]);
   const season=settings?.current_season||'Season 1';
-  // Deadline text from app_settings (updated regularly) → rules card + walkthrough
+  // Deadline text — use the actual next gameweek deadline (same source as the manager Week banner),
+  // falling back to the app_settings template, then a sensible default.
   const _days=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-  if(settings && settings.deadline_weekday!=null && settings.deadline_time){
-    gwDeadlineText=(_days[settings.deadline_weekday]||'Friday')+' at '+String(settings.deadline_time).slice(0,5);
-  }
+  try{
+    const _nowMs=Date.now();
+    const {data:_gws}=await sb.from('gameweeks').select('deadline_at,status,number').order('number');
+    const _ag=(_gws||[]).find(g=>g.deadline_at && new Date(g.deadline_at).getTime()>_nowMs && (g.status==='upcoming'||g.status==='open'));
+    if(_ag){
+      const _dl=new Date(_ag.deadline_at);
+      gwDeadlineText=_days[_dl.getDay()]+' at '+_dl.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',hour12:false});
+    } else if(settings && settings.deadline_weekday!=null && settings.deadline_time){
+      gwDeadlineText=(_days[settings.deadline_weekday]||'Friday')+' at '+String(settings.deadline_time).slice(0,5);
+    }
+  }catch(e){}
   const _dlEl=document.getElementById('rulesDeadline'); if(_dlEl) _dlEl.textContent='Deadline: '+gwDeadlineText;
   // Sponsor banners — driven by the admin Placements table, not a per-sponsor slot
   const byId={}; (allSponsors||[]).forEach(s=>byId[s.id]=s);
