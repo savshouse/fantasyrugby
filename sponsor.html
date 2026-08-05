@@ -72,6 +72,12 @@ a{color:inherit;text-decoration:none}
 .sponsor-inner-pub{display:block;text-decoration:none;color:#fff;padding:0}
 .sponsor-img-wrap-pub{width:100%;display:flex;align-items:center;justify-content:center;padding:0;min-height:90px}
 .sponsor-img-wrap-pub img{width:100%;max-height:180px;object-fit:contain;display:block}
+.sponsor-banner-pub.sp-compact .sponsor-img-wrap-pub{min-height:0}
+.sponsor-banner-pub.sp-compact .sponsor-text-pub{padding:7px 14px 9px}
+.sponsor-banner-pub.sp-compact .sponsor-name-pub{font-size:1rem}
+.sponsor-banner-pub.sp-compact .sponsor-label-pub{font-size:.58rem}
+.sponsor-banner-pub.sp-compact .sponsor-tag-pub{font-size:.72rem}
+.sponsor-banner-pub.sp-banneronly .sponsor-img-wrap-pub{min-height:0}
 .sponsor-text-pub{padding:12px 20px 18px}
 .sponsor-label-pub{font-size:.65rem;letter-spacing:.1em;text-transform:uppercase;opacity:.7;font-weight:600;display:block}
 .sponsor-name-pub{font-family:'Barlow Condensed',sans-serif;font-size:1.3rem;font-weight:800;line-height:1.15;display:block}
@@ -256,17 +262,28 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 function esc(s){ return (s??'').toString().replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 
 // ── Sponsor banner builder (identical to landing.html) ───────
-function buildSponsorBanner(data){
+function sponsorEff(data, placement){
+  const pm=(placement&&placement.display_mode&&placement.display_mode!=='inherit')?placement.display_mode:null;
+  const mode=pm||(data&&data.display_mode)||'standard';
+  const ph=(placement&&placement.max_height!=null)?placement.max_height:null;
+  const mh=(ph!=null)?ph:((data&&data.max_height!=null)?data.max_height:null);
+  const def=mode==='compact'?90:(mode==='banner_only'?140:180);
+  return {mode, h:(mh!=null?mh:def)};
+}
+function buildSponsorBanner(data, placement){
   if(!data) return '';
   const bg=data.bg_color||'#1B2A4A';
+  const eff=sponsorEff(data, placement);
+  const showText = eff.mode!=='banner_only';
   let img='';
-  if(data.banner_url) img=`<div class="sponsor-img-wrap-pub" style="background:${esc(bg)}"><img src="${esc(data.banner_url)}" alt="${esc(data.name||'')}" style="width:100%;max-height:180px;object-fit:contain;display:block"></div>`;
-  else if(data.logo_url) img=`<div class="sponsor-img-wrap-pub" style="background:rgba(255,255,255,.08)"><img src="${esc(data.logo_url)}" alt="${esc(data.name||'')}" style="width:100%;max-height:180px;object-fit:contain;display:block"></div>`;
+  if(data.banner_url) img=`<div class="sponsor-img-wrap-pub" style="background:${esc(bg)}"><img src="${esc(data.banner_url)}" alt="${esc(data.name||'')}" style="width:100%;max-height:${eff.h}px;object-fit:contain;display:block"></div>`;
+  else if(data.logo_url) img=`<div class="sponsor-img-wrap-pub" style="background:rgba(255,255,255,.08)"><img src="${esc(data.logo_url)}" alt="${esc(data.name||'')}" style="width:100%;max-height:${eff.h}px;object-fit:contain;display:block"></div>`;
   const hasName=!!(data.name&&data.name.trim()), hasTag=!!(data.tagline&&data.tagline.trim());
-  const txt=(hasName||hasTag)?`<div class="sponsor-text-pub" style="background:${esc(bg)}">${hasName?`<span class="sponsor-label-pub">Proudly sponsored by</span><span class="sponsor-name-pub">${esc(data.name)}</span>`:''} ${hasTag?`<span class="sponsor-tag-pub">${esc(data.tagline)}</span>`:''}</div>`:'';
+  const txt=(showText&&(hasName||hasTag))?`<div class="sponsor-text-pub" style="background:${esc(bg)}">${hasName?`<span class="sponsor-label-pub">Proudly sponsored by</span><span class="sponsor-name-pub">${esc(data.name)}</span>`:''} ${hasTag?`<span class="sponsor-tag-pub">${esc(data.tagline)}</span>`:''}</div>`:'';
   if(!img&&!txt) return '';
+  const cls='sponsor-banner-pub'+(eff.mode==='compact'?' sp-compact':'')+(eff.mode==='banner_only'?' sp-banneronly':'');
   const inner=data.link_url?`<a href="${esc(data.link_url)}" target="_blank" rel="noopener" class="sponsor-inner-pub">${img}${txt}</a>`:`<div class="sponsor-inner-pub">${img}${txt}</div>`;
-  return `<div class="sponsor-banner-pub">${inner}</div>`;
+  return `<div class="${cls}">${inner}</div>`;
 }
 
 // ── Sponsor carousel builder (identical to landing.html) ─────
@@ -317,8 +334,8 @@ async function loadAll(){
 
   // Sponsor banners
   const byId={}; (allSponsors||[]).forEach(s=>byId[s.id]=s);
-  document.getElementById('sponsorPageTop').innerHTML = buildSponsorBanner(placements?.banner_top_id ? byId[placements.banner_top_id] : null);
-  document.getElementById('sponsorPageBot').innerHTML = buildSponsorBanner(placements?.banner_bottom_id ? byId[placements.banner_bottom_id] : null);
+  document.getElementById('sponsorPageTop').innerHTML = buildSponsorBanner(placements?.banner_top_id ? byId[placements.banner_top_id] : null, placements);
+  document.getElementById('sponsorPageBot').innerHTML = buildSponsorBanner(placements?.banner_bottom_id ? byId[placements.banner_bottom_id] : null, placements);
 
   // Carousel
   if(placements?.show_carousel){

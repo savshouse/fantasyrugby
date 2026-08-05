@@ -85,6 +85,12 @@ a{color:inherit;text-decoration:none}
 .sponsor-label-pub{font-size:.65rem;letter-spacing:.1em;text-transform:uppercase;opacity:.7;font-weight:600;display:block}
 .sponsor-name-pub{font-family:'Barlow Condensed',sans-serif;font-size:1.3rem;font-weight:800;line-height:1.15;display:block}
 .sponsor-tag-pub{font-size:.8rem;opacity:.85;display:block;margin-top:2px}
+.sponsor-banner-pub.sp-compact .sponsor-img-wrap-pub{min-height:0}
+.sponsor-banner-pub.sp-compact .sponsor-text-pub{padding:7px 14px 9px}
+.sponsor-banner-pub.sp-compact .sponsor-name-pub{font-size:1rem}
+.sponsor-banner-pub.sp-compact .sponsor-label-pub{font-size:.58rem}
+.sponsor-banner-pub.sp-compact .sponsor-tag-pub{font-size:.72rem}
+.sponsor-banner-pub.sp-banneronly .sponsor-img-wrap-pub{min-height:0}
 
 /* ── PODIUM ── */
 .podium-wrap{display:flex;justify-content:center;align-items:flex-end;gap:12px;margin:0 0 4px;padding:16px 8px 0}
@@ -645,17 +651,28 @@ document.getElementById('wtNextBtn').onclick=()=>{ const n=wtSlides().length; if
 document.getElementById('wtBackBtn').onclick=()=>{ if(wtIdx>0){wtIdx--;renderWt();} };
 
 // ── Sponsor banners ──
-function buildSponsorBanner(data){
+function sponsorEff(data, placement){
+  const pm=(placement&&placement.display_mode&&placement.display_mode!=='inherit')?placement.display_mode:null;
+  const mode=pm||(data&&data.display_mode)||'standard';
+  const ph=(placement&&placement.max_height!=null)?placement.max_height:null;
+  const mh=(ph!=null)?ph:((data&&data.max_height!=null)?data.max_height:null);
+  const def=mode==='compact'?90:(mode==='banner_only'?140:180);
+  return {mode, h:(mh!=null?mh:def)};
+}
+function buildSponsorBanner(data, placement){
   if(!data) return '';
   const bg=data.bg_color||'#1B2A4A';
+  const eff=sponsorEff(data, placement);
+  const showText = eff.mode!=='banner_only';
   let img='';
-  if(data.banner_url) img=`<div class="sponsor-img-wrap-pub" style="background:${esc(bg)}"><img src="${esc(data.banner_url)}" alt="${esc(data.name||'')}" style="width:100%;max-height:180px;object-fit:contain;display:block"></div>`;
-  else if(data.logo_url) img=`<div class="sponsor-img-wrap-pub" style="background:rgba(255,255,255,.08)"><img src="${esc(data.logo_url)}" alt="${esc(data.name||'')}" style="width:100%;max-height:180px;object-fit:contain;display:block"></div>`;
+  if(data.banner_url) img=`<div class="sponsor-img-wrap-pub" style="background:${esc(bg)}"><img src="${esc(data.banner_url)}" alt="${esc(data.name||'')}" style="width:100%;max-height:${eff.h}px;object-fit:contain;display:block"></div>`;
+  else if(data.logo_url) img=`<div class="sponsor-img-wrap-pub" style="background:rgba(255,255,255,.08)"><img src="${esc(data.logo_url)}" alt="${esc(data.name||'')}" style="width:100%;max-height:${eff.h}px;object-fit:contain;display:block"></div>`;
   const hasName=!!(data.name&&data.name.trim()), hasTag=!!(data.tagline&&data.tagline.trim());
-  const txt=(hasName||hasTag)?`<div class="sponsor-text-pub" style="background:${esc(bg)}">${hasName?`<span class="sponsor-label-pub">Proudly sponsored by</span><span class="sponsor-name-pub">${esc(data.name)}</span>`:''} ${hasTag?`<span class="sponsor-tag-pub">${esc(data.tagline)}</span>`:''}</div>`:'';
+  const txt=(showText&&(hasName||hasTag))?`<div class="sponsor-text-pub" style="background:${esc(bg)}">${hasName?`<span class="sponsor-label-pub">Proudly sponsored by</span><span class="sponsor-name-pub">${esc(data.name)}</span>`:''} ${hasTag?`<span class="sponsor-tag-pub">${esc(data.tagline)}</span>`:''}</div>`:'';
   if(!img&&!txt) return '';
+  const cls='sponsor-banner-pub'+(eff.mode==='compact'?' sp-compact':'')+(eff.mode==='banner_only'?' sp-banneronly':'');
   const inner=data.link_url?`<a href="${esc(data.link_url)}" target="_blank" rel="noopener" class="sponsor-inner-pub">${img}${txt}</a>`:`<div class="sponsor-inner-pub">${img}${txt}</div>`;
-  return `<div class="sponsor-banner-pub">${inner}</div>`;
+  return `<div class="${cls}">${inner}</div>`;
 }
 
 function buildSponsorCarousel(banners, players){
@@ -1042,8 +1059,8 @@ async function loadAll(){
   const byId={}; (allSponsors||[]).forEach(s=>byId[s.id]=s);
   const topSp = placements?.banner_top_id ? byId[placements.banner_top_id] : null;
   const botSp = placements?.banner_bottom_id ? byId[placements.banner_bottom_id] : null;
-  document.getElementById('landingSponsorTop').innerHTML=buildSponsorBanner(topSp);
-  document.getElementById('landingSponsorBot').innerHTML=buildSponsorBanner(botSp);
+  document.getElementById('landingSponsorTop').innerHTML=buildSponsorBanner(topSp, placements);
+  document.getElementById('landingSponsorBot').innerHTML=buildSponsorBanner(botSp, placements);
 
   // Scoring rules
   const {data:rules}=await sb.from('scoring_rules').select('*');
