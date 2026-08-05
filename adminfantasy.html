@@ -736,6 +736,21 @@
         <label for="sp_color">Banner background colour <span style="text-transform:none;font-weight:400">(hex, e.g. #1B2A4A)</span></label>
         <input id="sp_color" placeholder="#1B2A4A" value="#1B2A4A" style="font-family:monospace">
         <div class="row">
+          <div>
+            <label for="sp_mode">Display style</label>
+            <select id="sp_mode">
+              <option value="standard">Standard — image + text</option>
+              <option value="compact">Compact — smaller, image + text</option>
+              <option value="banner_only">Banner only — image, no text</option>
+            </select>
+          </div>
+          <div>
+            <label for="sp_maxh">Max height <span style="text-transform:none;font-weight:400">(px, optional)</span></label>
+            <input id="sp_maxh" type="number" inputmode="numeric" placeholder="auto" min="20" max="600">
+          </div>
+        </div>
+        <p class="muted" style="font-size:.78rem;margin-top:6px">Sets this banner's default look everywhere it appears. Any page can override it in the Placements table below.</p>
+        <div class="row">
           <div><label for="sp_sort">Order</label><input id="sp_sort" type="number" inputmode="numeric" value="10"></div>
         </div>
         <label class="inline" style="margin-top:12px"><input type="checkbox" class="chk" id="sp_active" checked> Active</label>
@@ -4650,13 +4665,16 @@ function editSponsor(id){
   el('sp_banner').value=s.banner_url||'';
   el('sp_link').value=s.link_url||''; el('sp_tag').value=s.tagline||'';
   el('sp_color').value=s.bg_color||'#1B2A4A';
+  el('sp_mode').value=s.display_mode||'standard';
+  el('sp_maxh').value=(s.max_height!=null)?s.max_height:'';
   el('sp_sort').value=s.sort_order; el('sp_active').checked=s.active;
   window.scrollTo({top:0, behavior:'smooth'});
 }
 el('sp_clear') && (el('sp_clear').onclick=()=>{
   el('sp_id').value=''; el('sp_name').value=''; el('sp_logo').value=''; el('sp_banner').value='';
   el('sp_link').value=''; el('sp_tag').value='';
-  el('sp_color').value='#1B2A4A'; el('sp_sort').value='10'; el('sp_active').checked=true;
+  el('sp_color').value='#1B2A4A'; el('sp_mode').value='standard'; el('sp_maxh').value='';
+  el('sp_sort').value='10'; el('sp_active').checked=true;
 });
 el('sp_save') && (el('sp_save').onclick=async()=>{
   const name=el('sp_name').value.trim();
@@ -4665,6 +4683,8 @@ el('sp_save') && (el('sp_save').onclick=async()=>{
   const rec={ name:name||null, logo_url:logo||null, banner_url:banner||null,
     link_url:el('sp_link').value.trim()||null,
     tagline:el('sp_tag').value.trim()||null, bg_color:el('sp_color').value.trim()||'#1B2A4A',
+    display_mode:el('sp_mode').value||'standard',
+    max_height:el('sp_maxh').value?parseInt(el('sp_maxh').value,10):null,
     sort_order:parseInt(el('sp_sort').value||'10',10), active:el('sp_active').checked };
   const id=el('sp_id').value;
   const res=id ? await sb.from('sponsor_banners').update(rec).eq('id',id) : await sb.from('sponsor_banners').insert(rec);
@@ -4699,13 +4719,20 @@ function renderSponsorPlacements(){
   const box = el('spplace_table'); if(!box) return;
   const sponsorOpts = (allSponsors||[]).filter(s=>s.active).map(s=>`<option value="${s.id}">${esc(s.name||'(image only)')}</option>`).join('');
   const rows = SPPLACE_PAGES.map(pg=>{
-    const row = allSponsorPlacements.find(p=>p.page_key===pg.key) || { page_key:pg.key, banner_top_id:null, banner_bottom_id:null, show_carousel:false };
+    const row = allSponsorPlacements.find(p=>p.page_key===pg.key) || { page_key:pg.key, banner_top_id:null, banner_bottom_id:null, show_carousel:false, display_mode:'inherit', max_height:null };
     return `<div class="spplace-row" data-page="${pg.key}">
       <div class="spplace-page">${esc(pg.label)}</div>
       <div class="spplace-controls">
         <label class="spplace-field">Top<select data-place="banner_top_id"><option value="">— none —</option>${sponsorOpts}</select></label>
         <label class="spplace-field">Bottom<select data-place="banner_bottom_id"><option value="">— none —</option>${sponsorOpts}</select></label>
         <label class="spplace-field spplace-checkbox"><input type="checkbox" class="chk" data-place="show_carousel"> Carousel</label>
+        <label class="spplace-field">Style<select data-place="display_mode">
+          <option value="inherit">Inherit (per banner)</option>
+          <option value="standard">Standard</option>
+          <option value="compact">Compact</option>
+          <option value="banner_only">Banner only</option>
+        </select></label>
+        <label class="spplace-field">Max h<input type="number" data-place="max_height" min="20" max="600" placeholder="auto" style="width:72px"></label>
       </div>
     </div>`;
   }).join('');
@@ -4718,13 +4745,18 @@ function renderSponsorPlacements(){
     rowEl.querySelector('[data-place="banner_top_id"]').value = row?.banner_top_id || '';
     rowEl.querySelector('[data-place="banner_bottom_id"]').value = row?.banner_bottom_id || '';
     rowEl.querySelector('[data-place="show_carousel"]').checked = !!row?.show_carousel;
+    rowEl.querySelector('[data-place="display_mode"]').value = row?.display_mode || 'inherit';
+    rowEl.querySelector('[data-place="max_height"]').value = (row?.max_height!=null) ? row.max_height : '';
   });
   // Wire instant-save on change
   box.querySelectorAll('[data-place]').forEach(input=>{
     input.onchange = async ()=>{
       const pageKey = input.closest('[data-page]').dataset.page;
       const field = input.dataset.place;
-      const value = field==='show_carousel' ? input.checked : (input.value || null);
+      let value;
+      if(field==='show_carousel') value=input.checked;
+      else if(field==='max_height') value = input.value ? parseInt(input.value,10) : null;
+      else value = input.value || null;
       const { error } = await sb.from('sponsor_placements').update({ [field]: value, updated_at: new Date().toISOString() }).eq('page_key', pageKey);
       if(error){ toast(error.message, true); return; }
       toast('Saved');
