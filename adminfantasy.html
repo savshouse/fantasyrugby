@@ -914,7 +914,7 @@
             <option value="conversions">A conversion</option>
             <option value="penalties">A penalty</option>
             <option value="drop_goals">A drop goal</option>
-            <option value="mom_count">A Man of the Match</option>
+            <option value="mom_count">A Player of the Match</option>
             <option value="dom_count">A Defender of the Match</option>
             <option value="wins">A win</option>
             <option value="appearances">An appearance</option>
@@ -3143,7 +3143,7 @@ async function loadStatPanel(){
     <div id="st_addlist"></div>
     <div id="st_check"></div>
     <div class="row" style="margin-top:12px">
-      <div><label>Man of the Match</label><select id="st_mom"></select></div>
+      <div><label>Player of the Match</label><select id="st_mom"></select></div>
       <div><label>Defender of the Match</label><select id="st_dom"></select></div>
     </div>
     <div style="height:12px"></div>
@@ -3711,7 +3711,7 @@ async function toggleSubmissionDetail(subId){
     if(s.conversions) bits.push(s.conversions+' con');
     if(s.penalties) bits.push(s.penalties+' pen');
     if(s.drop_goals) bits.push(s.drop_goals+' drop');
-    if(s.is_mom) bits.push('MoM');
+    if(s.is_mom) bits.push('PoM');
     if(s.is_dom) bits.push('DoM');
     if(s.yellows) bits.push(s.yellows+' yellow');
     if(s.reds) bits.push(s.reds+' red');
@@ -3864,7 +3864,7 @@ const RP_COLUMNS = [
   {key:'conversions', label:'Cons', type:'num'},
   {key:'penalties', label:'Pens', type:'num'},
   {key:'drop_goals', label:'Drops', type:'num'},
-  {key:'mom_count', label:'MoM', type:'num'},
+  {key:'mom_count', label:'PoM', type:'num'},
   {key:'dom_count', label:'DoM', type:'num'},
   {key:'wins', label:'Wins', type:'num'},
   {key:'yellows', label:'Yellow', type:'num'},
@@ -3959,7 +3959,7 @@ function renderReports(){
 }
 el('rp_export') && (el('rp_export').onclick = ()=>{
   const rows = window._rpVisibleRows || [];
-  const headers = ['Name','Nickname','Squad','Position','Price','Season Points','Times Picked','Appearances','Tries','Conversions','Penalties','Drop Goals','MoM','DoM','Wins','Yellow','Red'];
+  const headers = ['Name','Nickname','Squad','Position','Price','Season Points','Times Picked','Appearances','Tries','Conversions','Penalties','Drop Goals','PoM','DoM','Wins','Yellow','Red'];
   const csvRows = [headers.join(',')];
   rows.forEach(p=>{
     const vals = [p.name, p.nickname||'', p.team_name, p.position, p.price, p.season_points, p.times_picked,
@@ -5023,7 +5023,7 @@ function renderPlayerStats(){
       ${th('rank','#')}${th('name','Player')}${th('team_name','Squad')}
       ${th('pts','Pts','Points')}${th('appearances','App','Appearances')}
       ${th('tries','T','Tries')}${th('conversions','C','Conversions')}${th('penalties','P','Penalties')}
-      ${th('drop_goals','D','Drop goals')}${th('dom','DoM','Defender of the Match')}${th('mom','MoM','Man of the Match')}${th('wins','W','Wins')}
+      ${th('drop_goals','D','Drop goals')}${th('dom','DoM','Defender of the Match')}${th('mom','PoM','Player of the Match')}${th('wins','W','Wins')}
       ${th('yellows','Y','Yellow cards')}${th('reds','R','Red cards')}
     </tr></thead>
     <tbody>${rows.map((p,i)=>`<tr style="border-bottom:1px solid var(--line)">
@@ -5057,7 +5057,7 @@ el('ps_refresh') && (el('ps_refresh').onclick = ()=>{ loadPlayerStats(); toast('
 el('ps_export') && (el('ps_export').onclick = ()=>{
   const rows = window._psRows||[]; if(!rows.length){ toast('Nothing to export',true); return; }
   downloadCSV('player-season-leaderboard.csv',
-    ['Rank','Player','Squad','Points','Apps','Tries','Cons','Pens','Drops','MoM','Yellows','Reds'],
+    ['Rank','Player','Squad','Points','Apps','Tries','Cons','Pens','Drops','PoM','Yellows','Reds'],
     rows.map((p,i)=>[i+1,p.name,p.team_name,p.pts,p.appearances,p.tries,p.conversions,p.penalties,p.drop_goals,p.mom,p.yellows,p.reds]));
   toast('Exported');
 });
@@ -5114,7 +5114,7 @@ async function renderTotw(){
     </tr></thead>
     <tbody>${top.map((p,i)=>`<tr style="border-bottom:1px solid var(--line)">
       <td style="padding:5px 4px; color:var(--muted)">${i+1}</td>
-      <td style="padding:5px 4px; font-weight:600">${esc(p.name)}${p.is_mom?' <span class="pill fwd" style="font-size:.65rem">MoM</span>':''}${p.is_dom?' <span class="pill back" style="font-size:.65rem">DoM</span>':''}</td>
+      <td style="padding:5px 4px; font-weight:600">${esc(p.name)}${p.is_mom?' <span class="pill fwd" style="font-size:.65rem">PoM</span>':''}${p.is_dom?' <span class="pill back" style="font-size:.65rem">DoM</span>':''}</td>
       <td style="padding:5px 4px; color:var(--muted); font-size:.8rem">${esc(p.team_name)}</td>
       <td style="padding:5px 4px; text-align:center"><span class="pill ${p.position==='forward'?'fwd':'back'}">${p.position[0].toUpperCase()}</span></td>
       <td style="padding:5px 4px; text-align:center; font-weight:800; color:var(--crimson)">${p.pts}</td>
@@ -5129,7 +5129,7 @@ el('tw_export') && (el('tw_export').onclick = ()=>{
   if(!gwId||!totwData.length){ toast('Select a gameweek first',true); return; }
   const gw=gameweeks.find(g=>g.id===gwId);
   downloadCSV(`week${gw?.number||'?'}-team-of-week.csv`,
-    ['Rank','Player','Squad','Position','Points','Tries','Conversions','Penalties','Drops','MoM','DoM'],
+    ['Rank','Player','Squad','Position','Points','Tries','Conversions','Penalties','Drops','PoM','DoM'],
     totwData.slice(0,size).map((p,i)=>[i+1,p.name,p.team_name,p.position,p.pts,p.tries,p.conversions,p.penalties,p.drop_goals,p.is_mom?'Yes':'',p.is_dom?'Yes':'']));
   toast('Exported');
 });
@@ -5180,7 +5180,7 @@ function renderPastSeason(){
     {key:'conversions',label:'C',type:'num'},
     {key:'penalties',label:'P',type:'num'},
     {key:'drop_goals',label:'D',type:'num'},
-    {key:'mom_count',label:'MoM',type:'num'},
+    {key:'mom_count',label:'PoM',type:'num'},
     {key:'dom_count',label:'DoM',type:'num'},
     {key:'wins',label:'Wins',type:'num'},
     {key:'yellows',label:'Y',type:'num'},
@@ -5256,7 +5256,7 @@ function renderPastSeason(){
   const exp = el('ps2_export');
   const sid = el('ps2_season').value;
   if(exp) exp.onclick=()=>{
-    const hdr=['Player','Squad','Position','Pts','Apps','T','C','P','D','MoM','DoM','Wins','Yellows','Reds','Times Picked'];
+    const hdr=['Player','Squad','Position','Pts','Apps','T','C','P','D','PoM','DoM','Wins','Yellows','Reds','Times Picked'];
     const csvRows=rows.map(p=>[p.name,p.team_name,p.position,p.pts,p.appearances,p.tries,p.conversions,p.penalties,p.drop_goals,p.mom_count,p.dom_count,p.wins,p.yellows,p.reds,p.times_picked]);
     downloadCSV(`${sid}-player-stats.csv`, hdr, csvRows);
     toast('Exported');

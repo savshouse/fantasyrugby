@@ -374,7 +374,7 @@ footer a{color:var(--gold)}
               <th data-sort="pts">Pts</th>
               <th data-sort="apps">Apps</th>
               <th data-sort="tries">Tries</th>
-              <th data-sort="mom">MoM</th>
+              <th data-sort="mom">PoM</th>
             </tr></thead>
             <tbody id="pdbBody"><tr><td colspan="7" class="loading">Loading…</td></tr></tbody>
           </table>
@@ -419,7 +419,7 @@ footer a{color:var(--gold)}
       <div class="step">
         <div class="step-num">2</div>
         <h3>Score points every week</h3>
-        <p>Your players earn points from their real match performances — tries, penalties, Man of the Match and more.</p>
+        <p>Your players earn points from their real match performances — tries, penalties, Player of the Match and more.</p>
       </div>
       <div class="step">
         <div class="step-num">3</div>
@@ -849,7 +849,7 @@ function openPlayerModal(p){
   const stats=[
     {val:p.pts||0,lbl:'Pts'},
     {val:p.tries||0,lbl:'Tries'},
-    {val:momV,lbl:'MoM'},
+    {val:momV,lbl:'PoM'},
     {val:domV,lbl:'DoM'},
   ];
   document.getElementById('modalStats').innerHTML=stats.map(s=>`<div class="modal-stat"><div class="modal-stat-val">${s.val}</div><div class="modal-stat-lbl">${s.lbl}</div></div>`).join('');
@@ -1076,7 +1076,7 @@ async function loadAll(){
   const {data:rules}=await sb.from('scoring_rules').select('*');
   const labels={appearance:'Appearance',try_forward:'Try (forward)',try_back:'Try (back)',
     conversion:'Conversion',penalty:'Penalty kick',drop_goal:'Drop goal',
-    mom:'Man of the Match',dom:'Director of the Match',win:'Win',yellow:'Yellow card',red:'Red card'};
+    mom:'Player of the Match',dom:'Defender of the Match',win:'Win',yellow:'Yellow card',red:'Red card'};
   document.getElementById('scoringBody').innerHTML=(rules||[])
     .filter(r=>labels[r.event_code])
     .sort((a,b)=>Math.abs(b.points)-Math.abs(a.points))
@@ -1115,7 +1115,7 @@ async function loadAll(){
       {key:'cons',   lbl:'Cons',  count:s.conversions||0, rate:R('conversion'), sub:(s.conversions||0)*R('conversion')},
       {key:'pens',   lbl:'Pens',  count:s.penalties||0,   rate:R('penalty'),    sub:(s.penalties||0)*R('penalty')},
       {key:'drops',  lbl:'Drops', count:s.drop_goals||0,  rate:R('drop_goal'),  sub:(s.drop_goals||0)*R('drop_goal')},
-      {key:'mom',    lbl:'MoM',   count:s.mom_count||0,   rate:R('mom'),        sub:(s.mom_count||0)*R('mom')},
+      {key:'mom',    lbl:'PoM',   count:s.mom_count||0,   rate:R('mom'),        sub:(s.mom_count||0)*R('mom')},
       {key:'dom',    lbl:'DoM',   count:s.dom_count||0,   rate:R('dom'),        sub:(s.dom_count||0)*R('dom')},
       {key:'wins',   lbl:'Wins',  count:s.wins||0,        rate:R('win'),        sub:(s.wins||0)*R('win')},
       {key:'yellows',lbl:'Yellow',count:s.yellows||0,     rate:R('yellow'),     sub:(s.yellows||0)*R('yellow')},
@@ -1221,7 +1221,7 @@ async function loadAll(){
       {key:'cons',   lbl:'Cons',  count:s.conversions||0, rate:rule('conversion'), sub:(s.conversions||0)*rule('conversion')},
       {key:'pens',   lbl:'Pens',  count:s.penalties||0,   rate:rule('penalty'),    sub:(s.penalties||0)*rule('penalty')},
       {key:'drops',  lbl:'Drops', count:s.drop_goals||0,  rate:rule('drop_goal'),  sub:(s.drop_goals||0)*rule('drop_goal')},
-      {key:'mom',    lbl:'MoM',   count:s.is_mom?1:0,     rate:rule('mom'),        sub:(s.is_mom?1:0)*rule('mom')},
+      {key:'mom',    lbl:'PoM',   count:s.is_mom?1:0,     rate:rule('mom'),        sub:(s.is_mom?1:0)*rule('mom')},
       {key:'dom',    lbl:'DoM',   count:s.is_dom?1:0,     rate:rule('dom'),        sub:(s.is_dom?1:0)*rule('dom')},
       {key:'wins',   lbl:'Wins',  count:(s.appeared&&s.fixtures.result==='win')?1:0, rate:rule('win'), sub:((s.appeared&&s.fixtures.result==='win')?1:0)*rule('win')},
       {key:'yellows',lbl:'Yellow',count:s.yellows||0,     rate:rule('yellow'),     sub:(s.yellows||0)*rule('yellow')},
