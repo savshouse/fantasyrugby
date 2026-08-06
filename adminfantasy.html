@@ -586,6 +586,8 @@
         <div style="height:10px"></div>
         <label for="spinv_sponsorName">Sponsor name</label>
         <input id="spinv_sponsorName" placeholder="e.g. Acme Builders Ltd, or Mr John Smith">
+        <label for="spinv_contactName">Contact name <span style="font-weight:400; text-transform:none">(optional — who to address emails to)</span></label>
+        <input id="spinv_contactName" placeholder="e.g. John Smith">
         <div class="row">
           <div><label for="spinv_email">Email</label><input id="spinv_email" type="email" placeholder="optional"></div>
           <div><label for="spinv_phone">Phone</label><input id="spinv_phone" placeholder="optional"></div>
@@ -1898,7 +1900,7 @@ function populateExistingSponsorDropdown(){
   });
   const sponsors = [...seen.values()].sort((a,b)=>a.sponsor_name.localeCompare(b.sponsor_name));
   sel.innerHTML = '<option value="">— New sponsor / type below —</option>' +
-    sponsors.map(inv=>`<option value="${esc(inv.sponsor_name)}" data-email="${esc(inv.sponsor_email||'')}" data-phone="${esc(inv.sponsor_phone||'')}" data-address="${esc(inv.sponsor_address||'')}">${esc(inv.sponsor_name)}</option>`).join('');
+    sponsors.map(inv=>`<option value="${esc(inv.sponsor_name)}" data-email="${esc(inv.sponsor_email||'')}" data-phone="${esc(inv.sponsor_phone||'')}" data-address="${esc(inv.sponsor_address||'')}" data-contact="${esc(inv.contact_name||'')}">${esc(inv.sponsor_name)}</option>`).join('');
 }
 el('spinv_existing_sponsor') && (el('spinv_existing_sponsor').onchange = function(){
   const opt = this.selectedOptions[0];
@@ -1907,6 +1909,7 @@ el('spinv_existing_sponsor') && (el('spinv_existing_sponsor').onchange = functio
   el('spinv_email').value = opt.dataset.email || '';
   el('spinv_phone').value = opt.dataset.phone || '';
   el('spinv_address').value = opt.dataset.address || '';
+  el('spinv_contactName').value = opt.dataset.contact || '';
   // Warn if this sponsor has an open unpaid invoice
   const open = (allInvoices||[]).filter(inv=>
     inv.sponsor_name === opt.value && inv.status_key !== 'paid'
@@ -2113,13 +2116,13 @@ async function emailInvoice(invoiceId){
         <p style="margin:4px 0 0; font-size:13px; opacity:.9">Sponsorship Invoice ${esc(inv.invoice_number)}</p>
       </div>
       <div style="padding:22px; border:1px solid #eee; border-top:none">
-        <p>Dear ${esc(inv.sponsor_name||'Sponsor')},</p>
+        <p>Dear ${esc(inv.contact_name||inv.sponsor_name||'Sponsor')},</p>
         <p>Thank you for your support of Old Northamptonians RFC. Please find your sponsorship invoice <b>${esc(inv.invoice_number)}</b> attached, totalling <b>£${built.total.toFixed(2)}</b>, due by <b>${esc(inv.due_date)}</b>.</p>
         <p>Payment details are included on the attached invoice. If you have any questions, just reply to this email.</p>
         <p style="margin-top:22px">Thank you again for your support.<br>Old Northamptonians RFC</p>
       </div>
     </div>`;
-  const text = `Dear ${inv.sponsor_name||'Sponsor'},\n\nThank you for your support of Old Northamptonians RFC. Please find your sponsorship invoice ${inv.invoice_number} attached, totalling £${built.total.toFixed(2)}, due by ${inv.due_date}.\n\nPayment details are included on the attached invoice. If you have any questions, just reply to this email.\n\nThank you again for your support.\nOld Northamptonians RFC`;
+  const text = `Dear ${inv.contact_name||inv.sponsor_name||'Sponsor'},\n\nThank you for your support of Old Northamptonians RFC. Please find your sponsorship invoice ${inv.invoice_number} attached, totalling £${built.total.toFixed(2)}, due by ${inv.due_date}.\n\nPayment details are included on the attached invoice. If you have any questions, just reply to this email.\n\nThank you again for your support.\nOld Northamptonians RFC`;
 
   toast('Sending email…');
   const { data, error } = await sb.functions.invoke('send-invoice-email', {
@@ -2409,6 +2412,7 @@ function editInvoice(id){
   if(createDetails) createDetails.open = true;
   el('spinv_id').value = inv.id;
   el('spinv_sponsorName').value = inv.sponsor_name || '';
+  el('spinv_contactName').value = inv.contact_name || '';
   el('spinv_email').value = inv.sponsor_email || '';
   el('spinv_phone').value = inv.sponsor_phone || '';
   el('spinv_address').value = inv.sponsor_address || '';
@@ -2421,7 +2425,7 @@ function editInvoice(id){
   window.scrollTo({top:0, behavior:'smooth'});
 }
 el('spinv_clear') && (el('spinv_clear').onclick = ()=>{
-  el('spinv_id').value=''; el('spinv_sponsorName').value=''; el('spinv_email').value=''; el('spinv_phone').value=''; el('spinv_address').value='';
+  el('spinv_id').value=''; el('spinv_sponsorName').value=''; el('spinv_contactName').value=''; el('spinv_email').value=''; el('spinv_phone').value=''; el('spinv_address').value='';
   if(el('spinv_existing_sponsor')) el('spinv_existing_sponsor').value='';
   el('spinv_notes').value=''; el('spinv_status').textContent='';
   el('spitem_type').value=''; el('spitem_amount').value=''; el('spitem_player').value='';
@@ -2442,6 +2446,7 @@ el('spinv_save') && (el('spinv_save').onclick = async ()=>{
   const id = el('spinv_id').value;
   const rec = {
     sponsor_name: sponsorName,
+    contact_name: el('spinv_contactName').value.trim() || null,
     sponsor_email: el('spinv_email').value.trim() || null,
     sponsor_phone: el('spinv_phone').value.trim() || null,
     sponsor_address: el('spinv_address').value.trim() || null,

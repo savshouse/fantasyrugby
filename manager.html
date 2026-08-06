@@ -395,9 +395,6 @@
       <input id="email" type="email" autocomplete="email" inputmode="email">
       <label for="pw">Password</label>
       <input id="pw" type="password" autocomplete="current-password">
-      <label class="inline" id="rememberWrap" style="margin-top:10px; font-size:.85rem; color:var(--muted); display:flex; align-items:center; gap:8px">
-        <input type="checkbox" id="rememberMe" checked style="width:auto"> Keep me signed in on this device
-      </label>
       <p style="margin-top:8px; font-size:.82rem" id="forgotWrap">
         <button class="linkbtn" id="forgotBtn" type="button">Forgot your password?</button>
       </p>
@@ -1401,7 +1398,6 @@ el('switchBtn').onclick = ()=>{
   el('switchText').textContent = up?'Already registered? ':'New here? ';
   el('switchBtn').textContent = up?'Sign in':'Create an account';
   el('authMsg').textContent='';
-  el('rememberWrap').classList.toggle('hide',up);
   el('forgotWrap').classList.toggle('hide',up);
 };
 el('authBtn').onclick = async ()=>{
@@ -1420,10 +1416,6 @@ el('authBtn').onclick = async ()=>{
     el('authMsg').textContent='Signing in…';
     const { data, error } = await sb.auth.signInWithPassword({ email, password:pw });
     if(error){ el('authMsg').textContent=error.message; return; }
-    // "Keep me signed in" — if unchecked, sign out automatically when this tab/browser closes
-    if(!el('rememberMe').checked){
-      window.addEventListener('pagehide', ()=>{ try{ sb.auth.signOut(); }catch(e){} });
-    }
     await afterLogin(data.user);
   }
 };
