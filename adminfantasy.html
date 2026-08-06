@@ -698,7 +698,10 @@
         <label for="spintro_body">Intro paragraph</label>
         <textarea id="spintro_body" rows="3" placeholder="e.g. Support the club and get your brand in front of our members all season long."></textarea>
         <div style="height:12px"></div>
-        <button class="btn navy" id="spintro_save">Save intro</button>
+        <div class="row">
+          <button class="btn navy" id="spintro_save">Save intro</button>
+          <button class="btn sec" id="spintro_clear" type="button">Clear intro</button>
+        </div>
         <p class="muted" id="spintro_status" style="margin-top:8px; font-size:.82rem"></p>
       </details>
 
@@ -1743,13 +1746,19 @@ async function loadSponsorPageIntro(){
   }
 }
 el('spintro_save') && (el('spintro_save').onclick = async ()=>{
-  const headline = el('spintro_headline').value.trim();
-  const intro = el('spintro_body').value.trim();
-  if(!headline){ el('spintro_status').textContent='Please add a headline.'; return; }
+  const headline = el('spintro_headline').value.trim() || null;
+  const intro = el('spintro_body').value.trim() || null;
   const { error } = await sb.from('sponsor_page_content').upsert({ id:1, headline, intro, updated_at: new Date().toISOString() });
   if(error){ el('spintro_status').textContent=error.message; return; }
-  el('spintro_status').textContent='✓ Saved';
-  setTimeout(()=>{ el('spintro_status').textContent=''; }, 2500);
+  el('spintro_status').textContent='✓ Saved — reload the sponsor page to see the change';
+  setTimeout(()=>{ el('spintro_status').textContent=''; }, 3500);
+});
+el('spintro_clear') && (el('spintro_clear').onclick = async ()=>{
+  el('spintro_headline').value=''; el('spintro_body').value='';
+  const { error } = await sb.from('sponsor_page_content').upsert({ id:1, headline:null, intro:null, updated_at: new Date().toISOString() });
+  if(error){ el('spintro_status').textContent=error.message; return; }
+  el('spintro_status').textContent='✓ Cleared — intro hidden on sponsor page';
+  setTimeout(()=>{ el('spintro_status').textContent=''; }, 3500);
 });
 function renderSponsorTypeSelect(){
   const sel = el('spitem_type'); if(!sel) return;

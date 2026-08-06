@@ -349,10 +349,15 @@ async function loadAll(){
 
   // Page intro (from admin Sponsor Settings)
   const introEl = document.getElementById('sponsorPageIntro');
-  if(introEl && pageContent){
-    if(pageContent.headline) introEl.querySelector('.intro-headline').textContent = pageContent.headline;
-    if(pageContent.intro)    introEl.querySelector('.intro-body').textContent    = pageContent.intro;
-    introEl.style.display = (pageContent.headline||pageContent.intro) ? 'block' : 'none';
+  if(introEl){
+    const h=(pageContent?.headline||'').trim(), b=(pageContent?.intro||'').trim();
+    if(h||b){
+      introEl.querySelector('.intro-headline').textContent = h;
+      introEl.querySelector('.intro-body').textContent = b;
+      introEl.style.display = 'block';
+    } else {
+      introEl.style.display = 'none';
+    }
   }
 
   // Sponsor banners
