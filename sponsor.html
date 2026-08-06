@@ -100,14 +100,14 @@ a{color:inherit;text-decoration:none}
 /* ── PACKAGE CARDS ── */
 .pkg-grid{display:grid;grid-template-columns:1fr;gap:20px}
 @media(min-width:600px){.pkg-grid{grid-template-columns:repeat(2,1fr)}}
-.pkg-card{border:1.5px solid var(--line);border-radius:16px;overflow:hidden;box-shadow:0 2px 12px rgba(27,42,74,.06);transition:box-shadow .2s}
+.pkg-card{border:1.5px solid var(--line);border-radius:16px;overflow:hidden;box-shadow:0 2px 12px rgba(27,42,74,.06);transition:box-shadow .2s;display:flex;flex-direction:column}
 .pkg-card:hover{box-shadow:0 8px 28px rgba(27,42,74,.12)}
 .pkg-card.featured{border-color:var(--gold);border-width:2px}
+.pkg-body{padding:16px;display:flex;flex-direction:column;flex:1}
 .pkg-featured-badge{background:var(--gold);color:var(--navy);font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;padding:6px 16px;text-align:center}
 .pkg-image{width:100%;height:160px;object-fit:cover;display:block}
 .pkg-image-placeholder{width:100%;height:100px;background:linear-gradient(135deg,#6b0f1f,var(--navy));display:flex;align-items:center;justify-content:center}
 .pkg-image-placeholder svg{width:36px;height:36px;opacity:.2;stroke:#fff}
-.pkg-body{padding:18px 18px 20px}
 .pkg-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:8px}
 .pkg-name{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:1.2rem;text-transform:uppercase;letter-spacing:.03em;color:var(--navy);line-height:1.1}
 .pkg-price{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:1.4rem;color:var(--crimson);white-space:nowrap;line-height:1}
@@ -201,6 +201,10 @@ footer a{color:var(--gold)}
   <div class="section" id="packages">
     <h2 class="section-title">Sponsorship packages</h2>
     <p class="section-sub">Choose the package that works for you — all include visibility with our managers throughout the season.</p>
+    <div id="sponsorPageIntro" style="display:none;max-width:720px;margin:0 auto 28px;text-align:center;padding:0 16px">
+      <h2 class="intro-headline" style="font-family:'Barlow Condensed',sans-serif;font-size:2rem;font-weight:900;color:var(--navy);margin:0 0 10px"></h2>
+      <p class="intro-body" style="color:var(--muted);font-size:1rem;line-height:1.65;margin:0"></p>
+    </div>
     <div class="pkg-grid" id="packagesList">
       <p class="muted" style="grid-column:1/-1;text-align:center;padding:40px 0">Loading packages…</p>
     </div>
@@ -332,15 +336,24 @@ function buildSponsorCarousel(banners, players){
 let allTypes = [], availData = [];
 
 async function loadAll(){
-  const [{ data:types }, { data:avail }, { data:allSponsors }, { data:placements }, { data:players }] = await Promise.all([
+  const [{ data:types }, { data:avail }, { data:allSponsors }, { data:placements }, { data:players }, { data:pageContent }] = await Promise.all([
     sb.from('sponsorship_types').select('*').eq('active',true).order('sort_order'),
     sb.rpc('public_sponsorship_availability'),
     sb.from('sponsor_banners').select('*').eq('active',true).order('sort_order'),
     sb.from('sponsor_placements').select('*').eq('page_key','sponsor').maybeSingle(),
-    sb.from('players').select('id,name,sponsor_name,sponsor_logo_url,sponsor_link_url').eq('active',true)
+    sb.from('players').select('id,name,sponsor_name,sponsor_logo_url,sponsor_link_url').eq('active',true),
+    sb.from('sponsor_page_content').select('headline,intro').eq('id',1).maybeSingle()
   ]);
   allTypes = types||[];
   availData = avail||[];
+
+  // Page intro (from admin Sponsor Settings)
+  const introEl = document.getElementById('sponsorPageIntro');
+  if(introEl && pageContent){
+    if(pageContent.headline) introEl.querySelector('.intro-headline').textContent = pageContent.headline;
+    if(pageContent.intro)    introEl.querySelector('.intro-body').textContent    = pageContent.intro;
+    introEl.style.display = (pageContent.headline||pageContent.intro) ? 'block' : 'none';
+  }
 
   // Sponsor banners
   const byId={}; (allSponsors||[]).forEach(s=>byId[s.id]=s);
@@ -381,7 +394,7 @@ function renderPackages(){
       : '';
     const descHtml = t.description ? `<p class="pkg-desc">${esc(t.description)}</p>` : '';
     const availHtml = availText ? `<div class="pkg-avail${isFull?' full':''}">${esc(availText)}</div>` : '';
-    return `<div class="pkg-card${t.highlight?' featured':''}">
+    return `<div class="pkg-card${t.highlight?' featured':''}${t.full_width?' pkg-full-width':''}" style="${t.full_width?'grid-column:1/-1':''}">
       ${t.highlight ? '<div class="pkg-featured-badge">⭐ Most popular</div>' : ''}
       ${imageHtml}
       <div class="pkg-body">
@@ -393,9 +406,11 @@ function renderPackages(){
           </div>
         </div>
         ${availHtml}${descHtml}${perksHtml}
-        <button class="pkg-btn" ${isFull?'disabled':''} onclick="openSponsorEnquiry('${t.id}')">
-          ${isFull ? 'Fully booked' : 'Enquire →'}
-        </button>
+        <div style="margin-top:auto;padding-top:12px">
+          <button class="pkg-btn" ${isFull?'disabled':''} onclick="openSponsorEnquiry('${t.id}')">
+            ${isFull ? 'Fully booked' : 'Enquire →'}
+          </button>
+        </div>
       </div>
     </div>`;
   }).join('');

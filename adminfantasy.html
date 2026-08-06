@@ -814,6 +814,10 @@
         <div class="inline" style="gap:16px; margin-top:12px; flex-wrap:wrap">
           <label class="inline" style="margin:0"><input type="checkbox" class="chk" id="sptype_active" checked> Active (shown when creating invoices)</label>
           <label class="inline" style="margin:0"><input type="checkbox" class="chk" id="sptype_highlight"> ⭐ Featured / most popular</label>
+          <label class="inline" style="margin:0"><input type="checkbox" class="chk" id="sptype_full_width"> ↔ Full width on sponsor page (good for premium / bespoke packages)</label>
+        </div>
+        <div class="row" style="margin-top:8px">
+          <div><label for="sptype_sort">Display order <span style="font-weight:400;text-transform:none">(lower = shown first)</span></label><input id="sptype_sort" type="number" inputmode="numeric" min="1" placeholder="e.g. 10"></div>
         </div>
         <div style="height:12px"></div>
         <div class="row">
@@ -1802,7 +1806,7 @@ function renderSponsorTypesList(){
     return `<div class="list-item">
       <div>
         <b>${esc(t.name)}</b> — £${Number(t.default_amount).toFixed(2)} ${t.active?'':'<span class="pill inactive">inactive</span>'}
-        <div class="muted" style="font-size:.78rem">Applies to: ${esc(t.applies_to)} · ${capText}</div>
+        <div class="muted" style="font-size:.78rem">Applies to: ${esc(t.applies_to)} · ${capText} · Order: ${t.sort_order??'—'}${t.full_width?' · ↔ Full width':''}</div>
       </div>
       <button class="btn sec small" data-edit-sptype="${t.id}">Edit</button>
     </div>`;
@@ -1817,6 +1821,8 @@ function editSponsorType(id){
   el('sptype_description').value = t.description||'';
   el('sptype_perks').value = t.perks||'';
   el('sptype_highlight').checked = t.highlight||false;
+  el('sptype_full_width').checked = t.full_width||false;
+  el('sptype_sort').value = t.sort_order!=null ? t.sort_order : '';
   el('sptype_image_url').value = t.image_url||'';
   el('sptype_image_name').textContent = t.image_url ? 'Current image saved' : '';
   el('sptype_image_preview').innerHTML = t.image_url ? `<img src="${esc(t.image_url)}" style="max-width:100%; max-height:120px; border-radius:8px; margin-top:4px">` : '';
@@ -1826,7 +1832,7 @@ function editSponsorType(id){
 el('sptype_clear') && (el('sptype_clear').onclick = ()=>{
   el('sptype_id').value=''; el('sptype_name').value=''; el('sptype_amount').value='';
   el('sptype_applies').value='player'; el('sptype_active').checked=true; el('sptype_capacity').value='';
-  el('sptype_description').value=''; el('sptype_perks').value=''; el('sptype_highlight').checked=false;
+  el('sptype_description').value=''; el('sptype_perks').value=''; el('sptype_highlight').checked=false; el('sptype_full_width').checked=false; el('sptype_sort').value='';
   el('sptype_image_url').value=''; el('sptype_image_name').textContent=''; el('sptype_image_preview').innerHTML='';
   if(el('sptype_image_file')) el('sptype_image_file').value='';
   window._pendingSptypeImage = null;
@@ -1860,12 +1866,14 @@ el('sptype_save') && (el('sptype_save').onclick = async ()=>{
     description: el('sptype_description').value.trim() || null,
     perks: el('sptype_perks').value.trim() || null,
     highlight: el('sptype_highlight').checked,
+    full_width: el('sptype_full_width').checked,
+    sort_order: el('sptype_sort').value ? parseInt(el('sptype_sort').value,10) : (allSponsorTypes.length+1),
     image_url
   };
   const id = el('sptype_id').value;
   const res = id
     ? await sb.from('sponsorship_types').update(rec).eq('id',id)
-    : await sb.from('sponsorship_types').insert({ ...rec, sort_order: allSponsorTypes.length+1 });
+    : await sb.from('sponsorship_types').insert(rec);
   if(res.error){ toast(res.error.message, true); return; }
   toast(id?'Type updated':'Type added'); el('sptype_clear').click(); await loadSponsorTypes();
 });
