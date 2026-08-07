@@ -603,6 +603,7 @@
     </section>
 
     <section id="fixtures">
+      <div id="fixturesSponsorTop"></div>
       <!-- Upcoming gameweek table -->
       <div class="fix-upcoming" id="fixUpcoming" style="display:none">
         <div class="fix-upcoming-hdr">
@@ -624,6 +625,11 @@
       </div>
       <!-- Gameweek cards rendered here -->
       <div id="fixCards"></div>
+      <div class="sponsor-carousel-wrap" id="sponsorCarouselWrap_fixtures" style="display:none">
+        <p class="sponsor-carousel-title">Thank you to our sponsors</p>
+        <div class="sponsor-carousel" id="sponsorCarousel_fixtures"></div>
+      </div>
+      <div id="fixturesSponsorBot"></div>
     </section>
 
     <section id="table">
@@ -1709,8 +1715,9 @@ async function loadSponsorBanner(){
   const placeByPage = {}; (placements||[]).forEach(p=>placeByPage[p.page_key]=p);
 
   const pages = [
-    { key:'team',        topEl:'sponsorBanner',      botEl:'sponsorFooter',       carouselSuffix:'team' },
-    { key:'leaderboard', topEl:'lbSponsorTop',       botEl:'lbSponsorBot',        carouselSuffix:'leaderboard' },
+    { key:'team',        topEl:'sponsorBanner',       botEl:'sponsorFooter',        carouselSuffix:'team' },
+    { key:'fixtures',    topEl:'fixturesSponsorTop',  botEl:'fixturesSponsorBot',   carouselSuffix:'fixtures' },
+    { key:'leaderboard', topEl:'lbSponsorTop',        botEl:'lbSponsorBot',         carouselSuffix:'leaderboard' },
     { key:'players',     topEl:'playersSponsorTop',  botEl:'playersSponsorBot',   carouselSuffix:'players' },
     { key:'totw',        topEl:'totwSponsorTop',     botEl:'totwSponsorBot',      carouselSuffix:'totw' },
     { key:'duty',        topEl:'dutySponsorTop',     botEl:'dutySponsorBot',      carouselSuffix:'duty' },
