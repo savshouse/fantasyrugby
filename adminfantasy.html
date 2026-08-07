@@ -1746,8 +1746,8 @@ async function loadSponsorPageIntro(){
   }
 }
 el('spintro_save') && (el('spintro_save').onclick = async ()=>{
-  const headline = el('spintro_headline').value.trim() || null;
-  const intro = el('spintro_body').value.trim() || null;
+  const headline = el('spintro_headline').value.trim();
+  const intro = el('spintro_body').value.trim();
   const { error } = await sb.from('sponsor_page_content').upsert({ id:1, headline, intro, updated_at: new Date().toISOString() });
   if(error){ el('spintro_status').textContent=error.message; return; }
   el('spintro_status').textContent='✓ Saved — reload the sponsor page to see the change';
@@ -1755,7 +1755,7 @@ el('spintro_save') && (el('spintro_save').onclick = async ()=>{
 });
 el('spintro_clear') && (el('spintro_clear').onclick = async ()=>{
   el('spintro_headline').value=''; el('spintro_body').value='';
-  const { error } = await sb.from('sponsor_page_content').upsert({ id:1, headline:null, intro:null, updated_at: new Date().toISOString() });
+  const { error } = await sb.from('sponsor_page_content').upsert({ id:1, headline:'', intro:'', updated_at: new Date().toISOString() });
   if(error){ el('spintro_status').textContent=error.message; return; }
   el('spintro_status').textContent='✓ Cleared — intro hidden on sponsor page';
   setTimeout(()=>{ el('spintro_status').textContent=''; }, 3500);
@@ -4959,8 +4959,8 @@ el('gw_csv_import') && (el('gw_csv_import').onclick = async ()=>{
     const team = allTeams.find(t=>t.name.toLowerCase()===teamName_.toLowerCase());
     if(!team){ errors.push(`Week ${num}: team "${teamName_}" not found`); skipped++; continue; }
     // Create fixture
-    const { error:fErr } = await sb.from('fixtures').insert({ gameweek_id:gw.id, team_id:team.id, opponent, home_away:homeAway, status:'upcoming' });
-    if(fErr){ errors.push(`Week ${num} ${teamName_}: ${fErr.message}`); continue; }
+    const { error:fErr } = await sb.from('fixtures').insert({ gameweek_id:gw.id, team_id:team.id, opponent, home_away:homeAway, status:'upcoming' }, { ignoreDuplicates: true });
+    if(fErr){ if(fErr.code==='23505'){ skipped++; continue; } errors.push(`Week ${num} ${teamName_}: ${fErr.message}`); continue; }
     created++;
   }
   let msg = `Imported ${created} fixture${created!==1?'s':''}.`;
