@@ -342,6 +342,88 @@
   .sponsor-carousel-item img{max-height:40px;max-width:110px;object-fit:contain;filter:grayscale(15%)}
   @keyframes sponsorScroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
   @media (prefers-reduced-motion: reduce){.sponsor-carousel-track{animation:none}}
+
+  /* ── FIXTURES TAB ─────────────────────────────────────── */
+  .fix-gw-card{background:var(--card);border:1.5px solid var(--line);border-radius:14px;margin-bottom:14px;overflow:hidden}
+  .fix-gw-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;cursor:pointer;user-select:none}
+  .fix-gw-header:active{background:var(--paper)}
+  .fix-gw-title{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:1.05rem;color:var(--navy);letter-spacing:.02em}
+  .fix-gw-meta{font-size:.75rem;color:var(--muted);margin-top:1px}
+  .fix-gw-caret{color:var(--gold);font-size:.9rem;transition:transform .15s;flex-shrink:0}
+  .fix-gw-card.open .fix-gw-caret{transform:rotate(180deg)}
+  .fix-gw-body{display:none;border-top:1px solid var(--line)}
+  .fix-gw-card.open .fix-gw-body{display:block}
+  .fix-comp-badge{font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;padding:2px 7px;border-radius:6px;background:var(--paper);color:var(--muted);border:1px solid var(--line);flex-shrink:0}
+  .fix-comp-badge.league{background:#eef2ff;color:#3b5ccc;border-color:#c5d0f7}
+  .fix-comp-badge.cup{background:#fef3e2;color:#b45309;border-color:#f5d99b}
+  .fix-comp-badge.friendly{background:#f0faf4;color:#1d7a4c;border-color:#b2dfc5}
+  .fix-tbc{color:var(--muted);font-style:italic;font-size:.82rem}
+  .fix-result{font-size:.8rem;font-weight:800;padding:2px 8px;border-radius:6px;display:inline-block}
+  .fix-result.win{background:#e1f3e8;color:#1d7a4c}
+  .fix-result.loss{background:#fbe3e1;color:var(--crimson)}
+  .fix-result.draw{background:#fff3d6;color:#8a6215}
+  .fix-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;gap:8px}
+  .fix-nav-btn{background:var(--card);border:1.5px solid var(--line);border-radius:10px;padding:8px 18px;font-weight:700;font-size:.85rem;color:var(--navy);cursor:pointer}
+  .fix-nav-btn:disabled{opacity:.35;cursor:not-allowed}
+  .fix-nav-label{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:1rem;color:var(--navy);text-align:center;flex:1}
+  /* upcoming table + card table (shared style) */
+  .fix-upcoming{background:var(--card);border:1.5px solid var(--line);border-radius:14px;overflow:hidden;margin-bottom:16px}
+  .fix-upcoming-hdr{padding:12px 16px 10px;border-bottom:1px solid var(--line);background:linear-gradient(135deg,var(--navy),#2a3f6a)}
+  .fix-upcoming-title{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:1.1rem;color:#fff}
+  .fix-upcoming-sub{font-size:.75rem;color:rgba(255,255,255,.65);margin-top:2px}
+  .fix-table{width:100%;border-collapse:collapse;font-size:.82rem}
+  .fix-table thead tr{background:var(--navy)}
+  .fix-table th{padding:8px 12px;text-align:left;font-size:.68rem;text-transform:uppercase;letter-spacing:.07em;color:rgba(255,255,255,.75);font-weight:700}
+  .fix-table td{padding:9px 12px;border-bottom:1px solid var(--line);color:var(--ink)}
+  .fix-table tr:last-child td{border-bottom:none}
+  .fix-table td:first-child{font-weight:700;color:var(--navy)}
+  /* form table */
+  .fix-form-table{width:100%;border-collapse:collapse;font-size:.82rem}
+  .fix-form-table thead tr{background:var(--navy)}
+  .fix-form-table th{padding:8px 12px;text-align:left;font-size:.68rem;text-transform:uppercase;letter-spacing:.07em;color:rgba(255,255,255,.75);font-weight:700}
+  .fix-form-table th:not(:first-child){text-align:center}
+  .fix-form-table td{padding:9px 12px;border-bottom:1px solid var(--line);color:var(--ink)}
+  .fix-form-table tr:last-child td{border-bottom:none}
+  .fix-form-table td:first-child{font-weight:700;color:var(--navy)}
+  .fix-form-table td:not(:first-child){text-align:center}
+  .form-dot{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;font-size:.65rem;font-weight:800;color:#fff;flex-shrink:0}
+  .form-dot.W{background:#1d7a4c}
+  .form-dot.L{background:var(--crimson)}
+  .form-dot.D{background:#8a6215}
+  .form-dot.blank{background:#e8e8e8;color:transparent}
+  .form-dots{display:flex;gap:3px;justify-content:center;flex-wrap:nowrap}
+  /* section bridge */
+  .fix-bridge{background:linear-gradient(135deg,var(--navy),#2a3f6a);border-radius:12px;padding:12px 16px;margin:4px 0 14px;color:rgba(255,255,255,.85);font-size:.82rem;line-height:1.5;text-align:center}
+  .fix-bridge strong{color:#fff;font-family:'Barlow Condensed',sans-serif;font-size:.95rem;display:block;margin-bottom:2px}
+  /* fixture stats modal */
+  .fxm-overlay{position:fixed;inset:0;z-index:1200;background:rgba(0,0,0,.55);display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s}
+  .fxm-overlay.show{opacity:1;pointer-events:auto}
+  .fxm-sheet{background:#fff;border-radius:20px 20px 0 0;width:100%;max-width:540px;max-height:88vh;overflow-y:auto;padding:0 0 env(safe-area-inset-bottom,12px);transform:translateY(100%);transition:transform .25s cubic-bezier(.32,.72,0,1)}
+  .fxm-overlay.show .fxm-sheet{transform:translateY(0)}
+  .fxm-handle{width:36px;height:4px;background:#ddd;border-radius:2px;margin:12px auto 0}
+  .fxm-head{padding:14px 18px 12px;border-bottom:1px solid var(--line)}
+  .fxm-fixture{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:1.2rem;color:var(--navy)}
+  .fxm-sub{font-size:.78rem;color:var(--muted);margin-top:2px}
+  .fxm-score{font-family:'Barlow Condensed',sans-serif;font-size:2rem;font-weight:900;color:var(--crimson);margin-top:4px}
+  .fxm-section{padding:12px 18px 4px;border-bottom:1px solid var(--line)}
+  .fxm-section-title{font-size:.65rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:700;margin-bottom:8px}
+  .fxm-top3{display:flex;gap:8px;margin-bottom:8px}
+  .fxm-hero{flex:1;background:var(--paper);border-radius:10px;padding:10px 8px;text-align:center;cursor:pointer}
+  .fxm-hero:active{background:#ece8e2}
+  .fxm-hero-pts{font-family:'Barlow Condensed',sans-serif;font-size:1.5rem;font-weight:900;color:var(--crimson)}
+  .fxm-hero-name{font-size:.75rem;font-weight:700;color:var(--navy);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .fxm-hero-how{font-size:.65rem;color:var(--muted);margin-top:3px;line-height:1.4}
+  .fxm-hero-medal{font-size:.9rem;margin-bottom:2px}
+  .fxm-player-row{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--line);cursor:pointer}
+  .fxm-player-row:last-child{border-bottom:none}
+  .fxm-player-row:active{background:var(--paper);margin:0 -18px;padding:7px 18px}
+  .fxm-player-avatar{width:32px;height:32px;border-radius:50%;object-fit:cover;flex-shrink:0}
+  .fxm-player-initials{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.7rem;color:#fff;flex-shrink:0}
+  .fxm-player-name{flex:1;font-size:.85rem;font-weight:600;color:var(--navy)}
+  .fxm-player-pts{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:1rem;color:var(--crimson)}
+  .fxm-player-tags{display:flex;gap:4px;flex-wrap:wrap;margin-top:2px}
+  .fxm-tag{font-size:.6rem;font-weight:700;text-transform:uppercase;padding:1px 6px;border-radius:4px;background:#ececec;color:var(--muted)}
+  .fxm-tag.gold{background:#fff3d6;color:#8a6215}
 </style>
   <!-- PWA / Home Screen icon — upload a 180x180 PNG to /images/ons-crest.png for best results -->
   <link rel="apple-touch-icon" href="https://fantasyrugby.uk/images/ons-crest.png">
@@ -388,9 +470,6 @@
       <input id="email" type="email" autocomplete="email" inputmode="email">
       <label for="pw">Password</label>
       <input id="pw" type="password" autocomplete="current-password">
-      <label class="inline" id="rememberWrap" style="margin-top:10px; font-size:.85rem; color:var(--muted); display:flex; align-items:center; gap:8px">
-        <input type="checkbox" id="rememberMe" checked style="width:auto"> Keep me signed in on this device
-      </label>
       <p style="margin-top:8px; font-size:.82rem" id="forgotWrap">
         <button class="linkbtn" id="forgotBtn" type="button">Forgot your password?</button>
       </p>
@@ -532,6 +611,53 @@
       </details>
       <div id="teamHead"></div>
       <div id="picker"></div>
+    </section>
+
+    <section id="fixtures">
+      <div id="fixturesSponsorTop"></div>
+      <!-- Upcoming gameweek table -->
+      <div class="fix-upcoming" id="fixUpcoming" style="display:none">
+        <div class="fix-upcoming-hdr">
+          <div class="fix-upcoming-title" id="fixUpcomingTitle">This week's fixtures</div>
+          <div class="fix-upcoming-sub" id="fixUpcomingSub"></div>
+        </div>
+        <div style="overflow-x:auto">
+          <table class="fix-table">
+            <thead><tr><th>Team</th><th>Opposition</th><th>H/A</th><th>Type</th></tr></thead>
+            <tbody id="fixUpcomingBody"></tbody>
+          </table>
+        </div>
+      </div>
+      <!-- Gameweek navigator -->
+      <div class="fix-bridge">
+        <strong>📅 Navigate the season</strong>
+        Use the arrows to look back at results and form, or forward to upcoming fixtures. Tap any scored result to see player stats.
+      </div>
+      <div class="fix-nav">
+        <button class="fix-nav-btn" id="fixPrevBtn">◀</button>
+        <div class="fix-nav-label" id="fixNavLabel">Week —</div>
+        <button class="fix-nav-btn" id="fixNextBtn">▶</button>
+      </div>
+      <!-- Gameweek cards rendered here -->
+      <div id="fixCards"></div>
+      <!-- Team form table -->
+      <div class="fix-upcoming" id="fixForm" style="display:none;margin-top:4px">
+        <div class="fix-upcoming-hdr">
+          <div class="fix-upcoming-title">Team form</div>
+          <div class="fix-upcoming-sub" id="fixFormSub"></div>
+        </div>
+        <div style="overflow-x:auto">
+          <table class="fix-form-table">
+            <thead><tr id="fixFormHdrRow"><th>Team</th></tr></thead>
+            <tbody id="fixFormBody"></tbody>
+          </table>
+        </div>
+      </div>
+      <div id="fixturesSponsorBot"></div>
+      <div class="sponsor-carousel-wrap" id="sponsorCarouselWrap_fixtures" style="display:none">
+        <p class="sponsor-carousel-title">Thank you to our sponsors</p>
+        <div class="sponsor-carousel" id="sponsorCarousel_fixtures"></div>
+      </div>
     </section>
 
     <section id="table">
@@ -772,6 +898,10 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
       My Team
     </button>
+    <button data-tab="fixtures">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01M16 18h.01"/></svg>
+      Fixtures
+    </button>
     <button data-tab="table">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
       Leaderboard
@@ -864,14 +994,11 @@ function nameHtml(p){ return p.nickname ? `${esc(p.name)} <span style="font-styl
 // ── Onboarding walkthrough ──────────────────────────────────────
 const ONBOARD_SEEN_KEY = 'onboard_seen_v1';
 let onboardSlideIdx = 0;
+let gwDeadlineText = 'Friday at 22:00'; // set from the next gameweek deadline in loadSettings()
 function onboardSlideContent(){
   const transfers = (settings?.transfers_per_week!=null) ? settings.transfers_per_week : 2;
   const transferWord = transfers===1 ? 'free transfer' : 'free transfers';
-  let deadlineText = 'Friday at 22:00';
-  if(settings?.deadline_weekday!=null && settings?.deadline_time){
-    const days=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-    deadlineText = (days[settings.deadline_weekday]||'Friday') + ' at ' + settings.deadline_time.slice(0,5);
-  }
+  const deadlineText = gwDeadlineText;
   return [
     { icon:'🏉', title:'Welcome to the game', body:`Pick a squad of real ONs players. They score you points based on how they actually play each week — the better they do on the pitch, the higher you climb the table.` },
     { icon:'📋', title:'Build your squad', body:`Choose <b>7 starters</b> (4 forwards + 3 backs) and <b>3 bench</b> players, all within your budget. No position rule on the bench — pick anyone.` },
@@ -1400,7 +1527,6 @@ el('switchBtn').onclick = ()=>{
   el('switchText').textContent = up?'Already registered? ':'New here? ';
   el('switchBtn').textContent = up?'Sign in':'Create an account';
   el('authMsg').textContent='';
-  el('rememberWrap').classList.toggle('hide',up);
   el('forgotWrap').classList.toggle('hide',up);
 };
 el('authBtn').onclick = async ()=>{
@@ -1419,10 +1545,6 @@ el('authBtn').onclick = async ()=>{
     el('authMsg').textContent='Signing in…';
     const { data, error } = await sb.auth.signInWithPassword({ email, password:pw });
     if(error){ el('authMsg').textContent=error.message; return; }
-    // "Keep me signed in" — if unchecked, sign out automatically when this tab/browser closes
-    if(!el('rememberMe').checked){
-      window.addEventListener('pagehide', ()=>{ try{ sb.auth.signOut(); }catch(e){} });
-    }
     await afterLogin(data.user);
   }
 };
@@ -1548,8 +1670,9 @@ function navTo(tab){
   const btn = document.querySelector(`.tab-bar button[data-tab="${tab}"]`);
   if(btn) btn.classList.add('active');
   const sec = el(tab); if(sec) sec.classList.add('active');
-  if(tab==='team')    { renderPicker(); }
-  if(tab==='table')   { loadLeaderboard(); loadMyPoints(); }
+  if(tab==='team')     { renderPicker(); }
+  if(tab==='fixtures') { loadFixturesTab(); }
+  if(tab==='table')    { loadLeaderboard(); loadMyPoints(); }
   if(tab==='players') { reloadMgrPlayerStats(); }
   if(tab==='totw')    { loadMgrTotw(); }
   if(tab==='duty')    { loadDutyForm(); }
@@ -1616,6 +1739,7 @@ async function loadSponsorBanner(){
 
   const pages = [
     { key:'team',        topEl:'sponsorBanner',      botEl:'sponsorFooter',       carouselSuffix:'team' },
+    { key:'fixtures',    topEl:'fixturesSponsorTop', botEl:'fixturesSponsorBot',  carouselSuffix:'fixtures' },
     { key:'leaderboard', topEl:'lbSponsorTop',       botEl:'lbSponsorBot',        carouselSuffix:'leaderboard' },
     { key:'players',     topEl:'playersSponsorTop',  botEl:'playersSponsorBot',   carouselSuffix:'players' },
     { key:'totw',        topEl:'totwSponsorTop',     botEl:'totwSponsorBot',      carouselSuffix:'totw' },
@@ -1773,11 +1897,23 @@ async function loadSettings(){  const {data}=await sb.from('app_settings').selec
   if(settings){
     const n = settings.transfers_per_week;
     el('howtoTransfers').textContent = n + (n===1?' free transfer':' free transfers');
-    const days=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-    const dayName = days[settings.deadline_weekday] || 'Friday';
-    const time = (settings.deadline_time||'22:00').slice(0,5);
-    el('howtoDeadline').textContent = dayName + ' at ' + time;
   }
+  // Deadline: prefer the actual next gameweek deadline (same source as the Week banner),
+  // then the app_settings template, then a default.
+  const days=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  let dl=null;
+  try{
+    const nowMs=Date.now();
+    const {data:gws}=await sb.from('gameweeks').select('deadline_at,status,number').order('number');
+    const ag=(gws||[]).find(g=>g.deadline_at && new Date(g.deadline_at).getTime()>nowMs && (g.status==='upcoming'||g.status==='open'));
+    if(ag) dl=new Date(ag.deadline_at);
+  }catch(e){}
+  if(dl){
+    gwDeadlineText = days[dl.getDay()] + ' at ' + dl.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',hour12:false});
+  } else if(settings && settings.deadline_weekday!=null && settings.deadline_time){
+    gwDeadlineText = (days[settings.deadline_weekday]||'Friday') + ' at ' + settings.deadline_time.slice(0,5);
+  }
+  if(el('howtoDeadline')) el('howtoDeadline').textContent = gwDeadlineText;
 }
 async function loadPlayers(){
   const seasonId = settings?.current_season || 'Season 1';
@@ -2099,7 +2235,7 @@ async function reloadMgrPlayerStats(){
       {key:'cons',   lbl:'Cons',  count:s.conversions||0, rate:rule('conversion'), sub:(s.conversions||0)*rule('conversion')},
       {key:'pens',   lbl:'Pens',  count:s.penalties||0,   rate:rule('penalty'),    sub:(s.penalties||0)*rule('penalty')},
       {key:'drops',  lbl:'Drops', count:s.drop_goals||0,  rate:rule('drop_goal'),  sub:(s.drop_goals||0)*rule('drop_goal')},
-      {key:'mom',    lbl:'MoM',   count:s.mom_count||0,   rate:rule('mom'),        sub:(s.mom_count||0)*rule('mom')},
+      {key:'mom',    lbl:'PoM',   count:s.mom_count||0,   rate:rule('mom'),        sub:(s.mom_count||0)*rule('mom')},
       {key:'dom',    lbl:'DoM',   count:s.dom_count||0,   rate:rule('dom'),        sub:(s.dom_count||0)*rule('dom')},
       {key:'wins',   lbl:'Wins',  count:s.wins||0,        rate:rule('win'),        sub:(s.wins||0)*rule('win')},
       {key:'yellows',lbl:'Yellow',count:s.yellows||0,     rate:rule('yellow'),     sub:(s.yellows||0)*rule('yellow')},
@@ -2151,7 +2287,7 @@ function renderMgrPlayerStats(){
           ${p.conversions?`<span>Cons <b>${p.conversions}</b></span>`:''}
           ${p.penalties?`<span>Pens <b>${p.penalties}</b></span>`:''}
           ${p.drop_goals?`<span>DGs <b>${p.drop_goals}</b></span>`:''}
-          ${p.mom?`<span>MoM <b>${p.mom}</b></span>`:''}
+          ${p.mom?`<span>PoM <b>${p.mom}</b></span>`:''}
           ${p.dom?`<span>DoM <b>${p.dom}</b></span>`:''}
           ${p.wins?`<span>Wins <b>${p.wins}</b></span>`:''}
           ${p.yellows?`<span style="color:#b45309">Yellows <b>${p.yellows}</b></span>`:''}
@@ -2196,7 +2332,7 @@ async function renderMgrTotw(){
       {key:'cons',   lbl:'Cons',  count:s.conversions||0, rate:rule('conversion'), sub:(s.conversions||0)*rule('conversion')},
       {key:'pens',   lbl:'Pens',  count:s.penalties||0,   rate:rule('penalty'),    sub:(s.penalties||0)*rule('penalty')},
       {key:'drops',  lbl:'Drops', count:s.drop_goals||0,  rate:rule('drop_goal'),  sub:(s.drop_goals||0)*rule('drop_goal')},
-      {key:'mom',    lbl:'MoM',   count:s.is_mom?1:0,     rate:rule('mom'),        sub:(s.is_mom?1:0)*rule('mom')},
+      {key:'mom',    lbl:'PoM',   count:s.is_mom?1:0,     rate:rule('mom'),        sub:(s.is_mom?1:0)*rule('mom')},
       {key:'dom',    lbl:'DoM',   count:s.is_dom?1:0,     rate:rule('dom'),        sub:(s.is_dom?1:0)*rule('dom')},
       {key:'wins',   lbl:'Wins',  count:(s.fixtures.result==='win')?1:0, rate:rule('win'), sub:((s.fixtures.result==='win')?1:0)*rule('win')},
       {key:'yellows',lbl:'Yellow',count:s.yellows||0,     rate:rule('yellow'),     sub:(s.yellows||0)*rule('yellow')},
@@ -2237,7 +2373,7 @@ async function renderMgrTotw(){
         ${avatarHtml(r.p,'avatar-sm')}
         <span style="flex:1; font-weight:600; font-size:.9rem; text-align:left">${nameHtml(r.p)}
           <span style="font-weight:400; color:var(--muted); font-size:.75rem"> · ${esc(teamLabel(r.p))}</span>
-          ${r.is_mom?'<span class="wk-note">MoM</span>':''}${r.is_dom?'<span class="wk-note">DoM</span>':''}
+          ${r.is_mom?'<span class="wk-note">PoM</span>':''}${r.is_dom?'<span class="wk-note">DoM</span>':''}
         </span>
         ${r.p.sponsor_logo_url?`<img src="${esc(r.p.sponsor_logo_url)}" title="${esc(r.p.sponsor_name||'')}" style="height:20px; max-width:52px; object-fit:contain; opacity:.85; flex:0 0 auto; border-radius:3px">`:''}
         <span style="font-weight:800; color:var(--crimson); white-space:nowrap">${r.pts} pts</span>
@@ -2250,7 +2386,7 @@ async function renderMgrTotw(){
           ${r.conversions?`<span>Cons ×${r.conversions} <b>+${r.conversions*rule('conversion')}</b></span>`:''}
           ${r.penalties?`<span>Pens ×${r.penalties} <b>+${r.penalties*rule('penalty')}</b></span>`:''}
           ${r.drop_goals?`<span>DGs ×${r.drop_goals} <b>+${r.drop_goals*rule('drop_goal')}</b></span>`:''}
-          ${r.is_mom?`<span>MoM <b>+${rule('mom')}</b></span>`:''}
+          ${r.is_mom?`<span>PoM <b>+${rule('mom')}</b></span>`:''}
           ${r.is_dom?`<span>DoM <b>+${rule('dom')}</b></span>`:''}
           ${r.yellows?`<span style="color:#b45309">Yellow <b>${rule('yellow')}</b></span>`:''}
           ${r.reds?`<span style="color:var(--crimson)">Red <b>${rule('red')}</b></span>`:''}
@@ -2689,7 +2825,7 @@ async function loadDutyForm(){
   <div class="card">
     <div class="eyebrow">Awards</div>
     <div class="row" style="display:flex; gap:10px">
-      <div style="flex:1"><label>Man of the Match</label><select id="duty_mom"></select></div>
+      <div style="flex:1"><label>Player of the Match</label><select id="duty_mom"></select></div>
       <div style="flex:1"><label>Defender of the Match</label><select id="duty_dom"></select></div>
     </div>
   </div>
@@ -2920,7 +3056,7 @@ function openPModal(p){
   el('pmStats').innerHTML = [
     {val: p.pts||p.season_points||0, lbl:'Pts'},
     {val: p.tries||0,                lbl:'Tries'},
-    {val: momV,                      lbl:'MoM'},
+    {val: momV,                      lbl:'PoM'},
     {val: domV,                      lbl:'DoM'},
   ].map(s=>`<div class="pm-stat"><div class="pm-stat-val">${s.val}</div><div class="pm-stat-lbl">${s.lbl}</div></div>`).join('');
   // Full breakdown grid + audit line
@@ -2995,7 +3131,7 @@ async function loadPlayerSeasonHistory(playerId, position){
         {key:'cons',   lbl:'Cons',  count:s.conversions||0, rate:rule('conversion'), sub:(s.conversions||0)*rule('conversion')},
         {key:'pens',   lbl:'Pens',  count:s.penalties||0,   rate:rule('penalty'),    sub:(s.penalties||0)*rule('penalty')},
         {key:'drops',  lbl:'Drops', count:s.drop_goals||0,  rate:rule('drop_goal'),  sub:(s.drop_goals||0)*rule('drop_goal')},
-        {key:'mom',    lbl:'MoM',   count:s.is_mom?1:0,     rate:rule('mom'),        sub:(s.is_mom?1:0)*rule('mom')},
+        {key:'mom',    lbl:'PoM',   count:s.is_mom?1:0,     rate:rule('mom'),        sub:(s.is_mom?1:0)*rule('mom')},
         {key:'dom',    lbl:'DoM',   count:s.is_dom?1:0,     rate:rule('dom'),        sub:(s.is_dom?1:0)*rule('dom')},
         {key:'win',    lbl:'Win',   count:s.fixtures.result==='win'?1:0, rate:rule('win'), sub:(s.fixtures.result==='win'?1:0)*rule('win')},
         {key:'yellow', lbl:'Yellow',count:s.yellows||0,     rate:rule('yellow'),     sub:(s.yellows||0)*rule('yellow')},
@@ -3061,7 +3197,280 @@ async function openMModal(m){
   el('mmExtra').innerHTML = extra;
 }
 function closeMModal(){ el('managerModal').classList.remove('show'); unlockBodyScroll(); }
-document.addEventListener('keydown', e=>{ if(e.key==='Escape'){ closePModal(); closeMModal(); } });
+document.addEventListener('keydown', e=>{ if(e.key==='Escape'){ closePModal(); closeMModal(); closeFixModal(); } });
+
+// ══════════════════════════════════════════════════════════════
+// FIXTURES TAB
+// ══════════════════════════════════════════════════════════════
+let allFixData = [];      // all fixtures with gameweek info
+let allGwData  = [];      // all gameweeks
+let fixGwIndex = 0;       // index into sorted allGwData for the navigator
+let fixRules   = null;    // scoring rules (loaded once)
+
+async function loadFixturesTab(){
+  // Load everything in parallel
+  const [{ data:gws }, { data:fixes }, { data:rules }] = await Promise.all([
+    sb.from('gameweeks').select('*').order('number'),
+    sb.from('fixtures').select('*, gameweeks(id,number,deadline_at,status)').order('gameweek_id'),
+    sb.from('scoring_rules').select('*')
+  ]);
+  allGwData  = (gws||[]).sort((a,b)=>a.number-b.number);
+  allFixData = fixes||[];
+  fixRules   = rules||[];
+
+  // Start on the current/next active week
+  const now = Date.now();
+  let startIdx = allGwData.findIndex(g=>{
+    const dl = g.deadline_at ? new Date(g.deadline_at).getTime() : 0;
+    return dl > now || g.status==='open' || g.status==='upcoming';
+  });
+  if(startIdx<0) startIdx = allGwData.length-1;
+  if(startIdx<0) startIdx = 0;
+  fixGwIndex = startIdx;
+
+  renderFixUpcoming();
+  renderFixNav();
+  renderFixCards();
+  renderFixForm();
+}
+
+function fixRule(code){
+  const r=(fixRules||[]).find(x=>x.event_code===code); return r?r.points:0;
+}
+
+function fixCompClass(type){
+  if(!type) return '';
+  const t=type.toLowerCase();
+  if(t==='league') return 'league';
+  if(t==='cup') return 'cup';
+  if(t==='friendly') return 'friendly';
+  return '';
+}
+
+function fixCompLabel(f){
+  if(f.competition_type==='other' && f.competition) return esc(f.competition);
+  if(f.competition_type) return esc(f.competition_type.charAt(0).toUpperCase()+f.competition_type.slice(1));
+  return '';
+}
+
+function renderFixUpcoming(){
+  const now = Date.now();
+  const active = allGwData.find(g=>{
+    const dl = g.deadline_at ? new Date(g.deadline_at).getTime() : 0;
+    return g.status==='open' || g.status==='upcoming' || dl>now;
+  }) || allGwData[allGwData.length-1];
+  if(!active){ el('fixUpcoming').style.display='none'; return; }
+  const fixes = allFixData.filter(f=>f.gameweek_id===active.id);
+  const teams = (allTeams||[]).filter(t=>t.active).sort((a,b)=>a.sort_order-b.sort_order);
+  el('fixUpcomingTitle').textContent = `Week ${active.number} — Fixtures`;
+  const dl = active.deadline_at ? new Date(active.deadline_at) : null;
+  el('fixUpcomingSub').textContent = dl ? `Deadline: ${dl.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'})} at ${dl.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',hour12:false})}` : '';
+  const byTeam={};
+  fixes.forEach(f=>{ if(f.team_id) byTeam[f.team_id]=f; });
+  el('fixUpcomingBody').innerHTML = teams.map(t=>{
+    const f=byTeam[t.id];
+    const opp=f?.opponent||'TBC';
+    const isTbc=!f||opp==='TBC';
+    const ha=f?.home_away??(isTbc?'':' ');
+    const comp=f?fixCompLabel(f):'';
+    const compCls=f?fixCompClass(f.competition_type):'';
+    return `<tr>
+      <td>${esc(t.name)}</td>
+      <td class="${isTbc?'fix-tbc':''}">${isTbc?'TBC':esc(opp)}</td>
+      <td style="text-transform:uppercase;font-size:.72rem;color:var(--muted)">${esc(ha)}</td>
+      <td>${comp?`<span class="fix-comp-badge ${compCls}">${comp}</span>`:''}</td>
+    </tr>`;
+  }).join('');
+  el('fixUpcoming').style.display='';
+}
+
+function renderFixNav(){
+  const gw = allGwData[fixGwIndex];
+  el('fixNavLabel').textContent = gw ? `Week ${gw.number}` : '—';
+  el('fixPrevBtn').disabled = fixGwIndex<=0;
+  el('fixNextBtn').disabled = fixGwIndex>=allGwData.length-1;
+}
+
+function renderFixCards(){
+  const gw = allGwData[fixGwIndex];
+  if(!gw){ el('fixCards').innerHTML='<div class="empty">No gameweeks yet.</div>'; return; }
+  const fixes = allFixData.filter(f=>f.gameweek_id===gw.id);
+  const teams = (allTeams||[]).filter(t=>t.active).sort((a,b)=>a.sort_order-b.sort_order);
+  const isScored = gw.status==='scored';
+  const byTeam={};
+  fixes.forEach(f=>{ if(f.team_id) byTeam[f.team_id]=f; });
+  let rows='';
+  teams.forEach(t=>{
+    const f=byTeam[t.id];
+    const opp=f?.opponent||'TBC'; const isTbc=!f||opp==='TBC';
+    const ha=f?.home_away||'';
+    const comp=f?fixCompLabel(f):''; const compCls=f?fixCompClass(f.competition_type):'';
+    let resultHtml='';
+    if(isScored && f && f.our_score!=null && f.their_score!=null){
+      const res=f.result||'';
+      const cls=res==='win'?'win':res==='loss'?'loss':'draw';
+      resultHtml=`<span class="fix-result ${cls}">${f.our_score}–${f.their_score}</span>`;
+    }
+    const clickable = isScored && f && f.id;
+    rows+=`<tr ${clickable?`onclick="openFixModal('${f.id}','${esc(gw.number)}','${esc(t.name)}')" style="cursor:pointer"`:''}>
+      <td><b>${esc(t.name)}</b></td>
+      <td class="${isTbc?'fix-tbc':''}">${isTbc?'TBC':'<b>vs</b> '+esc(opp)}</td>
+      <td style="text-transform:uppercase;font-size:.72rem;color:var(--muted)">${esc(ha)}</td>
+      <td>${comp?`<span class="fix-comp-badge ${compCls}">${comp}</span>`:''}</td>
+      ${isScored?`<td>${resultHtml}</td>`:''}
+    </tr>`;
+  });
+  const dl = gw.deadline_at ? new Date(gw.deadline_at) : null;
+  const dlStr = dl ? dl.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'}) : '';
+  const statusBadge = isScored?'<span style="font-size:.68rem;font-weight:700;color:#1d7a4c;background:#e1f3e8;padding:2px 8px;border-radius:6px;margin-left:6px">Scored</span>':'';
+  const tableBody = rows ? `<div style="overflow-x:auto"><table class="fix-table">
+    <thead><tr><th>Team</th><th>Opposition</th><th>H/A</th><th>Type</th>${isScored?'<th>Result</th>':''}</tr></thead>
+    <tbody>${rows}</tbody>
+  </table></div>` : '<div class="empty" style="padding:14px 16px">No fixtures set for this week.</div>';
+  el('fixCards').innerHTML=`<div class="fix-gw-card open">
+    <div class="fix-gw-header" onclick="this.closest('.fix-gw-card').classList.toggle('open')">
+      <div>
+        <div class="fix-gw-title">Week ${gw.number}${statusBadge}</div>
+        <div class="fix-gw-meta">${dlStr}${isScored?' · Tap a result to see player stats':''}</div>
+      </div>
+      <span class="fix-gw-caret">▼</span>
+    </div>
+    <div class="fix-gw-body">${tableBody}</div>
+  </div>`;
+}
+
+el('fixPrevBtn').onclick=()=>{ if(fixGwIndex>0){fixGwIndex--;renderFixNav();renderFixCards();} };
+el('fixNextBtn').onclick=()=>{ if(fixGwIndex<allGwData.length-1){fixGwIndex++;renderFixNav();renderFixCards();} };
+
+function renderFixForm(){
+  const scored = allGwData.filter(g=>g.status==='scored');
+  if(!scored.length){ el('fixForm').style.display='none'; return; }
+  const MAX=8;
+  const weeks = scored.slice(-MAX);
+  const teams = (allTeams||[]).filter(t=>t.active).sort((a,b)=>a.sort_order-b.sort_order);
+  const resultMap={};
+  allFixData.forEach(f=>{
+    if(f.result) resultMap[`${f.gameweek_id}_${f.team_id}`]=f.result;
+  });
+  const hdrCells = weeks.map(w=>`<th>Wk${w.number}</th>`).join('');
+  el('fixFormHdrRow').innerHTML=`<th>Team</th>${hdrCells}`;
+  el('fixFormBody').innerHTML = teams.map(t=>{
+    const dots = weeks.map(w=>{
+      const r=resultMap[`${w.id}_${t.id}`];
+      const letter=r==='win'?'W':r==='loss'?'L':r==='draw'?'D':null;
+      if(!letter) return `<span class="form-dot blank" title="No fixture">·</span>`;
+      const tip=letter==='W'?'Win':letter==='L'?'Loss':'Draw';
+      return `<span class="form-dot ${letter}" title="${tip}">${letter}</span>`;
+    }).join('');
+    return `<tr><td>${esc(t.name)}</td><td><div class="form-dots">${dots}</div></td></tr>`;
+  }).join('');
+  el('fixFormSub').textContent=`Last ${weeks.length} scored week${weeks.length!==1?'s':''}`;
+  el('fixForm').style.display='';
+}
+
+// ── Fixture stats modal ──────────────────────────────────────
+async function openFixModal(fixtureId, gwNum, teamName){
+  const fxm = el('fixModal');
+  el('fxmFixture').textContent='Loading…';
+  el('fxmSub').textContent=''; el('fxmScore').style.display='none'; el('fxmBody').innerHTML='';
+  fxm.classList.add('show'); lockBodyScroll();
+
+  const [{ data:fix }, { data:stats }] = await Promise.all([
+    sb.from('fixtures').select('*').eq('id',fixtureId).single(),
+    sb.from('match_stats').select('*, players(id,name,nickname,position,avatar_url,team_id,sponsor_name,sponsor_logo_url,sponsor_link_url)')
+      .eq('fixture_id',fixtureId).eq('appeared',true)
+  ]);
+  if(!fix){ el('fxmFixture').textContent='Fixture not found'; return; }
+
+  const team = allTeams.find(t=>t.id===fix.team_id);
+  el('fxmFixture').textContent=`${teamName||team?.name||''} vs ${fix.opponent||''}`;
+  const comp=fixCompLabel(fix);
+  el('fxmSub').textContent=(fix.home_away?fix.home_away.toUpperCase()+' · ':'')+(comp||'');
+  if(fix.our_score!=null&&fix.their_score!=null){
+    const res=fix.result||'';
+    const col=res==='win'?'#1d7a4c':res==='loss'?'var(--crimson)':'#8a6215';
+    el('fxmScore').textContent=`${fix.our_score} – ${fix.their_score}`;
+    el('fxmScore').style.color=col; el('fxmScore').style.display='';
+  }
+
+  if(!stats||!stats.length){
+    el('fxmBody').innerHTML='<div class="fxm-section"><p class="muted" style="font-size:.85rem">No player stats recorded for this fixture yet.</p></div>';
+    return;
+  }
+
+  const rule=code=>fixRule(code);
+  const players=stats.map(s=>{
+    const p=s.players||{};
+    const pts=(s.appearances||1)*rule('appearance')
+      +(s.tries||0)*(p.position==='forward'?rule('try_forward'):rule('try_back'))
+      +(s.conversions||0)*rule('conversion')
+      +(s.penalties||0)*rule('penalty')
+      +(s.drop_goals||0)*rule('drop_goal')
+      +(s.is_mom?rule('mom'):0)
+      +(s.is_dom?rule('dom'):0)
+      +(fix.result==='win'?rule('win'):0)
+      +(s.yellows||0)*rule('yellow')
+      +(s.reds||0)*rule('red');
+    const tags=[];
+    if(s.is_mom) tags.push({lbl:'PoM',gold:true});
+    if(s.is_dom) tags.push({lbl:'DoM',gold:true});
+    if(s.tries>0) tags.push({lbl:`${s.tries} tr${s.tries>1?'ies':'y'}`});
+    if(s.conversions>0) tags.push({lbl:`${s.conversions} con`});
+    if(s.penalties>0) tags.push({lbl:`${s.penalties} pen`});
+    if(s.drop_goals>0) tags.push({lbl:`${s.drop_goals} drop`});
+    if(s.yellows>0) tags.push({lbl:`${s.yellows} yellow`});
+    if(s.reds>0) tags.push({lbl:`${s.reds} red`});
+    const howParts=[];
+    if((s.appearances||1)) howParts.push(`App+${rule('appearance')}`);
+    if(s.tries>0) howParts.push(`${s.tries}T+${(s.tries||0)*(p.position==='forward'?rule('try_forward'):rule('try_back'))}`);
+    if(s.conversions>0) howParts.push(`${s.conversions}C+${(s.conversions||0)*rule('conversion')}`);
+    if(s.penalties>0) howParts.push(`${s.penalties}P+${(s.penalties||0)*rule('penalty')}`);
+    if(s.is_mom) howParts.push(`PoM+${rule('mom')}`);
+    if(s.is_dom) howParts.push(`DoM+${rule('dom')}`);
+    if(fix.result==='win') howParts.push(`Win+${rule('win')}`);
+    if(s.yellows>0) howParts.push(`Yel${(s.yellows||0)*rule('yellow')}`);
+    if(s.reds>0) howParts.push(`Red${(s.reds||0)*rule('red')}`);
+    return {...s, p, pts, tags, how:howParts.join(' · ')};
+  }).sort((a,b)=>b.pts-a.pts);
+
+  const medals=['🥇','🥈','🥉'];
+  const top3Html=players.slice(0,3).map((pl,i)=>`
+    <div class="fxm-hero" onclick='openFixPlayerModal(${JSON.stringify({...pl.p,pts:pl.pts,tries:pl.tries,mom:pl.is_mom?1:0,dom:pl.is_dom?1:0})})'>
+      <div class="fxm-hero-medal">${medals[i]}</div>
+      <div class="fxm-hero-pts">${pl.pts} pts</div>
+      <div class="fxm-hero-name">${esc(pl.p.name||pl.p.nickname||'')}</div>
+      <div class="fxm-hero-how">${esc(pl.how)}</div>
+    </div>`).join('');
+
+  function avatarHtml(pl){
+    if(pl.p.avatar_url) return `<img class="fxm-player-avatar" src="${esc(pl.p.avatar_url)}" alt="">`;
+    const ini=(pl.p.name||'?').trim().split(/\s+/).map(w=>w[0]).slice(0,2).join('').toUpperCase();
+    const bg=pl.p.position==='forward'?'var(--crimson)':'var(--navy)';
+    return `<div class="fxm-player-initials" style="background:${bg}">${ini}</div>`;
+  }
+  const allHtml=players.map(pl=>`
+    <div class="fxm-player-row" onclick='openFixPlayerModal(${JSON.stringify({...pl.p,pts:pl.pts,tries:pl.tries,mom:pl.is_mom?1:0,dom:pl.is_dom?1:0})})'>
+      ${avatarHtml(pl)}
+      <div style="flex:1;min-width:0">
+        <div class="fxm-player-name">${esc(pl.p.name||'')}</div>
+        <div class="fxm-player-tags">${pl.tags.map(t=>`<span class="fxm-tag${t.gold?' gold':''}">${t.lbl}</span>`).join('')}</div>
+      </div>
+      <div class="fxm-player-pts">${pl.pts}</div>
+    </div>`).join('');
+
+  el('fxmBody').innerHTML=`
+    <div class="fxm-section">
+      <div class="fxm-section-title">Top performers</div>
+      <div class="fxm-top3">${top3Html}</div>
+    </div>
+    <div class="fxm-section" style="border-bottom:none">
+      <div class="fxm-section-title">All appeared (${players.length})</div>
+      ${allHtml}
+    </div>`;
+}
+
+function openFixPlayerModal(p){ closeFixModal(); setTimeout(()=>openPModal(p),50); }
+function closeFixModal(){ el('fixModal').classList.remove('show'); unlockBodyScroll(); }
 
 // ── Inactivity auto-logout (security) ──────────────────────────
 const IDLE_LIMIT_MS   = 15 * 60 * 1000; // 15 minutes to logout
@@ -3120,6 +3529,20 @@ boot();
       <div class="pm-stats pm-stats-3" id="mmStats"></div>
       <div id="mmExtra"></div>
     </div>
+  </div>
+</div>
+
+<!-- ── FIXTURE STATS MODAL ── -->
+<div class="fxm-overlay" id="fixModal" onclick="if(event.target===this)closeFixModal()">
+  <div class="fxm-sheet" id="fixModalSheet">
+    <div class="fxm-handle"></div>
+    <div class="fxm-head">
+      <div class="fxm-fixture" id="fxmFixture">vs Opponent</div>
+      <div class="fxm-sub" id="fxmSub"></div>
+      <div class="fxm-score" id="fxmScore" style="display:none"></div>
+    </div>
+    <div id="fxmBody"></div>
+    <div style="height:16px"></div>
   </div>
 </div>
 
