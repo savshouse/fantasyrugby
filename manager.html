@@ -353,6 +353,8 @@
   .fix-gw-card.open .fix-gw-caret{transform:rotate(180deg)}
   .fix-gw-body{display:none;border-top:1px solid var(--line)}
   .fix-gw-card.open .fix-gw-body{display:block}
+  .fix-card-table{table-layout:fixed}
+  .fix-card-table td{overflow:hidden;text-overflow:ellipsis}
   .fix-row{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;border-bottom:1px solid var(--line);gap:8px}
   .fix-row:last-child{border-bottom:none}
   .fix-team{font-size:.8rem;font-weight:700;color:var(--navy);min-width:80px;flex-shrink:0}
@@ -3294,7 +3296,11 @@ function renderFixCards(){
   const dl = gw.deadline_at ? new Date(gw.deadline_at) : null;
   const dlStr = dl ? dl.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'}) : '';
   const statusBadge = isScored?'<span style="font-size:.68rem;font-weight:700;color:#1d7a4c;background:#e1f3e8;padding:2px 8px;border-radius:6px;margin-left:6px">Scored</span>':'';
-  const tableBody = rows ? `<div style="overflow-x:auto"><table class="fix-table">
+  const colgroup = isScored
+    ? '<colgroup><col style="width:16%"><col style="width:39%"><col style="width:11%"><col style="width:16%"><col style="width:18%"></colgroup>'
+    : '<colgroup><col style="width:20%"><col style="width:48%"><col style="width:14%"><col style="width:18%"></colgroup>';
+  const tableBody = rows ? `<div style="overflow-x:auto"><table class="fix-table fix-card-table">
+    ${colgroup}
     <thead><tr><th>Team</th><th>Opposition</th><th>H/A</th><th>Type</th>${isScored?'<th>Result</th>':''}</tr></thead>
     <tbody>${rows}</tbody>
   </table></div>` : '<div class="empty" style="padding:14px 16px">No fixtures set for this week.</div>';
