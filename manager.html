@@ -373,14 +373,33 @@
   .fix-nav-label{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:1rem;color:var(--navy);text-align:center;flex:1}
   /* upcoming table */
   .fix-upcoming{background:var(--card);border:1.5px solid var(--line);border-radius:14px;overflow:hidden;margin-bottom:16px}
-  .fix-upcoming-hdr{padding:12px 16px;border-bottom:1px solid var(--line)}
-  .fix-upcoming-title{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:1.1rem;color:var(--navy)}
-  .fix-upcoming-sub{font-size:.75rem;color:var(--muted);margin-top:2px}
+  .fix-upcoming-hdr{padding:12px 16px 10px;border-bottom:1px solid var(--line);background:linear-gradient(135deg,var(--navy),#2a3f6a)}
+  .fix-upcoming-title{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:1.1rem;color:#fff}
+  .fix-upcoming-sub{font-size:.75rem;color:rgba(255,255,255,.65);margin-top:2px}
   .fix-table{width:100%;border-collapse:collapse;font-size:.82rem}
-  .fix-table th{padding:7px 12px;text-align:left;font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:700;border-bottom:1px solid var(--line)}
+  .fix-table thead tr{background:var(--navy)}
+  .fix-table th{padding:8px 12px;text-align:left;font-size:.68rem;text-transform:uppercase;letter-spacing:.07em;color:rgba(255,255,255,.75);font-weight:700}
   .fix-table td{padding:9px 12px;border-bottom:1px solid var(--line);color:var(--ink)}
   .fix-table tr:last-child td{border-bottom:none}
   .fix-table td:first-child{font-weight:700;color:var(--navy)}
+  /* form table */
+  .fix-form-table{width:100%;border-collapse:collapse;font-size:.82rem}
+  .fix-form-table thead tr{background:var(--navy)}
+  .fix-form-table th{padding:8px 12px;text-align:left;font-size:.68rem;text-transform:uppercase;letter-spacing:.07em;color:rgba(255,255,255,.75);font-weight:700}
+  .fix-form-table th:not(:first-child){text-align:center}
+  .fix-form-table td{padding:9px 12px;border-bottom:1px solid var(--line);color:var(--ink)}
+  .fix-form-table tr:last-child td{border-bottom:none}
+  .fix-form-table td:first-child{font-weight:700;color:var(--navy)}
+  .fix-form-table td:not(:first-child){text-align:center}
+  .form-dot{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;font-size:.65rem;font-weight:800;color:#fff;flex-shrink:0}
+  .form-dot.W{background:#1d7a4c}
+  .form-dot.L{background:var(--crimson)}
+  .form-dot.D{background:#8a6215}
+  .form-dot.blank{background:#e8e8e8;color:transparent}
+  .form-dots{display:flex;gap:3px;justify-content:center;flex-wrap:nowrap}
+  /* section bridge */
+  .fix-bridge{background:linear-gradient(135deg,var(--navy),#2a3f6a);border-radius:12px;padding:12px 16px;margin:4px 0 14px;color:rgba(255,255,255,.85);font-size:.82rem;line-height:1.5;text-align:center}
+  .fix-bridge strong{color:#fff;font-family:'Barlow Condensed',sans-serif;font-size:.95rem;display:block;margin-bottom:2px}
   /* fixture stats modal */
   .fxm-overlay{position:fixed;inset:0;z-index:1200;background:rgba(0,0,0,.55);display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s}
   .fxm-overlay.show{opacity:1;pointer-events:auto}
@@ -618,6 +637,10 @@
         </div>
       </div>
       <!-- Gameweek navigator -->
+      <div class="fix-bridge">
+        <strong>📅 Navigate the season</strong>
+        Use the arrows to look back at results and form, or forward to upcoming fixtures. Tap any scored result to see player stats.
+      </div>
       <div class="fix-nav">
         <button class="fix-nav-btn" id="fixPrevBtn">◀</button>
         <div class="fix-nav-label" id="fixNavLabel">Week —</div>
@@ -625,6 +648,19 @@
       </div>
       <!-- Gameweek cards rendered here -->
       <div id="fixCards"></div>
+      <!-- Team form table -->
+      <div class="fix-upcoming" id="fixForm" style="display:none;margin-top:4px">
+        <div class="fix-upcoming-hdr">
+          <div class="fix-upcoming-title">Team form</div>
+          <div class="fix-upcoming-sub" id="fixFormSub"></div>
+        </div>
+        <div style="overflow-x:auto">
+          <table class="fix-form-table">
+            <thead><tr id="fixFormHdrRow"><th>Team</th></tr></thead>
+            <tbody id="fixFormBody"></tbody>
+          </table>
+        </div>
+      </div>
       <div class="sponsor-carousel-wrap" id="sponsorCarouselWrap_fixtures" style="display:none">
         <p class="sponsor-carousel-title">Thank you to our sponsors</p>
         <div class="sponsor-carousel" id="sponsorCarousel_fixtures"></div>
@@ -3165,6 +3201,7 @@ async function loadFixturesTab(){
   renderFixUpcoming();
   renderFixNav();
   renderFixCards();
+  renderFixForm();
 }
 
 function fixRule(code){
@@ -3271,6 +3308,37 @@ function renderFixCards(){
 
 el('fixPrevBtn').onclick=()=>{ if(fixGwIndex>0){fixGwIndex--;renderFixNav();renderFixCards();} };
 el('fixNextBtn').onclick=()=>{ if(fixGwIndex<allGwData.length-1){fixGwIndex++;renderFixNav();renderFixCards();} };
+
+function renderFixForm(){
+  // Only scored gameweeks
+  const scored = allGwData.filter(g=>g.status==='scored');
+  if(!scored.length){ el('fixForm').style.display='none'; return; }
+  // Show last N scored weeks that fit — cap at 8 for mobile readability
+  const MAX=8;
+  const weeks = scored.slice(-MAX);
+  const teams = (allTeams||[]).filter(t=>t.active).sort((a,b)=>a.sort_order-b.sort_order);
+  // Build lookup: (gwId, teamId) → result
+  const resultMap={};
+  allFixData.forEach(f=>{
+    if(f.result) resultMap[`${f.gameweek_id}_${f.team_id}`]=f.result;
+  });
+  // Header row
+  const hdrCells = weeks.map(w=>`<th>Wk${w.number}</th>`).join('');
+  el('fixFormHdrRow').innerHTML=`<th>Team</th>${hdrCells}`;
+  // Body rows
+  el('fixFormBody').innerHTML = teams.map(t=>{
+    const dots = weeks.map(w=>{
+      const r=resultMap[`${w.id}_${t.id}`];
+      const letter=r==='win'?'W':r==='loss'?'L':r==='draw'?'D':null;
+      if(!letter) return `<span class="form-dot blank" title="No fixture">·</span>`;
+      const tip=letter==='W'?'Win':letter==='L'?'Loss':'Draw';
+      return `<span class="form-dot ${letter}" title="${tip}">${letter}</span>`;
+    }).join('');
+    return `<tr><td>${esc(t.name)}</td><td><div class="form-dots">${dots}</div></td></tr>`;
+  }).join('');
+  el('fixFormSub').textContent=`Last ${weeks.length} scored week${weeks.length!==1?'s':''}`;
+  el('fixForm').style.display='';
+}
 
 // ── Fixture stats modal ──────────────────────────────────────
 async function openFixModal(fixtureId, gwNum, teamName){
