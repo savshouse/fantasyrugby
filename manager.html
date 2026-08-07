@@ -3283,17 +3283,21 @@ function renderFixCards(){
       resultHtml=`<span class="fix-result ${cls}">${f.our_score}–${f.their_score}</span>`;
     }
     const clickable = isScored && f && f.id;
-    rows+=`<div class="fix-row${clickable?' fix-row-link':''}" ${clickable?`onclick="openFixModal('${f.id}','${esc(gw.number)}','${esc(t.name)}')" style="cursor:pointer"`:''}>
-      <span class="fix-team">${esc(t.name)}</span>
-      <span class="fix-opp ${isTbc?'fix-tbc':''}">${isTbc?'TBC':'<b>vs</b> '+esc(opp)}</span>
-      <span class="fix-ha">${esc(ha)}</span>
-      ${comp?`<span class="fix-comp-badge ${compCls}">${comp}</span>`:''}
-      ${resultHtml}
-    </div>`;
+    rows+=`<tr ${clickable?`onclick="openFixModal('${f.id}','${esc(gw.number)}','${esc(t.name)}')" style="cursor:pointer"`:''}>
+      <td><b>${esc(t.name)}</b></td>
+      <td class="${isTbc?'fix-tbc':''}">${isTbc?'TBC':'<b>vs</b> '+esc(opp)}</td>
+      <td style="text-transform:uppercase;font-size:.72rem;color:var(--muted)">${esc(ha)}</td>
+      <td>${comp?`<span class="fix-comp-badge ${compCls}">${comp}</span>`:''}</td>
+      <td>${resultHtml}</td>
+    </tr>`;
   });
   const dl = gw.deadline_at ? new Date(gw.deadline_at) : null;
   const dlStr = dl ? dl.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'}) : '';
   const statusBadge = isScored?'<span style="font-size:.68rem;font-weight:700;color:#1d7a4c;background:#e1f3e8;padding:2px 8px;border-radius:6px;margin-left:6px">Scored</span>':'';
+  const tableBody = rows ? `<div style="overflow-x:auto"><table class="fix-table">
+    <thead><tr><th>Team</th><th>Opposition</th><th>H/A</th><th>Type</th>${isScored?'<th>Result</th>':''}</tr></thead>
+    <tbody>${rows}</tbody>
+  </table></div>` : '<div class="empty" style="padding:14px 16px">No fixtures set for this week.</div>';
   el('fixCards').innerHTML=`<div class="fix-gw-card open">
     <div class="fix-gw-header" onclick="this.closest('.fix-gw-card').classList.toggle('open')">
       <div>
@@ -3302,7 +3306,7 @@ function renderFixCards(){
       </div>
       <span class="fix-gw-caret">▼</span>
     </div>
-    <div class="fix-gw-body">${rows||'<div class="empty" style="padding:14px 16px">No fixtures set for this week.</div>'}</div>
+    <div class="fix-gw-body">${tableBody}</div>
   </div>`;
 }
 
