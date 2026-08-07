@@ -4951,7 +4951,7 @@ el('gw_csv_import') && (el('gw_csv_import').onclick = async ()=>{
     // Find or create gameweek
     let gw = gameweeks.find(g=>g.number===num);
     if(!gw){
-      const { data:newGw, error:gwErr } = await sb.from('gameweeks').insert({ number:num, deadline, status:'upcoming' }).select().single();
+      const { data:newGw, error:gwErr } = await sb.from('gameweeks').insert({ number:num, deadline_at: deadline ? new Date(deadline.split('/').length===3 ? deadline.split('/')[1]+'/'+deadline.split('/')[0]+'/'+deadline.split('/')[2] : deadline).toISOString() : null, status:'upcoming', season_id: gameweeks[0]?.season_id||null }).select().single();
       if(gwErr){ errors.push(`Week ${num}: ${gwErr.message}`); continue; }
       gw = newGw; gameweeks.push(gw);
     }
