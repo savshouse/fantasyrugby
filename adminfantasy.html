@@ -4763,12 +4763,23 @@ function renderSponsorPlacements(){
     input.onchange = async ()=>{
       const pageKey = input.closest('[data-page]').dataset.page;
       const field = input.dataset.place;
-      const value = field==='show_carousel' ? input.checked : (input.value || null);
-      const { error } = await sb.from('sponsor_placements').update({ [field]: value, updated_at: new Date().toISOString() }).eq('page_key', pageKey);
-      if(error){ toast(error.message, true); return; }
+      let value;
+      if(field==='show_carousel') value=input.checked;
+      else if(field==='max_height') value=input.value?parseInt(input.value,10):null;
+      else value=input.value||null;
+      // Upsert: if no row exists yet for this page_key, insert one
+      const existing = allSponsorPlacements.find(p=>p.page_key===pageKey);
+      let error;
+      if(existing){
+        ({error}=await sb.from('sponsor_placements').update({[field]:value,updated_at:new Date().toISOString()}).eq('page_key',pageKey));
+      } else {
+        ({error}=await sb.from('sponsor_placements').insert({page_key:pageKey,[field]:value}));
+        if(!error) allSponsorPlacements.push({page_key:pageKey,[field]:value});
+      }
+      if(error){ toast(error.message,true); return; }
       toast('Saved');
-      const local = allSponsorPlacements.find(p=>p.page_key===pageKey);
-      if(local) local[field] = value;
+      const local=allSponsorPlacements.find(p=>p.page_key===pageKey);
+      if(local) local[field]=value;
     };
   });
 }
