@@ -586,6 +586,8 @@
         <div style="height:10px"></div>
         <label for="spinv_sponsorName">Sponsor name</label>
         <input id="spinv_sponsorName" placeholder="e.g. Acme Builders Ltd, or Mr John Smith">
+        <label for="spinv_contactName">Contact name <span style="font-weight:400; text-transform:none">(optional — who to address emails to)</span></label>
+        <input id="spinv_contactName" placeholder="e.g. John Smith">
         <div class="row">
           <div><label for="spinv_email">Email</label><input id="spinv_email" type="email" placeholder="optional"></div>
           <div><label for="spinv_phone">Phone</label><input id="spinv_phone" placeholder="optional"></div>
@@ -597,8 +599,8 @@
           <div><label for="spinv_invDate">Invoice date</label><input id="spinv_invDate" type="date"></div>
           <div><label for="spinv_dueDate">Due date</label><input id="spinv_dueDate" type="date"></div>
         </div>
-        <label for="spinv_notes">Notes (optional)</label>
-        <textarea id="spinv_notes" rows="2" placeholder="Internal notes — not shown on the invoice" style="font-size:16px;width:100%;padding:11px 12px;border:1.5px solid var(--line);border-radius:10px;font-family:'Inter',sans-serif;box-sizing:border-box;resize:vertical"></textarea>
+        <label for="spinv_notes">Notes (optional) <span style="font-weight:400; text-transform:none">— shown on the invoice</span></label>
+        <textarea id="spinv_notes" rows="2" placeholder="e.g. what this sponsor is getting — appears on the invoice" style="font-size:16px;width:100%;padding:11px 12px;border:1.5px solid var(--line);border-radius:10px;font-family:'Inter',sans-serif;box-sizing:border-box;resize:vertical"></textarea>
 
         <div style="height:18px; border-top:1px solid var(--line); margin-top:6px"></div>
         <div class="eyebrow" style="margin-top:14px">Items on this invoice</div>
@@ -696,7 +698,10 @@
         <label for="spintro_body">Intro paragraph</label>
         <textarea id="spintro_body" rows="3" placeholder="e.g. Support the club and get your brand in front of our members all season long."></textarea>
         <div style="height:12px"></div>
-        <button class="btn navy" id="spintro_save">Save intro</button>
+        <div class="row">
+          <button class="btn navy" id="spintro_save">Save intro</button>
+          <button class="btn sec" id="spintro_clear" type="button">Clear intro</button>
+        </div>
         <p class="muted" id="spintro_status" style="margin-top:8px; font-size:.82rem"></p>
       </details>
 
@@ -735,6 +740,21 @@
         <input id="sp_tag" placeholder="e.g. Proud sponsors of ONs' Fantasy">
         <label for="sp_color">Banner background colour <span style="text-transform:none;font-weight:400">(hex, e.g. #1B2A4A)</span></label>
         <input id="sp_color" placeholder="#1B2A4A" value="#1B2A4A" style="font-family:monospace">
+        <div class="row">
+          <div>
+            <label for="sp_mode">Display style</label>
+            <select id="sp_mode">
+              <option value="standard">Standard — image + text</option>
+              <option value="compact">Compact — smaller, image + text</option>
+              <option value="banner_only">Banner only — image, no text</option>
+            </select>
+          </div>
+          <div>
+            <label for="sp_maxh">Max height <span style="text-transform:none;font-weight:400">(px, optional)</span></label>
+            <input id="sp_maxh" type="number" inputmode="numeric" placeholder="auto" min="20" max="600">
+          </div>
+        </div>
+        <p class="muted" style="font-size:.78rem;margin-top:6px">Sets this banner's default look everywhere it appears. Any page can override it in the Placements table below.</p>
         <div class="row">
           <div><label for="sp_sort">Order</label><input id="sp_sort" type="number" inputmode="numeric" value="10"></div>
         </div>
@@ -797,6 +817,10 @@
         <div class="inline" style="gap:16px; margin-top:12px; flex-wrap:wrap">
           <label class="inline" style="margin:0"><input type="checkbox" class="chk" id="sptype_active" checked> Active (shown when creating invoices)</label>
           <label class="inline" style="margin:0"><input type="checkbox" class="chk" id="sptype_highlight"> ⭐ Featured / most popular</label>
+          <label class="inline" style="margin:0"><input type="checkbox" class="chk" id="sptype_full_width"> ↔ Full width on sponsor page (good for premium / bespoke packages)</label>
+        </div>
+        <div class="row" style="margin-top:8px">
+          <div><label for="sptype_sort">Display order <span style="font-weight:400;text-transform:none">(lower = shown first)</span></label><input id="sptype_sort" type="number" inputmode="numeric" min="1" placeholder="e.g. 10"></div>
         </div>
         <div style="height:12px"></div>
         <div class="row">
@@ -899,7 +923,7 @@
             <option value="conversions">A conversion</option>
             <option value="penalties">A penalty</option>
             <option value="drop_goals">A drop goal</option>
-            <option value="mom_count">A Man of the Match</option>
+            <option value="mom_count">A Player of the Match</option>
             <option value="dom_count">A Defender of the Match</option>
             <option value="wins">A win</option>
             <option value="appearances">An appearance</option>
@@ -1722,13 +1746,19 @@ async function loadSponsorPageIntro(){
   }
 }
 el('spintro_save') && (el('spintro_save').onclick = async ()=>{
-  const headline = el('spintro_headline').value.trim();
-  const intro = el('spintro_body').value.trim();
-  if(!headline){ el('spintro_status').textContent='Please add a headline.'; return; }
+  const headline = el('spintro_headline').value.trim() || null;
+  const intro = el('spintro_body').value.trim() || null;
   const { error } = await sb.from('sponsor_page_content').upsert({ id:1, headline, intro, updated_at: new Date().toISOString() });
   if(error){ el('spintro_status').textContent=error.message; return; }
-  el('spintro_status').textContent='✓ Saved';
-  setTimeout(()=>{ el('spintro_status').textContent=''; }, 2500);
+  el('spintro_status').textContent='✓ Saved — reload the sponsor page to see the change';
+  setTimeout(()=>{ el('spintro_status').textContent=''; }, 3500);
+});
+el('spintro_clear') && (el('spintro_clear').onclick = async ()=>{
+  el('spintro_headline').value=''; el('spintro_body').value='';
+  const { error } = await sb.from('sponsor_page_content').upsert({ id:1, headline:null, intro:null, updated_at: new Date().toISOString() });
+  if(error){ el('spintro_status').textContent=error.message; return; }
+  el('spintro_status').textContent='✓ Cleared — intro hidden on sponsor page';
+  setTimeout(()=>{ el('spintro_status').textContent=''; }, 3500);
 });
 function renderSponsorTypeSelect(){
   const sel = el('spitem_type'); if(!sel) return;
@@ -1785,7 +1815,7 @@ function renderSponsorTypesList(){
     return `<div class="list-item">
       <div>
         <b>${esc(t.name)}</b> — £${Number(t.default_amount).toFixed(2)} ${t.active?'':'<span class="pill inactive">inactive</span>'}
-        <div class="muted" style="font-size:.78rem">Applies to: ${esc(t.applies_to)} · ${capText}</div>
+        <div class="muted" style="font-size:.78rem">Applies to: ${esc(t.applies_to)} · ${capText} · Order: ${t.sort_order??'—'}${t.full_width?' · ↔ Full width':''}</div>
       </div>
       <button class="btn sec small" data-edit-sptype="${t.id}">Edit</button>
     </div>`;
@@ -1800,6 +1830,8 @@ function editSponsorType(id){
   el('sptype_description').value = t.description||'';
   el('sptype_perks').value = t.perks||'';
   el('sptype_highlight').checked = t.highlight||false;
+  el('sptype_full_width').checked = t.full_width||false;
+  el('sptype_sort').value = t.sort_order!=null ? t.sort_order : '';
   el('sptype_image_url').value = t.image_url||'';
   el('sptype_image_name').textContent = t.image_url ? 'Current image saved' : '';
   el('sptype_image_preview').innerHTML = t.image_url ? `<img src="${esc(t.image_url)}" style="max-width:100%; max-height:120px; border-radius:8px; margin-top:4px">` : '';
@@ -1809,7 +1841,7 @@ function editSponsorType(id){
 el('sptype_clear') && (el('sptype_clear').onclick = ()=>{
   el('sptype_id').value=''; el('sptype_name').value=''; el('sptype_amount').value='';
   el('sptype_applies').value='player'; el('sptype_active').checked=true; el('sptype_capacity').value='';
-  el('sptype_description').value=''; el('sptype_perks').value=''; el('sptype_highlight').checked=false;
+  el('sptype_description').value=''; el('sptype_perks').value=''; el('sptype_highlight').checked=false; el('sptype_full_width').checked=false; el('sptype_sort').value='';
   el('sptype_image_url').value=''; el('sptype_image_name').textContent=''; el('sptype_image_preview').innerHTML='';
   if(el('sptype_image_file')) el('sptype_image_file').value='';
   window._pendingSptypeImage = null;
@@ -1843,12 +1875,14 @@ el('sptype_save') && (el('sptype_save').onclick = async ()=>{
     description: el('sptype_description').value.trim() || null,
     perks: el('sptype_perks').value.trim() || null,
     highlight: el('sptype_highlight').checked,
+    full_width: el('sptype_full_width').checked,
+    sort_order: el('sptype_sort').value ? parseInt(el('sptype_sort').value,10) : (allSponsorTypes.length+1),
     image_url
   };
   const id = el('sptype_id').value;
   const res = id
     ? await sb.from('sponsorship_types').update(rec).eq('id',id)
-    : await sb.from('sponsorship_types').insert({ ...rec, sort_order: allSponsorTypes.length+1 });
+    : await sb.from('sponsorship_types').insert(rec);
   if(res.error){ toast(res.error.message, true); return; }
   toast(id?'Type updated':'Type added'); el('sptype_clear').click(); await loadSponsorTypes();
 });
@@ -1883,7 +1917,7 @@ function populateExistingSponsorDropdown(){
   });
   const sponsors = [...seen.values()].sort((a,b)=>a.sponsor_name.localeCompare(b.sponsor_name));
   sel.innerHTML = '<option value="">— New sponsor / type below —</option>' +
-    sponsors.map(inv=>`<option value="${esc(inv.sponsor_name)}" data-email="${esc(inv.sponsor_email||'')}" data-phone="${esc(inv.sponsor_phone||'')}" data-address="${esc(inv.sponsor_address||'')}">${esc(inv.sponsor_name)}</option>`).join('');
+    sponsors.map(inv=>`<option value="${esc(inv.sponsor_name)}" data-email="${esc(inv.sponsor_email||'')}" data-phone="${esc(inv.sponsor_phone||'')}" data-address="${esc(inv.sponsor_address||'')}" data-contact="${esc(inv.contact_name||'')}">${esc(inv.sponsor_name)}</option>`).join('');
 }
 el('spinv_existing_sponsor') && (el('spinv_existing_sponsor').onchange = function(){
   const opt = this.selectedOptions[0];
@@ -1892,6 +1926,7 @@ el('spinv_existing_sponsor') && (el('spinv_existing_sponsor').onchange = functio
   el('spinv_email').value = opt.dataset.email || '';
   el('spinv_phone').value = opt.dataset.phone || '';
   el('spinv_address').value = opt.dataset.address || '';
+  el('spinv_contactName').value = opt.dataset.contact || '';
   // Warn if this sponsor has an open unpaid invoice
   const open = (allInvoices||[]).filter(inv=>
     inv.sponsor_name === opt.value && inv.status_key !== 'paid'
@@ -2098,13 +2133,13 @@ async function emailInvoice(invoiceId){
         <p style="margin:4px 0 0; font-size:13px; opacity:.9">Sponsorship Invoice ${esc(inv.invoice_number)}</p>
       </div>
       <div style="padding:22px; border:1px solid #eee; border-top:none">
-        <p>Dear ${esc(inv.sponsor_name||'Sponsor')},</p>
+        <p>Dear ${esc(inv.contact_name||inv.sponsor_name||'Sponsor')},</p>
         <p>Thank you for your support of Old Northamptonians RFC. Please find your sponsorship invoice <b>${esc(inv.invoice_number)}</b> attached, totalling <b>£${built.total.toFixed(2)}</b>, due by <b>${esc(inv.due_date)}</b>.</p>
         <p>Payment details are included on the attached invoice. If you have any questions, just reply to this email.</p>
         <p style="margin-top:22px">Thank you again for your support.<br>Old Northamptonians RFC</p>
       </div>
     </div>`;
-  const text = `Dear ${inv.sponsor_name||'Sponsor'},\n\nThank you for your support of Old Northamptonians RFC. Please find your sponsorship invoice ${inv.invoice_number} attached, totalling £${built.total.toFixed(2)}, due by ${inv.due_date}.\n\nPayment details are included on the attached invoice. If you have any questions, just reply to this email.\n\nThank you again for your support.\nOld Northamptonians RFC`;
+  const text = `Dear ${inv.contact_name||inv.sponsor_name||'Sponsor'},\n\nThank you for your support of Old Northamptonians RFC. Please find your sponsorship invoice ${inv.invoice_number} attached, totalling £${built.total.toFixed(2)}, due by ${inv.due_date}.\n\nPayment details are included on the attached invoice. If you have any questions, just reply to this email.\n\nThank you again for your support.\nOld Northamptonians RFC`;
 
   toast('Sending email…');
   const { data, error } = await sb.functions.invoke('send-invoice-email', {
@@ -2394,6 +2429,7 @@ function editInvoice(id){
   if(createDetails) createDetails.open = true;
   el('spinv_id').value = inv.id;
   el('spinv_sponsorName').value = inv.sponsor_name || '';
+  el('spinv_contactName').value = inv.contact_name || '';
   el('spinv_email').value = inv.sponsor_email || '';
   el('spinv_phone').value = inv.sponsor_phone || '';
   el('spinv_address').value = inv.sponsor_address || '';
@@ -2406,7 +2442,7 @@ function editInvoice(id){
   window.scrollTo({top:0, behavior:'smooth'});
 }
 el('spinv_clear') && (el('spinv_clear').onclick = ()=>{
-  el('spinv_id').value=''; el('spinv_sponsorName').value=''; el('spinv_email').value=''; el('spinv_phone').value=''; el('spinv_address').value='';
+  el('spinv_id').value=''; el('spinv_sponsorName').value=''; el('spinv_contactName').value=''; el('spinv_email').value=''; el('spinv_phone').value=''; el('spinv_address').value='';
   if(el('spinv_existing_sponsor')) el('spinv_existing_sponsor').value='';
   el('spinv_notes').value=''; el('spinv_status').textContent='';
   el('spitem_type').value=''; el('spitem_amount').value=''; el('spitem_player').value='';
@@ -2427,6 +2463,7 @@ el('spinv_save') && (el('spinv_save').onclick = async ()=>{
   const id = el('spinv_id').value;
   const rec = {
     sponsor_name: sponsorName,
+    contact_name: el('spinv_contactName').value.trim() || null,
     sponsor_email: el('spinv_email').value.trim() || null,
     sponsor_phone: el('spinv_phone').value.trim() || null,
     sponsor_address: el('spinv_address').value.trim() || null,
@@ -3166,7 +3203,7 @@ async function loadStatPanel(){
     <div id="st_addlist"></div>
     <div id="st_check"></div>
     <div class="row" style="margin-top:12px">
-      <div><label>Man of the Match</label><select id="st_mom"></select></div>
+      <div><label>Player of the Match</label><select id="st_mom"></select></div>
       <div><label>Defender of the Match</label><select id="st_dom"></select></div>
     </div>
     <div style="height:12px"></div>
@@ -3734,7 +3771,7 @@ async function toggleSubmissionDetail(subId){
     if(s.conversions) bits.push(s.conversions+' con');
     if(s.penalties) bits.push(s.penalties+' pen');
     if(s.drop_goals) bits.push(s.drop_goals+' drop');
-    if(s.is_mom) bits.push('MoM');
+    if(s.is_mom) bits.push('PoM');
     if(s.is_dom) bits.push('DoM');
     if(s.yellows) bits.push(s.yellows+' yellow');
     if(s.reds) bits.push(s.reds+' red');
@@ -3887,7 +3924,7 @@ const RP_COLUMNS = [
   {key:'conversions', label:'Cons', type:'num'},
   {key:'penalties', label:'Pens', type:'num'},
   {key:'drop_goals', label:'Drops', type:'num'},
-  {key:'mom_count', label:'MoM', type:'num'},
+  {key:'mom_count', label:'PoM', type:'num'},
   {key:'dom_count', label:'DoM', type:'num'},
   {key:'wins', label:'Wins', type:'num'},
   {key:'yellows', label:'Yellow', type:'num'},
@@ -3982,7 +4019,7 @@ function renderReports(){
 }
 el('rp_export') && (el('rp_export').onclick = ()=>{
   const rows = window._rpVisibleRows || [];
-  const headers = ['Name','Nickname','Squad','Position','Price','Season Points','Times Picked','Appearances','Tries','Conversions','Penalties','Drop Goals','MoM','DoM','Wins','Yellow','Red'];
+  const headers = ['Name','Nickname','Squad','Position','Price','Season Points','Times Picked','Appearances','Tries','Conversions','Penalties','Drop Goals','PoM','DoM','Wins','Yellow','Red'];
   const csvRows = [headers.join(',')];
   rows.forEach(p=>{
     const vals = [p.name, p.nickname||'', p.team_name, p.position, p.price, p.season_points, p.times_picked,
@@ -4688,13 +4725,16 @@ function editSponsor(id){
   el('sp_banner').value=s.banner_url||'';
   el('sp_link').value=s.link_url||''; el('sp_tag').value=s.tagline||'';
   el('sp_color').value=s.bg_color||'#1B2A4A';
+  el('sp_mode').value=s.display_mode||'standard';
+  el('sp_maxh').value=(s.max_height!=null)?s.max_height:'';
   el('sp_sort').value=s.sort_order; el('sp_active').checked=s.active;
   window.scrollTo({top:0, behavior:'smooth'});
 }
 el('sp_clear') && (el('sp_clear').onclick=()=>{
   el('sp_id').value=''; el('sp_name').value=''; el('sp_logo').value=''; el('sp_banner').value='';
   el('sp_link').value=''; el('sp_tag').value='';
-  el('sp_color').value='#1B2A4A'; el('sp_sort').value='10'; el('sp_active').checked=true;
+  el('sp_color').value='#1B2A4A'; el('sp_mode').value='standard'; el('sp_maxh').value='';
+  el('sp_sort').value='10'; el('sp_active').checked=true;
 });
 el('sp_save') && (el('sp_save').onclick=async()=>{
   const name=el('sp_name').value.trim();
@@ -4703,6 +4743,8 @@ el('sp_save') && (el('sp_save').onclick=async()=>{
   const rec={ name:name||null, logo_url:logo||null, banner_url:banner||null,
     link_url:el('sp_link').value.trim()||null,
     tagline:el('sp_tag').value.trim()||null, bg_color:el('sp_color').value.trim()||'#1B2A4A',
+    display_mode:el('sp_mode').value||'standard',
+    max_height:el('sp_maxh').value?parseInt(el('sp_maxh').value,10):null,
     sort_order:parseInt(el('sp_sort').value||'10',10), active:el('sp_active').checked };
   const id=el('sp_id').value;
   const res=id ? await sb.from('sponsor_banners').update(rec).eq('id',id) : await sb.from('sponsor_banners').insert(rec);
@@ -4714,7 +4756,6 @@ el('sp_refresh') && (el('sp_refresh').onclick=()=>{ loadSponsors(); toast('Refre
 // ── SPONSOR PLACEMENTS (which banner/carousel shows on which page) ──
 const SPPLACE_PAGES = [
   { key:'team',        label:'My Team (manager app)' },
-  { key:'fixtures',    label:'Fixtures (manager app)' },
   { key:'leaderboard', label:'Leaderboard (manager app)' },
   { key:'players',     label:'Players (manager app)' },
   { key:'totw',        label:'Team of the Week (manager app)' },
@@ -4738,13 +4779,20 @@ function renderSponsorPlacements(){
   const box = el('spplace_table'); if(!box) return;
   const sponsorOpts = (allSponsors||[]).filter(s=>s.active).map(s=>`<option value="${s.id}">${esc(s.name||'(image only)')}</option>`).join('');
   const rows = SPPLACE_PAGES.map(pg=>{
-    const row = allSponsorPlacements.find(p=>p.page_key===pg.key) || { page_key:pg.key, banner_top_id:null, banner_bottom_id:null, show_carousel:false };
+    const row = allSponsorPlacements.find(p=>p.page_key===pg.key) || { page_key:pg.key, banner_top_id:null, banner_bottom_id:null, show_carousel:false, display_mode:'inherit', max_height:null };
     return `<div class="spplace-row" data-page="${pg.key}">
       <div class="spplace-page">${esc(pg.label)}</div>
       <div class="spplace-controls">
         <label class="spplace-field">Top<select data-place="banner_top_id"><option value="">— none —</option>${sponsorOpts}</select></label>
         <label class="spplace-field">Bottom<select data-place="banner_bottom_id"><option value="">— none —</option>${sponsorOpts}</select></label>
         <label class="spplace-field spplace-checkbox"><input type="checkbox" class="chk" data-place="show_carousel"> Carousel</label>
+        <label class="spplace-field">Style<select data-place="display_mode">
+          <option value="inherit">Inherit (per banner)</option>
+          <option value="standard">Standard</option>
+          <option value="compact">Compact</option>
+          <option value="banner_only">Banner only</option>
+        </select></label>
+        <label class="spplace-field">Max h<input type="number" data-place="max_height" min="20" max="600" placeholder="auto" style="width:72px"></label>
       </div>
     </div>`;
   }).join('');
@@ -4757,6 +4805,8 @@ function renderSponsorPlacements(){
     rowEl.querySelector('[data-place="banner_top_id"]').value = row?.banner_top_id || '';
     rowEl.querySelector('[data-place="banner_bottom_id"]').value = row?.banner_bottom_id || '';
     rowEl.querySelector('[data-place="show_carousel"]').checked = !!row?.show_carousel;
+    rowEl.querySelector('[data-place="display_mode"]').value = row?.display_mode || 'inherit';
+    rowEl.querySelector('[data-place="max_height"]').value = (row?.max_height!=null) ? row.max_height : '';
   });
   // Wire instant-save on change
   box.querySelectorAll('[data-place]').forEach(input=>{
@@ -4765,21 +4815,21 @@ function renderSponsorPlacements(){
       const field = input.dataset.place;
       let value;
       if(field==='show_carousel') value=input.checked;
-      else if(field==='max_height') value=input.value?parseInt(input.value,10):null;
-      else value=input.value||null;
+      else if(field==='max_height') value = input.value ? parseInt(input.value,10) : null;
+      else value = input.value || null;
       // Upsert: if no row exists yet for this page_key, insert one
       const existing = allSponsorPlacements.find(p=>p.page_key===pageKey);
       let error;
       if(existing){
-        ({error}=await sb.from('sponsor_placements').update({[field]:value,updated_at:new Date().toISOString()}).eq('page_key',pageKey));
+        ({error} = await sb.from('sponsor_placements').update({[field]:value,updated_at:new Date().toISOString()}).eq('page_key',pageKey));
       } else {
-        ({error}=await sb.from('sponsor_placements').insert({page_key:pageKey,[field]:value}));
+        ({error} = await sb.from('sponsor_placements').insert({page_key:pageKey,[field]:value}));
         if(!error) allSponsorPlacements.push({page_key:pageKey,[field]:value});
       }
-      if(error){ toast(error.message,true); return; }
+      if(error){ toast(error.message, true); return; }
       toast('Saved');
-      const local=allSponsorPlacements.find(p=>p.page_key===pageKey);
-      if(local) local[field]=value;
+      const local = allSponsorPlacements.find(p=>p.page_key===pageKey);
+      if(local) local[field] = value;
     };
   });
 }
@@ -4947,16 +4997,16 @@ el('gw_csv_import') && (el('gw_csv_import').onclick = async ()=>{
     // Find or create gameweek
     let gw = gameweeks.find(g=>g.number===num);
     if(!gw){
-      const { data:newGw, error:gwErr } = await sb.from('gameweeks').insert({ number:num, deadline, status:'upcoming' }).select().single();
+      const { data:newGw, error:gwErr } = await sb.from('gameweeks').insert({ number:num, deadline_at: deadline ? new Date(deadline.split('/').length===3 ? deadline.split('/')[1]+'/'+deadline.split('/')[0]+'/'+deadline.split('/')[2] : deadline).toISOString() : null, status:'upcoming', season_id: gameweeks[0]?.season_id||null }).select().single();
       if(gwErr){ errors.push(`Week ${num}: ${gwErr.message}`); continue; }
       gw = newGw; gameweeks.push(gw);
     }
     // Find team
     const team = allTeams.find(t=>t.name.toLowerCase()===teamName_.toLowerCase());
     if(!team){ errors.push(`Week ${num}: team "${teamName_}" not found`); skipped++; continue; }
-    // Create fixture
-    const { error:fErr } = await sb.from('fixtures').insert({ gameweek_id:gw.id, team_id:team.id, opponent, home_away:homeAway, status:'upcoming' });
-    if(fErr){ errors.push(`Week ${num} ${teamName_}: ${fErr.message}`); continue; }
+    // Create fixture (skip silently if this gameweek+team combo already exists)
+    const { error:fErr } = await sb.from('fixtures').insert({ gameweek_id:gw.id, team_id:team.id, opponent, home_away:homeAway, status:'upcoming' }, { ignoreDuplicates: true });
+    if(fErr){ if(fErr.code==='23505'){ skipped++; continue; } errors.push(`Week ${num} ${teamName_}: ${fErr.message}`); continue; }
     created++;
   }
   let msg = `Imported ${created} fixture${created!==1?'s':''}.`;
@@ -5041,7 +5091,7 @@ function renderPlayerStats(){
       ${th('rank','#')}${th('name','Player')}${th('team_name','Squad')}
       ${th('pts','Pts','Points')}${th('appearances','App','Appearances')}
       ${th('tries','T','Tries')}${th('conversions','C','Conversions')}${th('penalties','P','Penalties')}
-      ${th('drop_goals','D','Drop goals')}${th('dom','DoM','Defender of the Match')}${th('mom','MoM','Man of the Match')}${th('wins','W','Wins')}
+      ${th('drop_goals','D','Drop goals')}${th('dom','DoM','Defender of the Match')}${th('mom','PoM','Player of the Match')}${th('wins','W','Wins')}
       ${th('yellows','Y','Yellow cards')}${th('reds','R','Red cards')}
     </tr></thead>
     <tbody>${rows.map((p,i)=>`<tr style="border-bottom:1px solid var(--line)">
@@ -5075,7 +5125,7 @@ el('ps_refresh') && (el('ps_refresh').onclick = ()=>{ loadPlayerStats(); toast('
 el('ps_export') && (el('ps_export').onclick = ()=>{
   const rows = window._psRows||[]; if(!rows.length){ toast('Nothing to export',true); return; }
   downloadCSV('player-season-leaderboard.csv',
-    ['Rank','Player','Squad','Points','Apps','Tries','Cons','Pens','Drops','MoM','Yellows','Reds'],
+    ['Rank','Player','Squad','Points','Apps','Tries','Cons','Pens','Drops','PoM','Yellows','Reds'],
     rows.map((p,i)=>[i+1,p.name,p.team_name,p.pts,p.appearances,p.tries,p.conversions,p.penalties,p.drop_goals,p.mom,p.yellows,p.reds]));
   toast('Exported');
 });
@@ -5132,7 +5182,7 @@ async function renderTotw(){
     </tr></thead>
     <tbody>${top.map((p,i)=>`<tr style="border-bottom:1px solid var(--line)">
       <td style="padding:5px 4px; color:var(--muted)">${i+1}</td>
-      <td style="padding:5px 4px; font-weight:600">${esc(p.name)}${p.is_mom?' <span class="pill fwd" style="font-size:.65rem">MoM</span>':''}${p.is_dom?' <span class="pill back" style="font-size:.65rem">DoM</span>':''}</td>
+      <td style="padding:5px 4px; font-weight:600">${esc(p.name)}${p.is_mom?' <span class="pill fwd" style="font-size:.65rem">PoM</span>':''}${p.is_dom?' <span class="pill back" style="font-size:.65rem">DoM</span>':''}</td>
       <td style="padding:5px 4px; color:var(--muted); font-size:.8rem">${esc(p.team_name)}</td>
       <td style="padding:5px 4px; text-align:center"><span class="pill ${p.position==='forward'?'fwd':'back'}">${p.position[0].toUpperCase()}</span></td>
       <td style="padding:5px 4px; text-align:center; font-weight:800; color:var(--crimson)">${p.pts}</td>
@@ -5147,7 +5197,7 @@ el('tw_export') && (el('tw_export').onclick = ()=>{
   if(!gwId||!totwData.length){ toast('Select a gameweek first',true); return; }
   const gw=gameweeks.find(g=>g.id===gwId);
   downloadCSV(`week${gw?.number||'?'}-team-of-week.csv`,
-    ['Rank','Player','Squad','Position','Points','Tries','Conversions','Penalties','Drops','MoM','DoM'],
+    ['Rank','Player','Squad','Position','Points','Tries','Conversions','Penalties','Drops','PoM','DoM'],
     totwData.slice(0,size).map((p,i)=>[i+1,p.name,p.team_name,p.position,p.pts,p.tries,p.conversions,p.penalties,p.drop_goals,p.is_mom?'Yes':'',p.is_dom?'Yes':'']));
   toast('Exported');
 });
@@ -5198,7 +5248,7 @@ function renderPastSeason(){
     {key:'conversions',label:'C',type:'num'},
     {key:'penalties',label:'P',type:'num'},
     {key:'drop_goals',label:'D',type:'num'},
-    {key:'mom_count',label:'MoM',type:'num'},
+    {key:'mom_count',label:'PoM',type:'num'},
     {key:'dom_count',label:'DoM',type:'num'},
     {key:'wins',label:'Wins',type:'num'},
     {key:'yellows',label:'Y',type:'num'},
@@ -5274,7 +5324,7 @@ function renderPastSeason(){
   const exp = el('ps2_export');
   const sid = el('ps2_season').value;
   if(exp) exp.onclick=()=>{
-    const hdr=['Player','Squad','Position','Pts','Apps','T','C','P','D','MoM','DoM','Wins','Yellows','Reds','Times Picked'];
+    const hdr=['Player','Squad','Position','Pts','Apps','T','C','P','D','PoM','DoM','Wins','Yellows','Reds','Times Picked'];
     const csvRows=rows.map(p=>[p.name,p.team_name,p.position,p.pts,p.appearances,p.tries,p.conversions,p.penalties,p.drop_goals,p.mom_count,p.dom_count,p.wins,p.yellows,p.reds,p.times_picked]);
     downloadCSV(`${sid}-player-stats.csv`, hdr, csvRows);
     toast('Exported');
