@@ -283,6 +283,13 @@
   .sponsor-label{font-size:.65rem; letter-spacing:.1em; text-transform:uppercase; opacity:.7; font-weight:600}
   .sponsor-name{font-family:'Barlow Condensed',sans-serif; font-size:1.3rem; font-weight:800; line-height:1.15}
   .sponsor-tag{font-size:.8rem; opacity:.85}
+  .sponsor-banner.sp-compact .sponsor-img-wrap{min-height:0; padding:8px 0}
+  .sponsor-banner.sp-compact .sponsor-logo{max-height:56px}
+  .sponsor-banner.sp-compact .sponsor-text{padding:7px 14px 9px}
+  .sponsor-banner.sp-compact .sponsor-name{font-size:1rem}
+  .sponsor-banner.sp-compact .sponsor-label{font-size:.58rem}
+  .sponsor-banner.sp-compact .sponsor-tag{font-size:.72rem}
+  .sponsor-banner.sp-banneronly .sponsor-img-wrap{min-height:0}
 
   /* ── TOAST ───────────────────────────────────────────────── */
   .toast{position:fixed; left:50%; transform:translateX(-50%); bottom:calc(72px + var(--pad));
@@ -1706,21 +1713,36 @@ async function loadLinks(){
 }
 let cachedSponsorHTML = { top: '', bot: '' };
 
-function buildSponsorHTML(data, slot){
+function buildSponsorHTML(data, slot, placement){
   if(!data) return '';
   const bg = data.bg_color || '#1B2A4A';
   const isFooter = slot === 'bot';
   const imgRadius = 'border-radius:14px 14px 0 0; overflow:hidden';
+  // Effective display mode + height: page override wins unless 'inherit', else the banner's own setting.
+  const pm=(placement&&placement.display_mode&&placement.display_mode!=='inherit')?placement.display_mode:null;
+  const mode=pm||data.display_mode||'standard';
+  const ph=(placement&&placement.max_height!=null)?placement.max_height:null;
+  const mhRaw=(ph!=null)?ph:(data.max_height!=null?data.max_height:null);
+  const mh=(mhRaw!=null)?mhRaw:(mode==='compact'?90:(mode==='banner_only'?140:180));
+  const showText = mode!=='banner_only';
   let imageBlock = '';
-  if(data.banner_url){
-    imageBlock = `<div class="sponsor-img-wrap" style="background:${esc(bg)};${imgRadius}"><img class="sponsor-logo" src="${esc(data.banner_url)}" alt="${esc(data.name||'')}" style="max-width:100%; max-height:180px; width:auto; object-fit:contain; display:block"></div>`;
+  if(mode==='banner_only'){
+    // Fill the placeholder edge-to-edge; rounded corners from the container; no background.
+    const src=data.banner_url||data.logo_url;
+    if(src){
+      const fit = mhRaw!=null ? `height:${mhRaw}px;object-fit:cover` : 'height:auto';
+      imageBlock = `<div class="sponsor-img-wrap" style="padding:0;min-height:0;border-radius:14px;overflow:hidden"><img class="sponsor-logo" src="${esc(src)}" alt="${esc(data.name||'')}" style="width:100%;max-width:100%;display:block;${fit}"></div>`;
+    }
+  } else if(data.banner_url){
+    imageBlock = `<div class="sponsor-img-wrap" style="background:${esc(bg)};${imgRadius}"><img class="sponsor-logo" src="${esc(data.banner_url)}" alt="${esc(data.name||'')}" style="max-width:100%; max-height:${mh}px; width:auto; object-fit:contain; display:block"></div>`;
   } else if(data.logo_url){
-    imageBlock = `<div class="sponsor-img-wrap" style="background:rgba(255,255,255,.08);${imgRadius}"><img class="sponsor-logo" src="${esc(data.logo_url)}" alt="${esc(data.name||'')}"></div>`;
+    const logoStyle = (mhRaw!=null) ? ` style="max-height:${mhRaw}px; object-fit:contain"` : '';
+    imageBlock = `<div class="sponsor-img-wrap" style="background:rgba(255,255,255,.08);${imgRadius}"><img class="sponsor-logo" src="${esc(data.logo_url)}" alt="${esc(data.name||'')}"${logoStyle}></div>`;
   }
-  // Only show text block if at least one text element exists
+  // Only show text block if at least one text element exists (and mode isn't banner-only)
   const hasName = !!(data.name && data.name.trim());
   const hasTag  = !!(data.tagline && data.tagline.trim());
-  const textBlock = (hasName || hasTag) ? `
+  const textBlock = (showText && (hasName || hasTag)) ? `
     <div class="sponsor-text">
       ${hasName ? `<span class="sponsor-label">Proudly sponsored by</span><span class="sponsor-name">${esc(data.name)}</span>` : ''}
       ${hasTag  ? `<span class="sponsor-tag">${esc(data.tagline)}</span>` : ''}
@@ -1731,7 +1753,8 @@ function buildSponsorHTML(data, slot){
   const inner = data.link_url
     ? `<a href="${esc(data.link_url)}" target="_blank" rel="noopener" class="sponsor-inner" style="background:${esc(bg)}">${content}</a>`
     : `<div class="sponsor-inner" style="background:${esc(bg)}">${content}</div>`;
-  return `<div class="sponsor-banner${isFooter?' footer':''}">${inner}</div>`;
+  const cls = 'sponsor-banner'+(isFooter?' footer':'')+(mode==='compact'?' sp-compact':'')+(mode==='banner_only'?' sp-banneronly':'');
+  return `<div class="${cls}">${inner}</div>`;
 }
 let _teamCarouselState = null; // cached inputs so renderPicker() can re-populate the carousel after it rebuilds the My Team DOM
 async function loadSponsorBanner(){
@@ -1759,8 +1782,8 @@ async function loadSponsorBanner(){
     const place = placeByPage[pg.key];
     const topSp = place?.banner_top_id ? byId[place.banner_top_id] : null;
     const botSp = place?.banner_bottom_id ? byId[place.banner_bottom_id] : null;
-    cache[pg.topEl] = buildSponsorHTML(topSp, 'top');
-    cache[pg.botEl] = buildSponsorHTML(botSp, 'bot');
+    cache[pg.topEl] = buildSponsorHTML(topSp, 'top', place);
+    cache[pg.botEl] = buildSponsorHTML(botSp, 'bot', place);
     const te = el(pg.topEl), be = el(pg.botEl);
     if(te) te.innerHTML = cache[pg.topEl];
     if(be) be.innerHTML = cache[pg.botEl];
