@@ -438,9 +438,9 @@
   .fxm-tag.gold{background:#fff3d6;color:#8a6215}
 
   /* ── APP CTA CARD ── */
-  .app-cta{display:block;text-decoration:none;border-radius:12px;overflow:hidden;margin:8px 0 4px;position:relative;min-height:72px;cursor:pointer}
+  .app-cta{display:block;text-decoration:none;border-radius:12px;overflow:hidden;margin:8px 0 12px;position:relative;min-height:72px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.15)}
   .app-cta-bg{position:absolute;inset:0;background-size:cover;background-position:center;z-index:0}
-  .app-cta-overlay{position:absolute;inset:0;background:rgba(0,0,0,.38);z-index:1}
+  .app-cta-overlay{position:absolute;inset:0;background:rgba(0,0,0,.48);z-index:1}
   .app-cta-body{position:relative;z-index:2;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px}
   .app-cta-text{flex:1;min-width:0}
   .app-cta-headline{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:1.05rem;color:#fff;line-height:1.15;letter-spacing:.02em}
@@ -1779,9 +1779,10 @@ function buildSponsorHTML(data, slot, placement){
 let _teamCarouselState = null; // cached inputs so renderPicker() can re-populate the carousel after it rebuilds the My Team DOM
 function buildCtaCard(cta){
   if(!cta || !cta.active) return '';
+  const bgColor = cta.bg_color||'#1B2A4A';
   const bg = cta.bg_image_url
-    ? `background-image:url('${esc(cta.bg_image_url)}');background-color:${esc(cta.bg_color||'#1B2A4A')}`
-    : `background-color:${esc(cta.bg_color||'#1B2A4A')}`;
+    ? `background-image:url('${esc(cta.bg_image_url)}');background-color:${esc(bgColor)}`
+    : `background:linear-gradient(135deg, ${esc(bgColor)} 0%, rgba(0,0,0,.45) 100%), ${esc(bgColor)}`;
   const overlay = cta.bg_image_url ? '<div class="app-cta-overlay"></div>' : '';
   const headline = cta.headline ? `<div class="app-cta-headline">${esc(cta.headline)}</div>` : '';
   const body = cta.body_text ? `<div class="app-cta-body-text">${esc(cta.body_text)}</div>` : '';
@@ -3809,6 +3810,6 @@ boot();
     <button class="btn ghost block" id="idleLogoutBtn" style="margin-top:8px">Sign out now</button>
   </div>
 </div>
-<!-- v1.1 — manager.html -->
+<!-- v1.2 — manager.html -->
 </body>
 </html>
