@@ -780,6 +780,16 @@
         <div id="spplace_table"><div class="empty">Loading…</div></div>
       </details>
 
+      <details class="card" id="cta_details">
+        <summary style="cursor:pointer; list-style:none; display:flex; align-items:center; justify-content:space-between">
+          <span class="eyebrow" style="margin:0">📲 App CTAs</span>
+          <span class="muted" style="font-size:.78rem">Club app call-to-action cards</span>
+        </summary>
+        <p class="muted" style="margin-top:10px">Configure a clickable call-to-action card on each page of the manager app — shown below the top sponsor banner. Use these to drive managers to the club app (Plat4rm), announce events, or highlight anything that needs action. Toggle active to show/hide without deleting.</p>
+        <p class="muted" style="margin-top:6px;font-size:.78rem">💡 Background image: recommended 800×200px landscape. If no image, choose a colour — navy (#1B2A4A) and gold (#D4A017) work well.</p>
+        <div id="cta_table"><div class="empty">Loading…</div></div>
+      </details>
+
       <details class="card" id="sptype_details">
         <summary style="cursor:pointer; list-style:none; display:flex; align-items:center; justify-content:space-between">
           <span class="eyebrow" style="margin:0">Sponsorship types &amp; prices</span>
@@ -4774,6 +4784,78 @@ async function loadSponsorPlacements(){
   if(error){ toast(error.message, true); return; }
   allSponsorPlacements = data || [];
   renderSponsorPlacements();
+  loadCtaPlacements();
+}
+
+// ── APP CTA PLACEMENTS ──────────────────────────────────────
+const CTA_PAGES = [
+  { key:'team',        label:'My Team' },
+  { key:'fixtures',    label:'Fixtures' },
+  { key:'leaderboard', label:'Leaderboard' },
+  { key:'players',     label:'Players' },
+  { key:'totw',        label:'Team of the Week' },
+  { key:'inbox',       label:'Messages' },
+  { key:'duty',        label:'Team Duty' },
+  { key:'profile',     label:'Profile' },
+  { key:'links',       label:'Links' },
+  { key:'info',        label:'Info & how it works' },
+];
+let allCtas = [];
+async function loadCtaPlacements(){
+  const box = el('cta_table'); if(!box) return;
+  const { data, error } = await sb.from('app_cta_placements').select('*');
+  if(error){ toast(error.message, true); return; }
+  allCtas = data || [];
+  renderCtaTable();
+}
+function renderCtaTable(){
+  const box = el('cta_table'); if(!box) return;
+  box.innerHTML = CTA_PAGES.map(pg=>{
+    const cta = allCtas.find(c=>c.page_key===pg.key) || { page_key:pg.key, active:false };
+    const id = cta.id || '';
+    return `<div class="spplace-row" data-ctapage="${pg.key}">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <div class="spplace-page" style="margin:0">${esc(pg.label)}</div>
+        <label class="inline" style="font-size:.8rem;gap:6px">
+          <input type="checkbox" class="chk" data-cta="active" ${cta.active?'checked':''} style="width:auto"> Active
+        </label>
+      </div>
+      <div class="row">
+        <div><label>Headline</label><input data-cta="headline" value="${esc(cta.headline||'')}" placeholder="e.g. Set your availability"></div>
+        <div><label>Body text</label><input data-cta="body_text" value="${esc(cta.body_text||'')}" placeholder="e.g. Team sheets go up Friday"></div>
+      </div>
+      <div class="row" style="margin-top:6px">
+        <div><label>Button label</label><input data-cta="button_label" value="${esc(cta.button_label||'Open app')}" placeholder="Open app"></div>
+        <div><label>Link URL</label><input data-cta="link_url" value="${esc(cta.link_url||'https://app.plat4rm.co.uk/')}" placeholder="https://app.plat4rm.co.uk/"></div>
+      </div>
+      <div class="row" style="margin-top:6px">
+        <div><label>Background image URL <span style="font-weight:400;text-transform:none">(800×200px recommended)</span></label><input data-cta="bg_image_url" value="${esc(cta.bg_image_url||'')}" placeholder="Leave blank to use colour only"></div>
+        <div><label>Background colour <span style="font-weight:400;text-transform:none">(if no image)</span></label><input data-cta="bg_color" value="${esc(cta.bg_color||'#1B2A4A')}" placeholder="#1B2A4A" style="font-family:monospace"></div>
+      </div>
+      <button class="btn small navy" data-ctasave="${pg.key}" style="margin-top:10px">Save ${esc(pg.label)}</button>
+    </div>`;
+  }).join('');
+  box.querySelectorAll('[data-ctasave]').forEach(btn=>{
+    btn.onclick = async ()=>{
+      const pageKey = btn.dataset.ctasave;
+      const row = box.querySelector(`[data-ctapage="${pageKey}"]`);
+      const g = field => { const el2 = row.querySelector(`[data-cta="${field}"]`); return el2?(el2.type==='checkbox'?el2.checked:el2.value.trim()):null; };
+      const rec = {
+        page_key: pageKey,
+        active: g('active'),
+        headline: g('headline')||null,
+        body_text: g('body_text')||null,
+        button_label: g('button_label')||'Open app',
+        link_url: g('link_url')||'https://app.plat4rm.co.uk/',
+        bg_image_url: g('bg_image_url')||null,
+        bg_color: g('bg_color')||'#1B2A4A',
+        updated_at: new Date().toISOString()
+      };
+      const { error } = await sb.from('app_cta_placements').upsert(rec, { onConflict:'page_key' });
+      if(error){ toast(error.message, true); return; }
+      toast('Saved'); await loadCtaPlacements();
+    };
+  });
 }
 function renderSponsorPlacements(){
   const box = el('spplace_table'); if(!box) return;
@@ -5613,6 +5695,6 @@ document.getElementById('rolesSaveBtn').onclick = async () => {
     </div>
   </div>
 </div>
-<!-- v1.1 — adminfantasy.html -->
+<!-- v1.2 — adminfantasy.html -->
 </body>
 </html>

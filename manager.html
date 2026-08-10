@@ -436,6 +436,16 @@
   .fxm-player-tags{display:flex;gap:4px;flex-wrap:wrap;margin-top:2px}
   .fxm-tag{font-size:.6rem;font-weight:700;text-transform:uppercase;padding:1px 6px;border-radius:4px;background:#ececec;color:var(--muted)}
   .fxm-tag.gold{background:#fff3d6;color:#8a6215}
+
+  /* ── APP CTA CARD ── */
+  .app-cta{display:block;text-decoration:none;border-radius:12px;overflow:hidden;margin:8px 0 4px;position:relative;min-height:72px;cursor:pointer}
+  .app-cta-bg{position:absolute;inset:0;background-size:cover;background-position:center;z-index:0}
+  .app-cta-overlay{position:absolute;inset:0;background:rgba(0,0,0,.38);z-index:1}
+  .app-cta-body{position:relative;z-index:2;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+  .app-cta-text{flex:1;min-width:0}
+  .app-cta-headline{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:1.05rem;color:#fff;line-height:1.15;letter-spacing:.02em}
+  .app-cta-body-text{font-size:.78rem;color:rgba(255,255,255,.85);margin-top:3px;line-height:1.4}
+  .app-cta-btn{flex-shrink:0;background:var(--gold);color:var(--navy);font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:.82rem;letter-spacing:.04em;text-transform:uppercase;padding:7px 14px;border-radius:8px;white-space:nowrap}
 </style>
   <!-- PWA / Home Screen icon — upload a 180x180 PNG to /images/ons-crest.png for best results -->
   <link rel="apple-touch-icon" href="https://fantasyrugby.uk/images/ons-crest.png">
@@ -607,6 +617,7 @@
     <div id="payBanner" style="display:none"></div>
     <section id="team" class="active">
       <div id="sponsorBanner"></div>
+      <div id="ctaCard_team"></div>
       <details class="howto-card">
         <summary>❔ How the game works — tap for a quick guide</summary>
         <div class="howto-body">
@@ -627,6 +638,7 @@
 
     <section id="fixtures">
       <div id="fixturesSponsorTop"></div>
+      <div id="ctaCard_fixtures"></div>
       <!-- Upcoming gameweek table -->
       <div class="fix-upcoming" id="fixUpcoming" style="display:none">
         <div class="fix-upcoming-hdr">
@@ -674,6 +686,7 @@
 
     <section id="table">
       <div id="lbSponsorTop"></div>
+      <div id="ctaCard_leaderboard"></div>
       <div class="lb-head">
         <div class="lb-title">Season Standings</div>
         <div class="podium" id="podium"></div>
@@ -703,6 +716,7 @@
     <!-- PLAYERS -->
     <section id="players">
       <div id="playersSponsorTop"></div>
+      <div id="ctaCard_players"></div>
       <div class="lb-head" id="mgr_ps_podium_wrap" style="display:none">
         <div class="lb-title">Top Performers This Season</div>
         <div class="podium" id="mgr_ps_podium"></div>
@@ -730,6 +744,7 @@
     <!-- TEAM OF THE WEEK -->
     <section id="totw">
       <div id="totwSponsorTop"></div>
+      <div id="ctaCard_totw"></div>
       <div class="lb-head" id="mgr_tw_podium_wrap" style="display:none">
         <div class="lb-title">Team of the Week</div>
         <div class="podium" id="mgr_tw_podium"></div>
@@ -754,6 +769,7 @@
     <!-- ═══ INBOX ═══════════════════════════════════════════════ -->
     <section id="inbox">
       <div id="inboxSponsorTop"></div>
+      <div id="ctaCard_inbox"></div>
       <div class="card">
         <div class="eyebrow">🔔 Inbox</div>
         <div id="inboxList"><p class="muted">Loading…</p></div>
@@ -795,6 +811,7 @@
 
     <section id="profile">
       <div id="profileSponsorTop"></div>
+      <div id="ctaCard_profile"></div>
       <div class="card profile-head">
         <div class="avatar-lg" id="profAvatarWrap"></div>
         <h2 id="profName"></h2>
@@ -837,6 +854,7 @@
     <!-- ═══ LINKS ════════════════════════════════════════════════ -->
     <section id="links">
       <div id="linksSponsorTop"></div>
+      <div id="ctaCard_links"></div>
       <div class="card" id="linksCard" style="display:none">
         <div class="eyebrow">Useful links</div>
         <div id="linksList"></div>
@@ -854,6 +872,7 @@
     <!-- ═══ INFO ══════════════════════════════════════════════════ -->
     <section id="info">
       <div id="infoSponsorTop"></div>
+      <div id="ctaCard_info"></div>
       <div class="card" style="background:#f7f6f4; border:1.5px solid #e0dbd4">
         <div class="eyebrow" style="color:var(--muted)">Competition terms</div>
         <p style="font-size:.8rem; color:var(--ink); line-height:1.5; margin:6px 0 0">
@@ -883,6 +902,7 @@
 
     <section id="duty">
       <div id="dutySponsorTop"></div>
+      <div id="ctaCard_duty"></div>
       <div class="card">
         <div class="inline" style="display:flex; align-items:center; justify-content:space-between; gap:10px">
           <div class="eyebrow">Team manager duty</div>
@@ -1757,13 +1777,30 @@ function buildSponsorHTML(data, slot, placement){
   return `<div class="${cls}">${inner}</div>`;
 }
 let _teamCarouselState = null; // cached inputs so renderPicker() can re-populate the carousel after it rebuilds the My Team DOM
+function buildCtaCard(cta){
+  if(!cta || !cta.active) return '';
+  const bg = cta.bg_image_url
+    ? `background-image:url('${esc(cta.bg_image_url)}');background-color:${esc(cta.bg_color||'#1B2A4A')}`
+    : `background-color:${esc(cta.bg_color||'#1B2A4A')}`;
+  const overlay = cta.bg_image_url ? '<div class="app-cta-overlay"></div>' : '';
+  const headline = cta.headline ? `<div class="app-cta-headline">${esc(cta.headline)}</div>` : '';
+  const body = cta.body_text ? `<div class="app-cta-body-text">${esc(cta.body_text)}</div>` : '';
+  const btn = `<div class="app-cta-btn">${esc(cta.button_label||'Open app')}</div>`;
+  return `<a class="app-cta" href="${esc(cta.link_url||'https://app.plat4rm.co.uk/')}" target="_blank" rel="noopener">
+    <div class="app-cta-bg" style="${bg}"></div>
+    ${overlay}
+    <div class="app-cta-body"><div class="app-cta-text">${headline}${body}</div>${btn}</div>
+  </a>`;
+}
 async function loadSponsorBanner(){
-  const [{ data: all }, { data: placements }] = await Promise.all([
+  const [{ data: all }, { data: placements }, { data: ctas }] = await Promise.all([
     sb.from('sponsor_banners').select('*').eq('active',true).order('sort_order'),
-    sb.from('sponsor_placements').select('*')
+    sb.from('sponsor_placements').select('*'),
+    sb.from('app_cta_placements').select('*')
   ]);
   const byId = {}; (all||[]).forEach(s=>byId[s.id]=s);
   const placeByPage = {}; (placements||[]).forEach(p=>placeByPage[p.page_key]=p);
+  const ctaByPage = {}; (ctas||[]).forEach(c=>ctaByPage[c.page_key]=c);
 
   const pages = [
     { key:'team',        topEl:'sponsorBanner',       botEl:'sponsorFooter',        carouselSuffix:'team' },
@@ -1787,6 +1824,9 @@ async function loadSponsorBanner(){
     const te = el(pg.topEl), be = el(pg.botEl);
     if(te) te.innerHTML = cache[pg.topEl];
     if(be) be.innerHTML = cache[pg.botEl];
+    // CTA card — rendered below the top sponsor banner
+    const ctaEl = el('ctaCard_'+pg.key);
+    if(ctaEl) ctaEl.innerHTML = buildCtaCard(ctaByPage[pg.key]);
     // Carousel — shown/hidden per page based on the admin Placements table
     if(place?.show_carousel){
       buildSponsorCarousel(all, allPlayers, pg.carouselSuffix);
@@ -3769,6 +3809,6 @@ boot();
     <button class="btn ghost block" id="idleLogoutBtn" style="margin-top:8px">Sign out now</button>
   </div>
 </div>
-<!-- v1.0 — manager.html -->
+<!-- v1.1 — manager.html -->
 </body>
 </html>
