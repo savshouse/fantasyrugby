@@ -1941,17 +1941,13 @@ function addDaysISO(dateStr, days){
 }
 async function nextInvoiceNumber(){
   const year = new Date().getFullYear();
-  // Use a global ever-incrementing sequence stored in app_settings.
-  // This ensures invoice numbers are NEVER reused even across year boundaries
-  // or if old invoices are deleted — the counter only ever goes up.
   const { data, error } = await sb.from('app_settings')
-    .select('last_invoice_seq')
+    .select('id,last_invoice_seq')
     .limit(1).single();
   if(error) throw new Error('Could not read invoice sequence: ' + error.message);
   const nextSeq = ((data?.last_invoice_seq) || 0) + 1;
-  // Increment the counter atomically before returning
   const { error: updateErr } = await sb.from('app_settings')
-    .update({ last_invoice_seq: nextSeq });
+    .update({ last_invoice_seq: nextSeq }).eq('id', data.id);
   if(updateErr) throw new Error('Could not update invoice sequence: ' + updateErr.message);
   return `INV-${year}-${String(nextSeq).padStart(3,'0')}`;
 }
@@ -2479,7 +2475,10 @@ el('spinv_save') && (el('spinv_save').onclick = async ()=>{
     const del = await sb.from('sponsorships').delete().eq('invoice_id', id);
     if(del.error){ el('spinv_status').textContent = del.error.message; toast(del.error.message, true); return; }
   } else {
-    rec.invoice_number = await nextInvoiceNumber();
+    let invNum;
+    try { invNum = await nextInvoiceNumber(); }
+    catch(e){ el('spinv_status').textContent = e.message; toast(e.message, true); return; }
+    rec.invoice_number = invNum;
     rec.created_by = me?.id || null;
     const res = await sb.from('invoices').insert(rec).select().single();
     if(res.error){ el('spinv_status').textContent = res.error.message; toast(res.error.message, true); return; }
@@ -5614,6 +5613,6 @@ document.getElementById('rolesSaveBtn').onclick = async () => {
     </div>
   </div>
 </div>
-<!-- v1.0 — adminfantasy.html -->
+<!-- v1.1 — adminfantasy.html -->
 </body>
 </html>
