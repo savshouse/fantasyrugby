@@ -437,16 +437,30 @@
   .fxm-tag{font-size:.6rem;font-weight:700;text-transform:uppercase;padding:1px 6px;border-radius:4px;background:#ececec;color:var(--muted)}
   .fxm-tag.gold{background:#fff3d6;color:#8a6215}
 
-  /* ── PLAYER DATABASE ── */
-  .ps-db-card{background:var(--card);border:1.5px solid var(--line);border-radius:12px;overflow:hidden;cursor:pointer;transition:box-shadow .15s;display:flex;flex-direction:column}
-  .ps-db-card:active{box-shadow:0 4px 14px rgba(27,42,74,.14)}
-  .ps-db-avatar{width:100%;aspect-ratio:1;object-fit:cover;background:var(--paper);display:block}
-  .ps-db-ini{width:100%;aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:2rem;color:#fff}
-  .ps-db-body{padding:8px 10px}
-  .ps-db-name{font-weight:700;font-size:.82rem;color:var(--navy);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .ps-db-team{font-size:.7rem;color:var(--muted);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .ps-db-sponsor{height:16px;max-width:60px;object-fit:contain;opacity:.75;margin-top:4px;display:block}
-  .ps-db-pos.active{background:var(--navy);color:#fff;border-color:var(--navy)}
+  /* ── PLAYER DATABASE (matches landing page) ── */
+  .pdb-search{width:100%;padding:10px 14px;border:1.5px solid var(--line);border-radius:10px;font-size:16px;font-family:'Inter',sans-serif;box-sizing:border-box}
+  .pdb-filters{display:flex;gap:8px;margin-top:8px}
+  .pdb-filters select{flex:1;padding:9px 10px;border:1.5px solid var(--line);border-radius:10px;font-size:.85rem;font-family:'Inter',sans-serif;background:#fff}
+  .pdb-table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;padding:0 18px}
+  .pdb-table{width:100%;border-collapse:collapse;font-size:.82rem;white-space:nowrap}
+  .pdb-table th{text-align:right;font-size:.64rem;text-transform:uppercase;letter-spacing:.03em;color:var(--muted);padding:6px 8px;border-bottom:2px solid var(--line);cursor:pointer;user-select:none}
+  .pdb-table th.pdb-th-name{text-align:left}
+  .pdb-table th:hover{color:var(--crimson)}
+  .pdb-table th.pdb-sorted{color:var(--crimson)}
+  .pdb-table td{padding:8px;border-bottom:1px solid var(--line);text-align:right}
+  .pdb-table td.pdb-td-name{text-align:left;font-weight:600;color:var(--navy);white-space:normal;min-width:120px}
+  .pdb-table td.pdb-td-name small{display:block;font-weight:400;color:var(--muted);font-size:.72rem}
+  .pdb-th-photo{width:36px}.pdb-td-photo{padding-right:0!important;width:36px}
+  .pdb-avatar{width:32px;height:32px;border-radius:50%;object-fit:cover;display:block}
+  .pdb-avatar-ini{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:.72rem}
+  .pdb-th-sponsor{width:48px}.pdb-td-sponsor{width:48px;text-align:center!important;padding-left:4px!important;padding-right:4px!important}
+  .pdb-sponsor-logo{height:18px;max-width:40px;object-fit:contain;vertical-align:middle;opacity:.9}
+  .pdb-table tr{cursor:pointer}.pdb-table tr:hover td{background:rgba(196,30,58,.04)}
+  .pdb-table tr:last-child td{border-bottom:0}
+  .pdb-empty{padding:20px 18px;text-align:center;color:var(--muted);font-size:.85rem}
+  .pdb-pager{display:flex;align-items:center;justify-content:center;gap:14px;padding:14px 18px 4px;font-size:.82rem;color:var(--muted)}
+  .pdb-pager button{background:var(--paper);border:1.5px solid var(--line);border-radius:8px;padding:6px 14px;font-size:.82rem;font-weight:600;color:var(--navy);cursor:pointer}
+  .pdb-pager button:disabled{opacity:.35;cursor:default}
 
   /* ── APP CTA CARD ── */
   .app-cta{display:block;text-decoration:none;border-radius:12px;overflow:hidden;margin:8px 0 12px;position:relative;min-height:72px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.15)}
@@ -728,19 +742,40 @@
     <section id="players">
       <div id="playersSponsorTop"></div>
       <div id="ctaCard_players"></div>
-      <!-- Player database -->
-      <div class="card" style="margin-bottom:12px">
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
-          <div class="eyebrow">Player database</div>
-        </div>
-        <p class="muted" style="font-size:.82rem;margin:4px 0 8px">All active players. Tap to see stats and sponsor.</p>
-        <input id="ps_db_search" placeholder="Search players…" style="width:100%;font-size:16px;padding:9px 12px;border:1px solid var(--line);border-radius:10px;outline:none;box-sizing:border-box;margin-bottom:8px">
-        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px" id="ps_db_filters">
-          <button class="btn ghost small ps-db-pos active" data-pos="">All</button>
-          <button class="btn ghost small ps-db-pos" data-pos="forward">Forwards</button>
-          <button class="btn ghost small ps-db-pos" data-pos="back">Backs</button>
-        </div>
-        <div id="ps_db_list" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px"></div>
+      <!-- Player database — matches landing page design -->
+      <div class="card" style="padding:0;margin-bottom:12px;overflow:hidden">
+        <details id="mgr_pdb_details">
+          <summary style="list-style:none;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:16px 18px;cursor:pointer">
+            <div><div class="eyebrow" style="margin:0">🔍 Player database</div><p class="muted" style="font-size:.78rem;margin-top:2px">Every player, every stat — find your favourite</p></div>
+            <span style="font-size:.72rem;color:var(--muted);white-space:nowrap;flex-shrink:0">Tap to expand</span>
+          </summary>
+          <div style="padding:0 18px 14px;border-top:1px solid var(--line)">
+            <input type="search" id="ps_db_search" class="pdb-search" placeholder="Search player name…" style="margin-top:12px">
+            <div class="pdb-filters">
+              <select id="ps_db_team"><option value="">All squads</option></select>
+              <select id="ps_db_pos">
+                <option value="">All positions</option>
+                <option value="forward">Forwards</option>
+                <option value="back">Backs</option>
+              </select>
+            </div>
+          </div>
+          <div class="pdb-table-wrap">
+            <table class="pdb-table">
+              <thead><tr>
+                <th class="pdb-th-photo"></th>
+                <th data-mgrsort="name" class="pdb-th-name">Player</th>
+                <th class="pdb-th-sponsor"></th>
+                <th data-mgrsort="pts">Pts</th>
+                <th data-mgrsort="apps">Apps</th>
+                <th data-mgrsort="tries">Tries</th>
+                <th data-mgrsort="mom">PoM</th>
+              </tr></thead>
+              <tbody id="ps_db_list"><tr><td colspan="7" class="pdb-empty">Loading…</td></tr></tbody>
+            </table>
+          </div>
+          <div class="pdb-pager" id="ps_db_pager"></div>
+        </details>
       </div>
       <div class="lb-head" id="mgr_ps_podium_wrap" style="display:none">
         <div class="lb-title">Top Performers This Season</div>
@@ -1730,7 +1765,7 @@ function navTo(tab){
   if(tab==='team')     { renderPicker(); }
   if(tab==='fixtures') { loadFixturesTab(); }
   if(tab==='table')    { loadLeaderboard(); loadMyPoints(); }
-  if(tab==='players') { reloadMgrPlayerStats(); renderPlayerDb(); }
+  if(tab==='players') { reloadMgrPlayerStats(); initPlayerDb(); }
   if(tab==='totw')    { loadMgrTotw(); }
   if(tab==='duty')    { loadDutyForm(); }
   if(tab==='inbox')   { loadInbox(); markAllInboxRead(); }
@@ -2398,43 +2433,76 @@ el('mgr_ps_refresh') && (el('mgr_ps_refresh').onclick=()=>{ reloadMgrPlayerStats
 el('mgr_ps_season') && (el('mgr_ps_season').onchange=()=>reloadMgrPlayerStats());
 el('mgr_ps_search') && (el('mgr_ps_search').oninput=renderMgrPlayerStats);
 
-// ── Player database (all players, tap to open modal) ──────────
+// ── Player database (matches landing page table design) ───────
+let _mgrPdbSortCol='pts', _mgrPdbSortDir=-1, _mgrPdbPage=0;
+const MGR_PDB_PAGE=10;
+
 function renderPlayerDb(){
-  const box = el('ps_db_list'); if(!box) return;
-  const q = (el('ps_db_search')?.value||'').toLowerCase();
-  const pos = document.querySelector('.ps-db-pos.active')?.dataset.pos||'';
-  const players = allPlayers.filter(p=>{
-    if(pos && p.position !== pos) return false;
-    if(q && !namePlain(p).toLowerCase().includes(q) && !(p.sponsor_name||'').toLowerCase().includes(q)) return false;
+  const box=el('ps_db_list'), pager=el('ps_db_pager'); if(!box) return;
+  const q=(el('ps_db_search')?.value||'').trim().toLowerCase();
+  const teamF=el('ps_db_team')?.value||'';
+  const posF=el('ps_db_pos')?.value||'';
+  let rows=allPlayers.filter(p=>{
+    if(q && !namePlain(p).toLowerCase().includes(q)) return false;
+    if(teamF && teamLabel(p)!==teamF) return false;
+    if(posF && p.position!==posF) return false;
     return true;
-  }).sort((a,b)=>namePlain(a).localeCompare(namePlain(b)));
-  if(!players.length){ box.innerHTML='<div class="empty" style="grid-column:1/-1">No players found.</div>'; return; }
+  }).slice().sort((a,b)=>{
+    let av=a[_mgrPdbSortCol], bv=b[_mgrPdbSortCol];
+    if(_mgrPdbSortCol==='name'){ av=namePlain(a).toLowerCase(); bv=namePlain(b).toLowerCase(); return av.localeCompare(bv)*_mgrPdbSortDir; }
+    return ((av||0)-(bv||0))*_mgrPdbSortDir;
+  });
+  // Update sort indicators
+  document.querySelectorAll('#mgr_pdb_details th[data-mgrsort]').forEach(th=>{
+    th.classList.toggle('pdb-sorted', th.dataset.mgrsort===_mgrPdbSortCol);
+    const base=th.textContent.replace(/[▲▼]\s*$/,'').trim();
+    th.textContent=base+(th.dataset.mgrsort===_mgrPdbSortCol?(_mgrPdbSortDir===1?' ▲':' ▼'):'');
+  });
+  if(!rows.length){ box.innerHTML=`<tr><td colspan="7" class="pdb-empty">No players found${q?` matching "${esc(q)}"`:''}</td></tr>`; if(pager) pager.innerHTML=''; return; }
+  const totalPages=Math.max(1,Math.ceil(rows.length/MGR_PDB_PAGE));
+  if(_mgrPdbPage>=totalPages) _mgrPdbPage=totalPages-1;
+  const pageRows=rows.slice(_mgrPdbPage*MGR_PDB_PAGE, _mgrPdbPage*MGR_PDB_PAGE+MGR_PDB_PAGE);
   const COLOURS={'forward':'var(--crimson)','back':'var(--navy)'};
-  box.innerHTML = players.map(p=>{
-    const bg = COLOURS[p.position]||'#888';
-    const ini = (p.name||'?').trim().split(/\s+/).map(w=>w[0]).slice(0,2).join('').toUpperCase();
-    const img = p.avatar_url
-      ? `<img class="ps-db-avatar" src="${esc(p.avatar_url)}" alt="${esc(p.name)}">`
-      : `<div class="ps-db-ini" style="background:${bg}">${ini}</div>`;
-    const sponsor = p.sponsor_logo_url ? `<img class="ps-db-sponsor" src="${esc(p.sponsor_logo_url)}" title="${esc(p.sponsor_name||'')}">` : '';
-    return `<div class="ps-db-card" onclick='openPModal(${JSON.stringify(p)})'>
-      ${img}
-      <div class="ps-db-body">
-        <div class="ps-db-name">${esc(p.name||'')}</div>
-        <div class="ps-db-team">${esc(teamLabel(p))}</div>
-        ${sponsor}
-      </div>
-    </div>`;
+  box.innerHTML=pageRows.map(p=>{
+    const bg=COLOURS[p.position]||'#888';
+    const ini=(p.name||'?').trim().split(/\s+/).map(w=>w[0]).slice(0,2).join('').toUpperCase();
+    const avatar=p.avatar_url
+      ?`<img class="pdb-avatar" src="${esc(p.avatar_url)}" alt="${esc(p.name)}">`
+      :`<div class="pdb-avatar-ini" style="background:${bg}">${ini}</div>`;
+    const sponsor=p.sponsor_logo_url?`<img class="pdb-sponsor-logo" src="${esc(p.sponsor_logo_url)}" alt="${esc(p.sponsor_name||'Sponsor')}" title="Sponsored by ${esc(p.sponsor_name||'')}">` :'';
+    return `<tr onclick='openPModal(${JSON.stringify(p)})'>
+      <td class="pdb-td-photo">${avatar}</td>
+      <td class="pdb-td-name">${esc(namePlain(p))}<small>${esc(teamLabel(p))}</small></td>
+      <td class="pdb-td-sponsor">${sponsor}</td>
+      <td>${p.season_points||0}</td>
+      <td>${p.appearances||0}</td>
+      <td>${p.tries||0}</td>
+      <td>${p.mom_count||0}</td>
+    </tr>`;
   }).join('');
+  const start=_mgrPdbPage*MGR_PDB_PAGE+1, end=Math.min(rows.length,start+MGR_PDB_PAGE-1);
+  if(pager){ pager.innerHTML=`<button ${_mgrPdbPage===0?'disabled':''} id="mgrPdbPrev">‹ Prev</button><span>${start}–${end} of ${rows.length}</span><button ${_mgrPdbPage>=totalPages-1?'disabled':''} id="mgrPdbNext">Next ›</button>`;
+    const pv=el('mgrPdbPrev'), nx=el('mgrPdbNext');
+    if(pv) pv.onclick=()=>{ _mgrPdbPage--; renderPlayerDb(); };
+    if(nx) nx.onclick=()=>{ _mgrPdbPage++; renderPlayerDb(); };
+  }
 }
-el('ps_db_search') && (el('ps_db_search').oninput = renderPlayerDb);
-el('ps_db_filters') && el('ps_db_filters').querySelectorAll('.ps-db-pos').forEach(btn=>{
-  btn.onclick = ()=>{
-    el('ps_db_filters').querySelectorAll('.ps-db-pos').forEach(b=>b.classList.remove('active'));
-    btn.classList.add('active');
-    renderPlayerDb();
-  };
-});
+
+// Populate team filter from allPlayers
+function initPlayerDb(){
+  const teamSel=el('ps_db_team'); if(!teamSel) return;
+  if(teamSel.options.length<=1){
+    const teams=[...new Set(allPlayers.map(p=>teamLabel(p)).filter(Boolean))].sort();
+    teamSel.innerHTML='<option value="">All squads</option>'+teams.map(t=>`<option value="${esc(t)}">${esc(t)}</option>`).join('');
+  }
+  el('ps_db_search') && (el('ps_db_search').oninput=()=>{ _mgrPdbPage=0; renderPlayerDb(); });
+  el('ps_db_team') && (el('ps_db_team').onchange=()=>{ _mgrPdbPage=0; renderPlayerDb(); });
+  el('ps_db_pos') && (el('ps_db_pos').onchange=()=>{ _mgrPdbPage=0; renderPlayerDb(); });
+  document.querySelectorAll('#mgr_pdb_details th[data-mgrsort]').forEach(th=>{
+    th.onclick=()=>{ const col=th.dataset.mgrsort; if(_mgrPdbSortCol===col) _mgrPdbSortDir*=-1; else { _mgrPdbSortCol=col; _mgrPdbSortDir=col==='name'?1:-1; } _mgrPdbPage=0; renderPlayerDb(); };
+  });
+  renderPlayerDb();
+}
 el('mgr_tw_refresh') && (el('mgr_tw_refresh').onclick=()=>{ loadMgrTotw(); toast('Refreshed'); });
 
 // ── MANAGER: TEAM OF THE WEEK ─────────────────────────────────
@@ -3873,6 +3941,6 @@ boot();
     <button class="btn ghost block" id="idleLogoutBtn" style="margin-top:8px">Sign out now</button>
   </div>
 </div>
-<!-- v1.3 — manager.html -->
+<!-- v1.4 — manager.html -->
 </body>
 </html>
