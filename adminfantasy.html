@@ -657,7 +657,8 @@
           </select></div>
           <div style="flex:1"><label>Type</label><select id="spinv_typeFilter"><option value="">All types</option></select></div>
         </div>
-        <div id="spinv_topscroll" style="overflow-x:auto; margin-top:10px"><div id="spinv_topscroll_spacer" style="height:1px"></div></div>
+        <div id="spinv_topscroll" style="overflow-x:scroll; margin-top:10px; -webkit-overflow-scrolling:touch"><div id="spinv_topscroll_spacer" style="height:14px"></div></div>
+        <style>#spinv_topscroll::-webkit-scrollbar{height:8px; display:block}#spinv_topscroll::-webkit-scrollbar-thumb{background:var(--muted,#999); border-radius:4px}#spinv_topscroll::-webkit-scrollbar-track{background:var(--line,#eee)}</style>
         <div id="spinv_bottomscroll" style="overflow-x:auto">
           <div id="spinv_list"><div class="empty">Loading…</div></div>
         </div>
@@ -2315,12 +2316,12 @@ function renderSponsorshipsList(){
   if(!rows.length){ box.innerHTML = '<div class="empty">No invoices found.</div>'; return; }
 
   const SPINV_WIDTHS = { sponsor_name:160, contact_name:130, invoice_number:110, type_names:130, item_count:44, total:90, invoice_date:96, due_date:96, status_label:84 };
-  const spinvTotalWidth = Object.values(SPINV_WIDTHS).reduce((a,b)=>a+b,0) + 400; // + 200px Actions + 200px Bookkeeping
+  const spinvTotalWidth = Object.values(SPINV_WIDTHS).reduce((a,b)=>a+b,0) + 420; // + 200px Actions + 220px Bookkeeping
   const head = SPINV_COLUMNS.map(c=>{
     if(c.key==='sponsor_name') return `<th data-col="${c.key}" class="${c.key===spinvSortCol?'sorted':''}" style="cursor:pointer; width:${SPINV_WIDTHS[c.key]}px; max-width:${SPINV_WIDTHS[c.key]}px">${c.label}${c.key===spinvSortCol?(spinvSortDir===1?' ▲':' ▼'):''}<span class="col-resize-handle" data-resize-col="${c.key}"></span></th>`
       + `<th data-col="contact_name" style="width:${SPINV_WIDTHS.contact_name}px; max-width:${SPINV_WIDTHS.contact_name}px">Contact<span class="col-resize-handle" data-resize-col="contact_name"></span></th>`;
     return `<th data-col="${c.key}" class="${c.key===spinvSortCol?'sorted':''}" style="cursor:pointer; width:${SPINV_WIDTHS[c.key]||110}px; max-width:${SPINV_WIDTHS[c.key]||110}px">${c.label}${c.key===spinvSortCol?(spinvSortDir===1?' ▲':' ▼'):''}<span class="col-resize-handle" data-resize-col="${c.key}"></span></th>`;
-  }).join('') + '<th style="width:200px; min-width:200px">Actions</th><th style="width:200px; min-width:200px">Bookkeeping</th>';
+  }).join('') + '<th style="width:200px; min-width:200px">Actions</th><th style="width:220px; min-width:220px">Bookkeeping</th>';
 
   const body = rows.map(inv=>{
     const stColor = inv.status_key==='paid' ? '#2a7a3b' : inv.status_key==='overdue' ? 'var(--crimson)' : '#b45309';
@@ -2426,8 +2427,10 @@ function renderSponsorshipsList(){
   const tbl = box.querySelector('table');
   const topS = el('spinv_topscroll'), botS = el('spinv_bottomscroll'), spc = el('spinv_topscroll_spacer');
   if(tbl && topS && botS && spc){
-    // Set spacer width from the known table min-width (avoids timing issues with scrollWidth measurement)
-    spc.style.width = spinvTotalWidth + 'px';
+    const syncWidth = ()=>{ spc.style.width = tbl.scrollWidth + 'px'; };
+    syncWidth();
+    if(window.ResizeObserver){ new ResizeObserver(syncWidth).observe(tbl); }
+    else { requestAnimationFrame(syncWidth); setTimeout(syncWidth, 300); }
     let syncing = false;
     topS.onscroll = ()=>{ if(syncing) return; syncing = true; botS.scrollLeft = topS.scrollLeft; syncing = false; };
     botS.onscroll = ()=>{ if(syncing) return; syncing = true; topS.scrollLeft = botS.scrollLeft; syncing = false; };
@@ -5718,6 +5721,6 @@ document.getElementById('rolesSaveBtn').onclick = async () => {
     </div>
   </div>
 </div>
-<!-- v1.4 — adminfantasy.html -->
+<!-- v1.5 — adminfantasy.html -->
 </body>
 </html>
