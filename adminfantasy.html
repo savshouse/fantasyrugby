@@ -2316,12 +2316,12 @@ function renderSponsorshipsList(){
   if(!rows.length){ box.innerHTML = '<div class="empty">No invoices found.</div>'; return; }
 
   const SPINV_WIDTHS = { sponsor_name:160, contact_name:130, invoice_number:110, type_names:130, item_count:44, total:90, invoice_date:96, due_date:96, status_label:84 };
-  const spinvTotalWidth = Object.values(SPINV_WIDTHS).reduce((a,b)=>a+b,0) + 420; // + 200px Actions + 220px Bookkeeping
+  const spinvTotalWidth = Object.values(SPINV_WIDTHS).reduce((a,b)=>a+b,0) + 460; // + 200px Actions + 260px Bookkeeping
   const head = SPINV_COLUMNS.map(c=>{
     if(c.key==='sponsor_name') return `<th data-col="${c.key}" class="${c.key===spinvSortCol?'sorted':''}" style="cursor:pointer; width:${SPINV_WIDTHS[c.key]}px; max-width:${SPINV_WIDTHS[c.key]}px">${c.label}${c.key===spinvSortCol?(spinvSortDir===1?' ▲':' ▼'):''}<span class="col-resize-handle" data-resize-col="${c.key}"></span></th>`
       + `<th data-col="contact_name" style="width:${SPINV_WIDTHS.contact_name}px; max-width:${SPINV_WIDTHS.contact_name}px">Contact<span class="col-resize-handle" data-resize-col="contact_name"></span></th>`;
     return `<th data-col="${c.key}" class="${c.key===spinvSortCol?'sorted':''}" style="cursor:pointer; width:${SPINV_WIDTHS[c.key]||110}px; max-width:${SPINV_WIDTHS[c.key]||110}px">${c.label}${c.key===spinvSortCol?(spinvSortDir===1?' ▲':' ▼'):''}<span class="col-resize-handle" data-resize-col="${c.key}"></span></th>`;
-  }).join('') + '<th style="width:200px; min-width:200px">Actions</th><th style="width:220px; min-width:220px">Bookkeeping</th>';
+  }).join('') + '<th style="width:200px; min-width:200px">Actions</th><th style="width:260px; min-width:260px">Bookkeeping</th>';
 
   const body = rows.map(inv=>{
     const stColor = inv.status_key==='paid' ? '#2a7a3b' : inv.status_key==='overdue' ? 'var(--crimson)' : '#b45309';
@@ -2359,7 +2359,7 @@ function renderSponsorshipsList(){
     </tr>${detailRows}`;
   }).join('');
 
-  box.innerHTML = `<div class="rp-scroll"><table class="rp-table resizable" style="min-width:${spinvTotalWidth}px">${'<thead><tr>'+head+'</tr></thead>'}<tbody>${body}</tbody></table></div>`;
+  box.innerHTML = `<table class="rp-table resizable" style="min-width:${spinvTotalWidth}px">${'<thead><tr>'+head+'</tr></thead>'}<tbody>${body}</tbody></table>`;
   window._spinvVisibleRows = rows;
   box.querySelectorAll('th[data-col]').forEach(th=> th.onclick = (e)=>{
     if(e.target.classList.contains('col-resize-handle')) return; // don't sort when dragging the handle
@@ -5721,6 +5721,6 @@ document.getElementById('rolesSaveBtn').onclick = async () => {
     </div>
   </div>
 </div>
-<!-- v1.5 — adminfantasy.html -->
+<!-- v1.6 — adminfantasy.html -->
 </body>
 </html>
