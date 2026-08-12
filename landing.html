@@ -863,8 +863,11 @@ function openPlayerModal(p){
     if(parts.length) extra+=`<div class="modal-audit"><b>How ${total} is made:</b> ${parts.join(' &nbsp;·&nbsp; ')}</div>`;
   }
   document.getElementById('modalExtra').innerHTML=extra;
-  document.getElementById('modalSponsor').innerHTML=p.sponsor_name?`<div class="modal-sponsor">${p.sponsor_logo_url?`<img src="${esc(p.sponsor_logo_url)}" alt="${esc(p.sponsor_name)}">`:''}
-    <div class="modal-sponsor-text"><b>Sponsored by</b>${esc(p.sponsor_name)}</div></div>`:'';
+  document.getElementById('modalSponsor').innerHTML=p.sponsor_name
+    ? (p.sponsor_link_url
+        ? `<a href="${esc(p.sponsor_link_url)}" target="_blank" rel="noopener" class="modal-sponsor" style="text-decoration:none">${p.sponsor_logo_url?`<img src="${esc(p.sponsor_logo_url)}" alt="${esc(p.sponsor_name)}">`:''}<div class="modal-sponsor-text"><b>Sponsored by</b>${esc(p.sponsor_name)}</div></a>`
+        : `<div class="modal-sponsor">${p.sponsor_logo_url?`<img src="${esc(p.sponsor_logo_url)}" alt="${esc(p.sponsor_name)}">`:''}<div class="modal-sponsor-text"><b>Sponsored by</b>${esc(p.sponsor_name)}</div></div>`)
+    : '';
   document.getElementById('playerModal').classList.add('show');
 }
 function closeModal(){document.getElementById('playerModal').classList.remove('show');}
@@ -1284,6 +1287,6 @@ document.addEventListener('click', e => {
   }
 });
 </script>
-<!-- v1.0 — landing.html -->
+<!-- v1.1 — landing.html -->
 </body>
 </html>

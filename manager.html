@@ -437,6 +437,17 @@
   .fxm-tag{font-size:.6rem;font-weight:700;text-transform:uppercase;padding:1px 6px;border-radius:4px;background:#ececec;color:var(--muted)}
   .fxm-tag.gold{background:#fff3d6;color:#8a6215}
 
+  /* ── PLAYER DATABASE ── */
+  .ps-db-card{background:var(--card);border:1.5px solid var(--line);border-radius:12px;overflow:hidden;cursor:pointer;transition:box-shadow .15s;display:flex;flex-direction:column}
+  .ps-db-card:active{box-shadow:0 4px 14px rgba(27,42,74,.14)}
+  .ps-db-avatar{width:100%;aspect-ratio:1;object-fit:cover;background:var(--paper);display:block}
+  .ps-db-ini{width:100%;aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:2rem;color:#fff}
+  .ps-db-body{padding:8px 10px}
+  .ps-db-name{font-weight:700;font-size:.82rem;color:var(--navy);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .ps-db-team{font-size:.7rem;color:var(--muted);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .ps-db-sponsor{height:16px;max-width:60px;object-fit:contain;opacity:.75;margin-top:4px;display:block}
+  .ps-db-pos.active{background:var(--navy);color:#fff;border-color:var(--navy)}
+
   /* ── APP CTA CARD ── */
   .app-cta{display:block;text-decoration:none;border-radius:12px;overflow:hidden;margin:8px 0 12px;position:relative;min-height:72px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.15)}
   .app-cta-bg{position:absolute;inset:0;background-size:cover;background-position:center;z-index:0}
@@ -717,6 +728,20 @@
     <section id="players">
       <div id="playersSponsorTop"></div>
       <div id="ctaCard_players"></div>
+      <!-- Player database -->
+      <div class="card" style="margin-bottom:12px">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
+          <div class="eyebrow">Player database</div>
+        </div>
+        <p class="muted" style="font-size:.82rem;margin:4px 0 8px">All active players. Tap to see stats and sponsor.</p>
+        <input id="ps_db_search" placeholder="Search players…" style="width:100%;font-size:16px;padding:9px 12px;border:1px solid var(--line);border-radius:10px;outline:none;box-sizing:border-box;margin-bottom:8px">
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px" id="ps_db_filters">
+          <button class="btn ghost small ps-db-pos active" data-pos="">All</button>
+          <button class="btn ghost small ps-db-pos" data-pos="forward">Forwards</button>
+          <button class="btn ghost small ps-db-pos" data-pos="back">Backs</button>
+        </div>
+        <div id="ps_db_list" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px"></div>
+      </div>
       <div class="lb-head" id="mgr_ps_podium_wrap" style="display:none">
         <div class="lb-title">Top Performers This Season</div>
         <div class="podium" id="mgr_ps_podium"></div>
@@ -1705,7 +1730,7 @@ function navTo(tab){
   if(tab==='team')     { renderPicker(); }
   if(tab==='fixtures') { loadFixturesTab(); }
   if(tab==='table')    { loadLeaderboard(); loadMyPoints(); }
-  if(tab==='players') { reloadMgrPlayerStats(); }
+  if(tab==='players') { reloadMgrPlayerStats(); renderPlayerDb(); }
   if(tab==='totw')    { loadMgrTotw(); }
   if(tab==='duty')    { loadDutyForm(); }
   if(tab==='inbox')   { loadInbox(); markAllInboxRead(); }
@@ -2372,6 +2397,44 @@ function renderMgrPlayerStats(){
 el('mgr_ps_refresh') && (el('mgr_ps_refresh').onclick=()=>{ reloadMgrPlayerStats(); toast('Refreshed'); });
 el('mgr_ps_season') && (el('mgr_ps_season').onchange=()=>reloadMgrPlayerStats());
 el('mgr_ps_search') && (el('mgr_ps_search').oninput=renderMgrPlayerStats);
+
+// ── Player database (all players, tap to open modal) ──────────
+function renderPlayerDb(){
+  const box = el('ps_db_list'); if(!box) return;
+  const q = (el('ps_db_search')?.value||'').toLowerCase();
+  const pos = document.querySelector('.ps-db-pos.active')?.dataset.pos||'';
+  const players = allPlayers.filter(p=>{
+    if(pos && p.position !== pos) return false;
+    if(q && !namePlain(p).toLowerCase().includes(q) && !(p.sponsor_name||'').toLowerCase().includes(q)) return false;
+    return true;
+  }).sort((a,b)=>namePlain(a).localeCompare(namePlain(b)));
+  if(!players.length){ box.innerHTML='<div class="empty" style="grid-column:1/-1">No players found.</div>'; return; }
+  const COLOURS={'forward':'var(--crimson)','back':'var(--navy)'};
+  box.innerHTML = players.map(p=>{
+    const bg = COLOURS[p.position]||'#888';
+    const ini = (p.name||'?').trim().split(/\s+/).map(w=>w[0]).slice(0,2).join('').toUpperCase();
+    const img = p.avatar_url
+      ? `<img class="ps-db-avatar" src="${esc(p.avatar_url)}" alt="${esc(p.name)}">`
+      : `<div class="ps-db-ini" style="background:${bg}">${ini}</div>`;
+    const sponsor = p.sponsor_logo_url ? `<img class="ps-db-sponsor" src="${esc(p.sponsor_logo_url)}" title="${esc(p.sponsor_name||'')}">` : '';
+    return `<div class="ps-db-card" onclick='openPModal(${JSON.stringify(p)})'>
+      ${img}
+      <div class="ps-db-body">
+        <div class="ps-db-name">${esc(p.name||'')}</div>
+        <div class="ps-db-team">${esc(teamLabel(p))}</div>
+        ${sponsor}
+      </div>
+    </div>`;
+  }).join('');
+}
+el('ps_db_search') && (el('ps_db_search').oninput = renderPlayerDb);
+el('ps_db_filters') && el('ps_db_filters').querySelectorAll('.ps-db-pos').forEach(btn=>{
+  btn.onclick = ()=>{
+    el('ps_db_filters').querySelectorAll('.ps-db-pos').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    renderPlayerDb();
+  };
+});
 el('mgr_tw_refresh') && (el('mgr_tw_refresh').onclick=()=>{ loadMgrTotw(); toast('Refreshed'); });
 
 // ── MANAGER: TEAM OF THE WEEK ─────────────────────────────────
@@ -3810,6 +3873,6 @@ boot();
     <button class="btn ghost block" id="idleLogoutBtn" style="margin-top:8px">Sign out now</button>
   </div>
 </div>
-<!-- v1.2 — manager.html -->
+<!-- v1.3 — manager.html -->
 </body>
 </html>
