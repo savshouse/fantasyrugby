@@ -2314,22 +2314,28 @@ function renderSponsorshipsList(){
 
   if(!rows.length){ box.innerHTML = '<div class="empty">No invoices found.</div>'; return; }
 
-  const SPINV_WIDTHS = { sponsor_name:170, invoice_number:110, type_names:130, item_count:44, total:90, invoice_date:96, due_date:96, status_label:84 };
-  const spinvTotalWidth = Object.values(SPINV_WIDTHS).reduce((a,b)=>a+b,0) + 420; // + actions column
-  const head = SPINV_COLUMNS.map(c=>`<th data-col="${c.key}" class="${c.key===spinvSortCol?'sorted':''}" style="cursor:pointer; width:${SPINV_WIDTHS[c.key]||110}px; max-width:${SPINV_WIDTHS[c.key]||110}px">${c.label}${c.key===spinvSortCol?(spinvSortDir===1?' ▲':' ▼'):''}<span class="col-resize-handle" data-resize-col="${c.key}"></span></th>`).join('') + '<th style="width:420px; min-width:420px">Actions</th>';
+  const SPINV_WIDTHS = { sponsor_name:160, contact_name:130, invoice_number:110, type_names:130, item_count:44, total:90, invoice_date:96, due_date:96, status_label:84 };
+  const spinvTotalWidth = Object.values(SPINV_WIDTHS).reduce((a,b)=>a+b,0) + 300; // + actions columns
+  const head = SPINV_COLUMNS.map(c=>{
+    if(c.key==='sponsor_name') return `<th data-col="${c.key}" class="${c.key===spinvSortCol?'sorted':''}" style="cursor:pointer; width:${SPINV_WIDTHS[c.key]}px; max-width:${SPINV_WIDTHS[c.key]}px">${c.label}${c.key===spinvSortCol?(spinvSortDir===1?' ▲':' ▼'):''}<span class="col-resize-handle" data-resize-col="${c.key}"></span></th>`
+      + `<th data-col="contact_name" style="width:${SPINV_WIDTHS.contact_name}px; max-width:${SPINV_WIDTHS.contact_name}px">Contact<span class="col-resize-handle" data-resize-col="contact_name"></span></th>`;
+    return `<th data-col="${c.key}" class="${c.key===spinvSortCol?'sorted':''}" style="cursor:pointer; width:${SPINV_WIDTHS[c.key]||110}px; max-width:${SPINV_WIDTHS[c.key]||110}px">${c.label}${c.key===spinvSortCol?(spinvSortDir===1?' ▲':' ▼'):''}<span class="col-resize-handle" data-resize-col="${c.key}"></span></th>`;
+  }).join('') + '<th style="width:160px; min-width:160px">Actions</th><th style="width:140px; min-width:140px">Bookkeeping</th>';
+
   const body = rows.map(inv=>{
     const stColor = inv.status_key==='paid' ? '#2a7a3b' : inv.status_key==='overdue' ? 'var(--crimson)' : '#b45309';
     const expanded = spInvExpanded.has(inv.id);
     const detailRows = expanded ? inv.items.map(i=>{
       const tn = (allSponsorTypes.find(t=>t.id===i.sponsorship_type_id)||{}).name || '—';
       const pn = i.player_id ? displayNamePlain(allPlayers.find(p=>p.id===i.player_id)||{name:'Unknown'}) : '';
-      return `<tr class="mr-item-row"><td class="name-cell" style="padding-left:28px; color:var(--muted); font-size:.82rem">${esc(tn)}${pn?' · '+esc(pn):''}</td><td colspan="3"></td><td class="num" style="font-weight:600">£${Number(i.amount).toFixed(2)}</td><td colspan="3"></td><td></td></tr>`;
+      return `<tr class="mr-item-row"><td class="name-cell" style="padding-left:28px; color:var(--muted); font-size:.82rem">${esc(tn)}${pn?' · '+esc(pn):''}</td><td colspan="4"></td><td class="num" style="font-weight:600">£${Number(i.amount).toFixed(2)}</td><td colspan="3"></td><td></td><td></td></tr>`;
     }).join('') : '';
     return `<tr data-toggle-inv="${inv.id}" style="cursor:pointer">
       <td class="name-cell">
         <b>${expanded?'▾':'▸'} ${esc(inv.sponsor_name)}</b>
         ${inv.emailed_at ? `<div class="muted" style="font-size:.7rem; color:#2a7a3b; margin-top:2px">✓ Emailed ${new Date(inv.emailed_at).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'})}</div>` : ''}
       </td>
+      <td style="color:var(--muted); font-size:.85rem">${esc(inv.contact_name||'')}</td>
       <td>${esc(inv.invoice_number)}</td>
       <td>${esc(inv.type_names)}</td>
       <td class="num">${inv.item_count}</td>
@@ -2338,14 +2344,16 @@ function renderSponsorshipsList(){
       <td>${inv.due_date}</td>
       <td><span class="pill" style="background:${stColor}; color:#fff">${inv.status_label}</span></td>
       <td style="white-space:nowrap">
-        ${inv.status_key!=='paid' ? `<button class="btn sec small" data-mark-paid="${inv.id}">Mark paid</button>` : `<button class="btn sec small" data-mark-unpaid="${inv.id}">Mark unpaid</button>`}
         <button class="btn sec small" data-edit-spinv="${inv.id}">Edit</button>
         <button class="btn sec small" data-pdf-spinv="${inv.id}">PDF</button>
-        <button class="btn sec small" data-email-spinv="${inv.id}">${inv.emailed_at?'Re-send':'Email'}</button>
-        <button class="btn sec small" data-qf-sync="${inv.id}" title="${inv.quickfile_invoice_id ? 'Synced to QuickFile (click to re-sync)' : 'Push to QuickFile'}" style="${inv.quickfile_invoice_id ? 'color:#2a7a3b' : ''}">
-          ${inv.quickfile_invoice_id ? '✓ QF' : 'Push to QF'}
-        </button>
         <button class="btn sec small" data-delete-spinv="${inv.id}" style="color:var(--crimson); border-color:var(--crimson)">Delete</button>
+      </td>
+      <td style="white-space:nowrap">
+        <button class="btn sec small" data-email-spinv="${inv.id}">${inv.emailed_at?'Re-send':'Send'}</button>
+        <button class="btn sec small" data-qf-sync="${inv.id}" title="${inv.quickfile_invoice_id ? 'Synced to QuickFile (click to re-sync)' : 'Push to QuickFile'}" style="${inv.quickfile_invoice_id ? 'color:#2a7a3b' : ''}">
+          ${inv.quickfile_invoice_id ? '✓ QF' : 'Push QF'}
+        </button>
+        ${inv.status_key!=='paid' ? `<button class="btn sec small" data-mark-paid="${inv.id}" style="color:#2a7a3b;border-color:#2a7a3b">Paid ✓</button>` : `<button class="btn sec small" data-mark-unpaid="${inv.id}">Unpaid</button>`}
       </td>
     </tr>${detailRows}`;
   }).join('');
@@ -2397,14 +2405,29 @@ function renderSponsorshipsList(){
   box.querySelectorAll('[data-mark-paid]').forEach(b=>b.onclick=()=>setInvoicePaid(b.dataset.markPaid, true));
   box.querySelectorAll('[data-mark-unpaid]').forEach(b=>b.onclick=()=>setInvoicePaid(b.dataset.markUnpaid, false));
   box.querySelectorAll('[data-pdf-spinv]').forEach(b=>b.onclick=()=>generateInvoicePdf(b.dataset.pdfSpinv));
-  box.querySelectorAll('[data-email-spinv]').forEach(b=>b.onclick=()=>emailInvoice(b.dataset.emailSpinv));
+  box.querySelectorAll('[data-email-spinv]').forEach(b=>b.onclick=()=>{
+    const inv = allInvoices.find(i=>i.id===b.dataset.emailSpinv);
+    const isResend = !!(inv&&inv.emailed_at);
+    const msg = isResend
+      ? `Re-send invoice to ${inv.sponsor_email||inv.contact_name||inv.sponsor_name}?\n\nThis will send another copy of the invoice email. Only do this if they haven't received it or have asked for a copy.`
+      : `Send invoice to ${inv?.sponsor_email||inv?.contact_name||inv?.sponsor_name}?\n\nThis will email the invoice PDF to the sponsor. Make sure the invoice details are correct before sending.`;
+    if(confirm(msg)) emailInvoice(b.dataset.emailSpinv);
+  });
   box.querySelectorAll('[data-delete-spinv]').forEach(b=>b.onclick=()=>deleteInvoice(b.dataset.deleteSpinv));
-  box.querySelectorAll('[data-qf-sync]').forEach(b=>b.onclick=()=>syncToQuickFile(b.dataset.qfSync, b));
+  box.querySelectorAll('[data-qf-sync]').forEach(b=>b.onclick=()=>{
+    const inv = allInvoices.find(i=>i.id===b.dataset.qfSync);
+    const isResync = !!(inv&&inv.quickfile_invoice_id);
+    const msg = isResync
+      ? `Re-push to QuickFile?\n\nThis will create a new invoice in QuickFile for ${inv.sponsor_name} (ONS-${inv.invoice_number?.replace(/^INV-/,'')||'?'}). The previous QuickFile record will not be deleted automatically — check QuickFile for duplicates.`
+      : `Push to QuickFile?\n\nThis will create a new client and invoice in QuickFile for ${inv?.sponsor_name||'this sponsor'}. Make sure the invoice details are correct first.`;
+    if(confirm(msg)) syncToQuickFile(b.dataset.qfSync, b);
+  });
 
   const tbl = box.querySelector('table');
   const topS = el('spinv_topscroll'), botS = el('spinv_bottomscroll'), spc = el('spinv_topscroll_spacer');
   if(tbl && topS && botS && spc){
-    requestAnimationFrame(()=>{ spc.style.width = tbl.scrollWidth + 'px'; });
+    // Use double rAF to ensure the table is fully laid out before measuring
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{ spc.style.width = tbl.scrollWidth + 'px'; }));
     let syncing = false;
     topS.onscroll = ()=>{ if(syncing) return; syncing = true; botS.scrollLeft = topS.scrollLeft; syncing = false; };
     botS.onscroll = ()=>{ if(syncing) return; syncing = true; topS.scrollLeft = botS.scrollLeft; syncing = false; };
@@ -5695,6 +5718,6 @@ document.getElementById('rolesSaveBtn').onclick = async () => {
     </div>
   </div>
 </div>
-<!-- v1.2 — adminfantasy.html -->
+<!-- v1.3 — adminfantasy.html -->
 </body>
 </html>
