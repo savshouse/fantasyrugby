@@ -4709,7 +4709,7 @@ function renderDelTracker(){
     const spTotal = allRows.length;
     const spOverdue = allRows.some(r=>{ const dl=r.deadline||r.deliverable_types?.default_deadline; return dl && dl<today && r.quantity_delivered<r.quantity_agreed; });
     html += `<div class="del-sponsor-row" style="margin-bottom:8px">
-      <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--navy);border-radius:10px;cursor:pointer;user-select:none" onclick="delToggleSponsor(${JSON.stringify(sponsor)})">
+      <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--navy);border-radius:10px;cursor:pointer;user-select:none" data-del-sp-toggle="${esc(sponsor)}">
         <span style="color:var(--gold);font-size:.9rem;flex-shrink:0">${spOpen?"▼":"▶"}</span>
         <span style="font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:1.05rem;color:#fff;flex:1">${esc(sponsor)}</span>
         <span style="font-size:.78rem;color:rgba(255,255,255,.7)">${spDone}/${spTotal} delivered${spOverdue?" · <span style='color:var(--gold)'>⚠ overdue</span>":""}</span>
@@ -4724,7 +4724,7 @@ function renderDelTracker(){
         const invDone = rows.filter(r=>r.quantity_delivered>=r.quantity_agreed).length;
         const invOverdue = rows.some(r=>{ const dl=r.deadline||r.deliverable_types?.default_deadline; return dl && dl<today && r.quantity_delivered<r.quantity_agreed; });
         html += `<div style="margin:4px 0 4px 20px">
-          <div style="display:flex;align-items:center;gap:10px;padding:8px 14px;background:var(--paper);border:1px solid var(--line);border-radius:8px;cursor:pointer" onclick="delToggleInvoice(${JSON.stringify(invKey)})">
+          <div style="display:flex;align-items:center;gap:10px;padding:8px 14px;background:var(--paper);border:1px solid var(--line);border-radius:8px;cursor:pointer" data-del-inv-toggle="${esc(invKey)}">
             <span style="color:var(--muted);font-size:.8rem;flex-shrink:0">${invOpen?"▼":"▶"}</span>
             <span style="font-weight:600;font-size:.85rem;flex:1">${esc(invLabel)}</span>
             <span style="font-size:.75rem;color:var(--muted)">${invDone}/${rows.length} delivered${invOverdue?" · <span style='color:var(--crimson)'>⚠ overdue</span>":""}</span>
@@ -4778,6 +4778,8 @@ function renderDelTracker(){
   html += `</div><p class="muted" style="font-size:.78rem;margin-top:8px">${filtered.length} deliverable${filtered.length!==1?"s":""} · Red = overdue · ✓ = complete</p>`;
   box.innerHTML = html;
 
+  box.querySelectorAll("[data-del-sp-toggle]").forEach(b=>b.onclick=()=>delToggleSponsor(b.dataset.delSpToggle));
+  box.querySelectorAll("[data-del-inv-toggle]").forEach(b=>b.onclick=()=>delToggleInvoice(b.dataset.delInvToggle));
   box.querySelectorAll("[data-del-markdone]").forEach(b=>b.onclick=()=>markDelDone(b.dataset.delMarkdone,parseInt(b.dataset.qty)));
   box.querySelectorAll("[data-del-unmark]").forEach(b=>b.onclick=()=>markDelDone(b.dataset.delUnmark,0));
   box.querySelectorAll("[data-del-edit]").forEach(b=>b.onclick=()=>openDelModal(b.dataset.delEdit));
@@ -6378,6 +6380,6 @@ document.getElementById('rolesSaveBtn').onclick = async () => {
     </div>
   </div>
 </div>
-<!-- v1.15 — adminfantasy.html -->
+<!-- v1.16 — adminfantasy.html -->
 </body>
 </html>
