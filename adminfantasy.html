@@ -2667,6 +2667,11 @@ async function deleteInvoice(id){
   const inv = allInvoices.find(x=>x.id===id); if(!inv) return;
   const sure = confirm(`Delete invoice ${inv.invoice_number} for ${inv.sponsor_name}?\n\nThis permanently removes the invoice and every item on it. This cannot be undone.`);
   if(!sure) return;
+  // Clear sponsor fields on any players linked to this invoice
+  const playerItems = itemsForInvoice(id).filter(i=>i.player_id);
+  for(const item of playerItems){
+    await sb.from('players').update({ sponsor_name:null, sponsor_logo_url:null, sponsor_link_url:null }).eq('id', item.player_id);
+  }
   // Line items must go first — the DB will otherwise block deleting an invoice that still has items pointing at it.
   const delItems = await sb.from('sponsorships').delete().eq('invoice_id', id);
   if(delItems.error){ toast(delItems.error.message, true); return; }
@@ -2674,6 +2679,7 @@ async function deleteInvoice(id){
   if(delInv.error){ toast(delInv.error.message, true); return; }
   toast('Invoice deleted');
   await loadSponsorships();
+  await loadPlayers();
 }
 function editInvoice(id){
   const inv = allInvoices.find(x=>x.id===id); if(!inv) return;
@@ -2727,6 +2733,14 @@ el('spinv_save') && (el('spinv_save').onclick = async ()=>{
   if(id){
     const res = await sb.from('invoices').update(rec).eq('id', id);
     if(res.error){ el('spinv_status').textContent = res.error.message; toast(res.error.message, true); return; }
+    // Before replacing line items, clear sponsor fields for players being removed
+    const oldItems = itemsForInvoice(id).filter(i=>i.player_id);
+    const newPlayerIds = new Set(spBasket.map(i=>i.player_id).filter(Boolean));
+    for(const item of oldItems){
+      if(!newPlayerIds.has(item.player_id)){
+        await sb.from('players').update({ sponsor_name:null, sponsor_logo_url:null, sponsor_link_url:null }).eq('id', item.player_id);
+      }
+    }
     // Replace line items: delete old, insert current basket
     const del = await sb.from('sponsorships').delete().eq('invoice_id', id);
     if(del.error){ el('spinv_status').textContent = del.error.message; toast(del.error.message, true); return; }
@@ -6403,6 +6417,6 @@ document.getElementById('rolesSaveBtn').onclick = async () => {
     </div>
   </div>
 </div>
-<!-- v1.19 — adminfantasy.html -->
+<!-- v1.20 — adminfantasy.html -->
 </body>
 </html>
