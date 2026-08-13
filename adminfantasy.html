@@ -4889,6 +4889,7 @@ function openDelModal(id){
   el('del_row_status').textContent='';
   el('del_row_modal').classList.add('show');
 }
+function closeDelModal(){ el('del_row_modal').classList.remove('show'); }
 
 function onInvoiceSelected(){
   const invId = el('del_row_invoice').value;
@@ -6402,6 +6403,6 @@ document.getElementById('rolesSaveBtn').onclick = async () => {
     </div>
   </div>
 </div>
-<!-- v1.18 — adminfantasy.html -->
+<!-- v1.19 — adminfantasy.html -->
 </body>
 </html>
