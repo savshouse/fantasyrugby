@@ -737,6 +737,10 @@
           <select id="del_row_invoice"><option value="">None</option></select>
           <label style="margin-top:8px">Deliverable type</label>
           <select id="del_row_type"><option value="">Select type…</option></select>
+          <div id="del_row_player_wrap" style="display:none;margin-top:8px">
+            <label>Which player? <span class="muted" style="font-weight:400;text-transform:none;font-size:.8rem">(from this invoice)</span></label>
+            <select id="del_row_player"><option value="">Select player…</option></select>
+          </div>
           <div class="row" style="margin-top:8px">
             <div><label>Qty agreed</label><input type="number" id="del_row_qty_agreed" min="1" value="1" style="width:80px"></div>
             <div><label>Qty delivered</label><input type="number" id="del_row_qty_delivered" min="0" value="0" style="width:80px"></div>
@@ -4881,16 +4885,18 @@ function openDelModal(id){
   const spSel = el('del_row_sponsor');
   const sponsors = [...new Set((allInvoices||[]).map(i=>i.sponsor_name).filter(Boolean))].sort();
   spSel.innerHTML = '<option value="">Select sponsor…</option>' + sponsors.map(s=>`<option value="${esc(s)}">${esc(s)}</option>`).join('');
-  spSel.onchange = ()=>{ el('del_row_invoice').innerHTML = makeInvOptions(spSel.value); onInvoiceSelected(); };
+  spSel.onchange = ()=>{ el('del_row_invoice').innerHTML = makeInvOptions(spSel.value); onInvoiceSelected(); updateDelPlayerPicker(); };
   // Populate type dropdown fresh
   const typeSel = el('del_row_type');
-  typeSel.innerHTML = '<option value="">Select type…</option>' + allDeliverableTypes.map(t=>`<option value="${t.id}">${esc(t.name)}</option>`).join('');
+  typeSel.innerHTML = '<option value="">Select type…</option>' + allDeliverableTypes.map(t=>`<option value="${t.id}" data-category="${esc(t.category||'')}">${esc(t.name)}</option>`).join('');
+  typeSel.onchange = updateDelPlayerPicker;
   if(id){
     const r = allDeliverableRows.find(x=>x.id===id); if(!r) return;
     spSel.value = r.sponsor_name||'';
     el('del_row_invoice').innerHTML = makeInvOptions(r.sponsor_name);
     el('del_row_invoice').value = r.invoice_id||'';
     typeSel.value = r.deliverable_type_id||'';
+    updateDelPlayerPicker();
     el('del_row_qty_agreed').value = r.quantity_agreed||1;
     el('del_row_qty_delivered').value = r.quantity_delivered||0;
     el('del_row_deadline').value = r.deadline||'';
@@ -4903,6 +4909,34 @@ function openDelModal(id){
   el('del_row_status').textContent='';
   el('del_row_modal').classList.add('show');
 }
+function updateDelPlayerPicker(){
+  const typeSel = el('del_row_type');
+  const opt = typeSel.selectedOptions[0];
+  const isPlayer = opt && opt.dataset.category === 'Players';
+  const wrap = el('del_row_player_wrap'); if(!wrap) return;
+  wrap.style.display = isPlayer ? 'block' : 'none';
+  if(!isPlayer){ el('del_row_player').innerHTML='<option value="">Select player…</option>'; return; }
+  // Populate from invoice's player line items
+  const invId = el('del_row_invoice').value;
+  const playerItems = invId
+    ? (allSponsorships||[]).filter(s=>s.invoice_id===invId && s.player_id)
+    : [];
+  const plSel = el('del_row_player');
+  if(playerItems.length){
+    plSel.innerHTML = '<option value="">Select player…</option>' +
+      playerItems.map(s=>{
+        const p = (allPlayers||[]).find(x=>x.id===s.player_id);
+        const name = p ? (p.nickname ? `${p.name} "${p.nickname}"` : p.name) : s.player_id;
+        return `<option value="${esc(name)}">${esc(name)}</option>`;
+      }).join('');
+    plSel.onchange = ()=>{
+      if(plSel.value) el('del_row_notes').value = `Sponsored player — ${plSel.value}`;
+    };
+  } else {
+    plSel.innerHTML = '<option value="">No player line items on this invoice</option>';
+  }
+}
+
 function closeDelModal(){ el('del_row_modal').classList.remove('show'); }
 
 function onInvoiceSelected(){
@@ -4911,9 +4945,8 @@ function onInvoiceSelected(){
   const inv = allInvoices.find(i=>i.id===invId); if(!inv) return;
   const items = (allSponsorships||[]).filter(s=>s.invoice_id===invId);
   if(!items.length) return;
-  // We're in single-row-add mode — just pre-fill qty from first line item
-  // Full auto-create (one row per line item) happens on invoice save via autoCreateDeliverables()
   el('del_row_qty_agreed').value = items.reduce((t,s)=>t+1,0);
+  updateDelPlayerPicker();
 }
 
 async function autoCreateDeliverables(invoiceId, sponsorName){
@@ -6417,6 +6450,6 @@ document.getElementById('rolesSaveBtn').onclick = async () => {
     </div>
   </div>
 </div>
-<!-- v1.20 — adminfantasy.html -->
+<!-- v1.21 — adminfantasy.html -->
 </body>
 </html>
