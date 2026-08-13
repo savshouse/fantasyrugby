@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>ONs Fantasy Rugby — Poster</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800;900&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#f0f0f0;display:flex;justify-content:center;align-items:flex-start;min-height:100vh;padding:32px;font-family:'Inter',sans-serif}
+  .poster{
+    width:794px; /* A4 landscape ~96dpi equivalent, works well for A3 print */
+    min-height:1123px;
+    background:#1B2A4A;
+    position:relative;
+    overflow:hidden;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    padding:0;
+  }
+  /* Top crimson band */
+  .top-band{width:100%;background:#C41E3A;padding:18px 50px;display:flex;align-items:center;gap:20px}
+  .top-band-text{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:1.1rem;text-transform:uppercase;letter-spacing:.15em;color:rgba(255,255,255,.9)}
+  /* Gold accent lines */
+  .gold-line{width:100%;height:5px;background:#D4A017}
+  .gold-line-thin{width:100%;height:2px;background:#D4A017;opacity:.5}
+  /* Main body */
+  .body{flex:1;width:100%;display:flex;flex-direction:column;align-items:center;padding:44px 60px 50px;position:relative}
+  /* Decorative circles */
+  .circles{position:absolute;right:-80px;top:60px;opacity:.06;pointer-events:none}
+  .circles svg{width:420px;height:420px}
+  /* Crest */
+  .crest{width:110px;height:110px;object-fit:contain;margin-bottom:18px;filter:drop-shadow(0 4px 20px rgba(0,0,0,.4))}
+  /* Headlines */
+  .eyebrow{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:1.1rem;letter-spacing:.25em;text-transform:uppercase;color:#D4A017;margin-bottom:10px}
+  h1{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:5.8rem;text-transform:uppercase;letter-spacing:.04em;color:#fff;line-height:.92;text-align:center;margin-bottom:8px}
+  h1 span{color:#D4A017}
+  h2{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:2.8rem;text-transform:uppercase;letter-spacing:.06em;color:#fff;text-align:center;margin-bottom:30px}
+  /* Divider */
+  .divider{width:160px;height:3px;background:#D4A017;margin:22px auto}
+  /* Feature stats */
+  .stats{display:flex;gap:0;margin:22px 0 32px;width:100%}
+  .stat{flex:1;text-align:center;padding:22px 10px;position:relative}
+  .stat+.stat::before{content:'';position:absolute;left:0;top:20%;height:60%;width:1px;background:#D4A017;opacity:.4}
+  .stat-number{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:3.6rem;color:#D4A017;line-height:1}
+  .stat-label{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:1rem;text-transform:uppercase;letter-spacing:.12em;color:rgba(255,255,255,.75);margin-top:4px}
+  /* How it works */
+  .how-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;width:100%;margin-bottom:36px}
+  .how-step{background:rgba(255,255,255,.07);border:1px solid rgba(212,160,23,.25);border-radius:14px;padding:18px 14px;text-align:center}
+  .step-num{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:2rem;color:#D4A017;line-height:1;margin-bottom:6px}
+  .step-title{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:1.1rem;text-transform:uppercase;letter-spacing:.04em;color:#fff;margin-bottom:5px}
+  .step-desc{font-size:.78rem;color:rgba(255,255,255,.65);line-height:1.5}
+  /* Prize band */
+  .prize-band{width:100%;background:#C41E3A;border-radius:12px;padding:18px 30px;display:flex;align-items:center;justify-content:space-between;margin-bottom:36px;gap:20px}
+  .prize-text{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:1.65rem;text-transform:uppercase;letter-spacing:.04em;color:#fff}
+  .prize-text span{color:#D4A017}
+  .prize-sub{font-size:.85rem;color:rgba(255,255,255,.8);margin-top:3px}
+  /* QR section */
+  .qr-section{display:flex;align-items:center;gap:40px;width:100%;margin-top:4px}
+  .qr-wrap{background:#fff;border-radius:14px;padding:14px;flex-shrink:0}
+  .qr-wrap img{width:160px;height:160px;display:block}
+  .qr-info{flex:1}
+  .qr-cta{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:2.4rem;text-transform:uppercase;letter-spacing:.04em;color:#fff;margin-bottom:8px;line-height:1.1}
+  .qr-cta span{color:#D4A017}
+  .qr-url{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:1.3rem;color:#D4A017;letter-spacing:.06em;margin-bottom:8px}
+  .qr-note{font-size:.82rem;color:rgba(255,255,255,.6);line-height:1.5}
+  /* Footer */
+  .footer{width:100%;padding:16px 50px;background:rgba(0,0,0,.25);display:flex;align-items:center;justify-content:space-between;margin-top:auto}
+  .footer-club{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:1.1rem;text-transform:uppercase;letter-spacing:.1em;color:rgba(255,255,255,.6)}
+  .footer-season{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:1rem;color:#D4A017;letter-spacing:.08em}
+  @media print{
+    body{background:none;padding:0}
+    .poster{width:100%;min-height:100vh}
+  }
+</style>
+</head>
+<body>
+<div class="poster">
+  <!-- Decorative circles -->
+  <div class="circles">
+    <svg viewBox="0 0 400 400"><circle cx="200" cy="200" r="190" fill="none" stroke="white" stroke-width="1"/><circle cx="200" cy="200" r="150" fill="none" stroke="white" stroke-width="1"/><circle cx="200" cy="200" r="110" fill="none" stroke="white" stroke-width="1"/><circle cx="200" cy="200" r="70" fill="none" stroke="white" stroke-width="1"/><circle cx="200" cy="200" r="30" fill="none" stroke="white" stroke-width="1"/></svg>
+  </div>
+
+  <!-- Top band -->
+  <div class="top-band">
+    <img src="https://upload.wikimedia.org/wikipedia/commons/1/1e/ONsLogoNew-svg.svg" style="width:40px;height:40px;object-fit:contain;flex-shrink:0" alt="ONs RFC">
+    <span class="top-band-text">Old Northamptonians RFC &nbsp;·&nbsp; Season 1 &nbsp;·&nbsp; Members Only</span>
+  </div>
+  <div class="gold-line"></div>
+
+  <div class="body">
+    <!-- Crest -->
+    <img class="crest" src="https://upload.wikimedia.org/wikipedia/commons/1/1e/ONsLogoNew-svg.svg" alt="ONs RFC Crest">
+
+    <div class="eyebrow">Introducing</div>
+
+    <h1>ONs<br><span>Fantasy</span><br>Rugby</h1>
+    <h2>Pick your squad. Earn your points.</h2>
+
+    <div class="divider"></div>
+
+    <!-- Stats -->
+    <div class="stats">
+      <div class="stat">
+        <div class="stat-number">£10</div>
+        <div class="stat-label">Entry fee</div>
+      </div>
+      <div class="stat">
+        <div class="stat-number">100%</div>
+        <div class="stat-label">To prize fund</div>
+      </div>
+      <div class="stat">
+        <div class="stat-number">5</div>
+        <div class="stat-label">Teams to pick from</div>
+      </div>
+      <div class="stat">
+        <div class="stat-number">6</div>
+        <div class="stat-label">Prizes to win</div>
+      </div>
+    </div>
+
+    <!-- How it works -->
+    <div class="how-grid">
+      <div class="how-step">
+        <div class="step-num">1</div>
+        <div class="step-title">Sign up</div>
+        <div class="step-desc">Create your manager account — paid-up ONs members only</div>
+      </div>
+      <div class="how-step">
+        <div class="step-num">2</div>
+        <div class="step-title">Pick your squad</div>
+        <div class="step-desc">7 starters + 3 bench from real ONs players across all XVs</div>
+      </div>
+      <div class="how-step">
+        <div class="step-num">3</div>
+        <div class="step-title">Score points</div>
+        <div class="step-desc">Your players earn you points every week based on real match stats</div>
+      </div>
+      <div class="how-step">
+        <div class="step-num">4</div>
+        <div class="step-title">Win prizes</div>
+        <div class="step-desc">Top 3 managers &amp; top 3 player performances share the pot</div>
+      </div>
+    </div>
+
+    <!-- Prize band -->
+    <div class="prize-band">
+      <div>
+        <div class="prize-text">Season 1 runs <span>September → Christmas</span></div>
+        <div class="prize-sub">Every penny of your £10 entry goes directly into the prize fund. The club keeps nothing.</div>
+      </div>
+      <div style="font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:2.2rem;color:#D4A017;white-space:nowrap;flex-shrink:0">🏆 6 prizes</div>
+    </div>
+
+    <!-- QR + CTA -->
+    <div class="qr-section">
+      <div class="qr-wrap">
+        <img src="data:image/png;base64,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" alt="Scan to sign up">
+      </div>
+      <div class="qr-info">
+        <div class="qr-cta">Scan to build<br>your <span>squad</span></div>
+        <div class="qr-url">fantasyrugby.uk</div>
+        <div class="qr-note">Or visit fantasyrugby.uk on any device · Picks lock Friday at 22:00 · Entry fee £10 · Paid-up members only</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="gold-line-thin"></div>
+  <div class="footer">
+    <span class="footer-club">Old Northamptonians RFC</span>
+    <span class="footer-season">Fantasy Rugby Manager · Season 1</span>
+  </div>
+</div>
+</body>
+</html>
