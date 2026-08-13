@@ -338,7 +338,7 @@ let allTypes = [], availData = [];
 
 async function loadAll(){
   const [{ data:types }, { data:avail }, { data:allSponsors }, { data:placements }, { data:players }, { data:pageContent }] = await Promise.all([
-    sb.from('sponsorship_types').select('*').eq('active',true).order('sort_order'),
+    sb.from('sponsorship_types').select('*').eq('active',true).eq('show_on_sponsor_page',true).order('sort_order'),
     sb.rpc('public_sponsorship_availability'),
     sb.from('sponsor_banners').select('*').eq('active',true).order('sort_order'),
     sb.from('sponsor_placements').select('*').eq('page_key','sponsor').maybeSingle(),
@@ -443,7 +443,7 @@ async function loadSponsorEnquiryOptions(){
   const typeSel = document.getElementById('enq_type');
   typeSel.innerHTML = '<option value="">Loading options…</option>';
   const [{data:types},{data:avail},{data:allPlayersForEnq},{data:enqTeams}] = await Promise.all([
-    sb.from('sponsorship_types').select('*').eq('active',true).order('sort_order'),
+    sb.from('sponsorship_types').select('*').eq('active',true).eq('show_on_sponsor_page',true).order('sort_order'),
     sb.rpc('public_sponsorship_availability'),
     sb.from('players').select('id,name,nickname,position,team_id').eq('active',true),
     sb.from('teams').select('id,name')
@@ -517,6 +517,6 @@ document.addEventListener('click', e => {
   }
 });
 </script>
-<!-- v1.0 — sponsor.html -->
+<!-- v1.1 — sponsor.html -->
 </body>
 </html>

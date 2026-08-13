@@ -694,35 +694,6 @@
 
     <!-- DELIVERABLES -->
     <section id="deliverables">
-      <!-- Deliverable types management -->
-      <details class="card" id="del_types_details">
-        <summary style="cursor:pointer; list-style:none; display:flex; align-items:center; justify-content:space-between">
-          <span class="eyebrow" style="margin:0">⚙️ Deliverable types</span>
-          <span class="muted" style="font-size:.75rem">Tap to manage</span>
-        </summary>
-        <p class="muted" style="margin-top:8px; font-size:.82rem">Define what can be delivered to a sponsor. These become the rows in the tracker below. Add custom types as needed.</p>
-        <div id="del_types_list" style="margin-top:10px"><div class="empty">Loading…</div></div>
-        <hr class="divider" style="margin:14px 0">
-        <div class="eyebrow">Add deliverable type</div>
-        <div class="row" style="margin-top:8px">
-          <div style="flex:2"><label>Name</label><input id="del_type_name" placeholder="e.g. Pitchside advertising banners"></div>
-          <div><label>Category</label>
-            <select id="del_type_cat">
-              <option value="Kit">Kit</option>
-              <option value="Advertising">Advertising</option>
-              <option value="Events">Events</option>
-              <option value="Digital">Digital</option>
-              <option value="Players">Players</option>
-              <option value="Other">Other</option>
-            </select>
-          </div>
-          <div><label>Default deadline</label><input type="date" id="del_type_deadline"></div>
-          <div><label>Order</label><input type="number" id="del_type_sort" value="10" min="1" style="width:70px"></div>
-        </div>
-        <button class="btn navy" id="del_type_save" style="margin-top:10px">Add type</button>
-        <p class="muted" id="del_type_status" style="font-size:.82rem; margin-top:6px"></p>
-      </details>
-
       <!-- Deliverables tracker -->
       <div class="card">
         <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px">
@@ -756,7 +727,7 @@
       </div>
 
       <!-- Add / Edit row modal -->
-      <div class="add-overlay" id="del_row_modal" onclick="if(event.target===this)closeDelModal()" style="align-items:center;justify-content:center;z-index:80">
+      <div class="add-overlay" id="del_row_modal" style="align-items:center;justify-content:center;z-index:80">
         <div class="modal-card" style="max-width:480px;width:100%;max-height:90vh;overflow-y:auto;position:relative">
           <button class="modal-close" onclick="closeDelModal()">✕</button>
           <div class="eyebrow" id="del_modal_title">Add deliverable row</div>
@@ -774,7 +745,10 @@
           </div>
           <label style="margin-top:8px">Notes</label>
           <textarea id="del_row_notes" rows="2" placeholder="Any notes about this deliverable…" style="font-size:16px;width:100%;padding:10px 12px;border:1.5px solid var(--line);border-radius:10px;font-family:'Inter',sans-serif;box-sizing:border-box;resize:vertical"></textarea>
-          <button class="btn navy" id="del_row_save" style="margin-top:12px; width:100%">Save</button>
+          <div class="row" style="margin-top:12px">
+            <button class="btn navy" id="del_row_save" style="flex:2">Save</button>
+            <button class="btn sec" onclick="closeDelModal()" style="flex:1">Cancel</button>
+          </div>
           <p class="muted" id="del_row_status" style="font-size:.82rem; margin-top:6px; text-align:center"></p>
         </div>
       </div>
@@ -906,8 +880,15 @@
         <input id="sptype_capacity" type="number" inputmode="numeric" min="0" placeholder="Leave blank for unlimited">
         <label for="sptype_description">Description (shown on sponsor landing page)</label>
         <textarea id="sptype_description" rows="2" placeholder="e.g. Your brand on every player card, seen by all managers every week of the season."></textarea>
-        <label for="sptype_perks">What's included — one perk per line (shown on sponsor landing page)</label>
+        <label for="sptype_perks">Top 4 highlights <span style="font-weight:400;text-transform:none;font-size:.8rem">— shown publicly on sponsor page, one per line. These are your marketing pitch — not linked to the deliverables checklist below.</span></label>
         <textarea id="sptype_perks" rows="4" placeholder="e.g.&#10;Logo on player card&#10;Social media mention&#10;Matchday programme feature"></textarea>
+
+        <div style="margin-top:14px; padding-top:12px; border-top:1px solid var(--line)">
+          <div class="eyebrow" style="margin-bottom:6px; font-size:.75rem">Deliverables included in this package</div>
+          <p class="muted" style="font-size:.78rem; margin-bottom:10px">Tick each deliverable included in this package and set the quantity. These are used to auto-populate the deliverables tracker when an invoice is saved.</p>
+          <div id="sptype_del_checklist"><div class="muted" style="font-size:.82rem">Save a type first, or add deliverable types in the Deliverables tab.</div></div>
+        </div>
+
         <label>Artwork image (shown on sponsor landing page)</label>
         <div class="upload-row">
           <label class="btn ghost" style="flex:1; text-align:center; cursor:pointer">
@@ -921,8 +902,9 @@
         <input type="hidden" id="sptype_image_url">
         <div class="inline" style="gap:16px; margin-top:12px; flex-wrap:wrap">
           <label class="inline" style="margin:0"><input type="checkbox" class="chk" id="sptype_active" checked> Active (shown when creating invoices)</label>
+          <label class="inline" style="margin:0"><input type="checkbox" class="chk" id="sptype_show_page" checked> 🌐 Show on sponsor page</label>
           <label class="inline" style="margin:0"><input type="checkbox" class="chk" id="sptype_highlight"> ⭐ Featured / most popular</label>
-          <label class="inline" style="margin:0"><input type="checkbox" class="chk" id="sptype_full_width"> ↔ Full width on sponsor page (good for premium / bespoke packages)</label>
+          <label class="inline" style="margin:0"><input type="checkbox" class="chk" id="sptype_full_width"> ↔ Full width on sponsor page</label>
         </div>
         <div class="row" style="margin-top:8px">
           <div><label for="sptype_sort">Display order <span style="font-weight:400;text-transform:none">(lower = shown first)</span></label><input id="sptype_sort" type="number" inputmode="numeric" min="1" placeholder="e.g. 10"></div>
@@ -933,6 +915,31 @@
           <button class="btn sec" id="sptype_clear">Clear</button>
         </div>
         <div id="sptype_list" style="margin-top:14px"></div>
+
+        <details style="margin-top:16px; border-top:1px solid var(--line); padding-top:12px">
+          <summary style="cursor:pointer; list-style:none; font-size:.82rem; color:var(--muted); font-weight:600">⚙️ Manage deliverable types</summary>
+          <p class="muted" style="font-size:.78rem; margin:8px 0">Add, edit or reorder the deliverable types that appear in the checklist above and in the tracker.</p>
+          <div id="del_types_list" style="margin-top:8px"><div class="empty">Loading…</div></div>
+          <hr style="margin:12px 0; border:none; border-top:1px solid var(--line)">
+          <div style="font-size:.82rem; font-weight:600; margin-bottom:6px">Add deliverable type</div>
+          <div class="row">
+            <div style="flex:2"><label>Name</label><input id="del_type_name" placeholder="e.g. Pitchside advertising banners"></div>
+            <div><label>Category</label>
+              <select id="del_type_cat">
+                <option value="Kit">Kit</option>
+                <option value="Advertising">Advertising</option>
+                <option value="Events">Events</option>
+                <option value="Digital">Digital</option>
+                <option value="Players">Players</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+            <div><label>Default deadline</label><input type="date" id="del_type_deadline"></div>
+            <div><label>Order</label><input type="number" id="del_type_sort" value="10" min="1" style="width:70px"></div>
+          </div>
+          <button class="btn navy" id="del_type_save" style="margin-top:10px">Add type</button>
+          <p class="muted" id="del_type_status" style="font-size:.82rem; margin-top:6px"></p>
+        </details>
       </details>
 
     </section>
@@ -1855,11 +1862,16 @@ el('msg_send') && (el('msg_send').onclick = async ()=>{
 });
 let allSponsorTypes = [];
 async function loadSponsorTypes(){
-  const { data, error } = await sb.from('sponsorship_types').select('*').order('sort_order');
+  const [{ data, error }, { data:tmplData }] = await Promise.all([
+    sb.from('sponsorship_types').select('*').order('sort_order'),
+    sb.from('deliverable_templates').select('*')
+  ]);
   if(error){ toast(error.message, true); return; }
   allSponsorTypes = data || [];
+  allDeliverableTemplates = tmplData || [];
   renderSponsorTypeSelect();
   renderSponsorTypesList();
+  renderDelTypes(); // refresh deliverable types list in case it's open
 }
 
 // Sponsor type image — handled by the cropper (wired in the IIFE at the bottom of the file)
@@ -1964,17 +1976,49 @@ function editSponsorType(id){
   el('sptype_perks').value = t.perks||'';
   el('sptype_highlight').checked = t.highlight||false;
   el('sptype_full_width').checked = t.full_width||false;
+  if(el('sptype_show_page')) el('sptype_show_page').checked = t.show_on_sponsor_page!==false;
   el('sptype_sort').value = t.sort_order!=null ? t.sort_order : '';
   el('sptype_image_url').value = t.image_url||'';
   el('sptype_image_name').textContent = t.image_url ? 'Current image saved' : '';
   el('sptype_image_preview').innerHTML = t.image_url ? `<img src="${esc(t.image_url)}" style="max-width:100%; max-height:120px; border-radius:8px; margin-top:4px">` : '';
+  renderSponsorTypeDelChecklist(t.id);
   el('sptype_details').open = true;
   window.scrollTo({top:0, behavior:'smooth'});
+}
+function renderSponsorTypeDelChecklist(sptypeId){
+  const box = el('sptype_del_checklist'); if(!box) return;
+  if(!allDeliverableTypes.length){
+    box.innerHTML = '<div class="muted" style="font-size:.82rem">No deliverable types defined yet — add them using the "Manage deliverable types" section below.</div>';
+    return;
+  }
+  const currentTemplates = sptypeId ? (allDeliverableTemplates||[]).filter(t=>t.sponsorship_type_id===sptypeId) : [];
+  const grouped = {};
+  allDeliverableTypes.forEach(t=>{ (grouped[t.category||'Other']||=[]).push(t); });
+  box.innerHTML = Object.entries(grouped).map(([cat,types])=>`
+    <div style="margin-bottom:10px">
+      <div class="muted" style="font-size:.72rem; text-transform:uppercase; letter-spacing:.06em; font-weight:700; margin-bottom:4px">${esc(cat)}</div>
+      ${types.map(t=>{
+        const tmpl = currentTemplates.find(c=>c.deliverable_type_id===t.id);
+        const checked = !!tmpl;
+        const qty = tmpl?.quantity_default||1;
+        return `<div style="display:flex; align-items:center; gap:10px; padding:4px 0; border-bottom:1px solid var(--line)">
+          <label class="inline" style="flex:1; margin:0; font-size:.85rem; gap:8px">
+            <input type="checkbox" class="chk" id="sptype_del_chk_${t.id}" data-del-tmpl="${t.id}" ${checked?'checked':''} style="width:auto">
+            ${esc(t.name)}
+          </label>
+          <label style="display:flex; align-items:center; gap:4px; font-size:.8rem; color:var(--muted); flex-shrink:0">
+            Qty <input type="number" id="sptype_del_qty_${t.id}" min="1" value="${qty}" style="width:52px; padding:4px 6px; border:1px solid var(--line); border-radius:6px; font-size:.82rem; text-align:center">
+          </label>
+        </div>`;
+      }).join('')}
+    </div>`).join('');
 }
 el('sptype_clear') && (el('sptype_clear').onclick = ()=>{
   el('sptype_id').value=''; el('sptype_name').value=''; el('sptype_amount').value='';
   el('sptype_applies').value='player'; el('sptype_active').checked=true; el('sptype_capacity').value='';
   el('sptype_description').value=''; el('sptype_perks').value=''; el('sptype_highlight').checked=false; el('sptype_full_width').checked=false; el('sptype_sort').value='';
+  if(el('sptype_show_page')) el('sptype_show_page').checked=true;
+  renderSponsorTypeDelChecklist(null);
   el('sptype_image_url').value=''; el('sptype_image_name').textContent=''; el('sptype_image_preview').innerHTML='';
   if(el('sptype_image_file')) el('sptype_image_file').value='';
   window._pendingSptypeImage = null;
@@ -2009,6 +2053,7 @@ el('sptype_save') && (el('sptype_save').onclick = async ()=>{
     perks: el('sptype_perks').value.trim() || null,
     highlight: el('sptype_highlight').checked,
     full_width: el('sptype_full_width').checked,
+    show_on_sponsor_page: el('sptype_show_page')?.checked ?? true,
     sort_order: el('sptype_sort').value ? parseInt(el('sptype_sort').value,10) : (allSponsorTypes.length+1),
     image_url
   };
@@ -2017,6 +2062,22 @@ el('sptype_save') && (el('sptype_save').onclick = async ()=>{
     ? await sb.from('sponsorship_types').update(rec).eq('id',id)
     : await sb.from('sponsorship_types').insert(rec);
   if(res.error){ toast(res.error.message, true); return; }
+  const savedId = id || res.data?.[0]?.id;
+  // Save deliverable templates — delete existing for this type then re-insert checked ones
+  if(savedId){
+    await sb.from('deliverable_templates').delete().eq('sponsorship_type_id', savedId);
+    const checkboxes = document.querySelectorAll('#sptype_del_checklist [data-del-tmpl]');
+    const inserts = [];
+    checkboxes.forEach(cb=>{
+      if(!cb.checked) return;
+      const typeId = cb.dataset.delTmpl;
+      const qtyEl = document.getElementById('sptype_del_qty_'+typeId);
+      const qty = Math.max(1, parseInt(qtyEl?.value||'1',10));
+      inserts.push({ sponsorship_type_id:savedId, deliverable_type_id:typeId, quantity_default:qty });
+    });
+    if(inserts.length) await sb.from('deliverable_templates').insert(inserts);
+    allDeliverableTemplates = (allDeliverableTemplates||[]).filter(t=>t.sponsorship_type_id!==savedId).concat(inserts);
+  }
   toast(id?'Type updated':'Type added'); el('sptype_clear').click(); await loadSponsorTypes();
 });
 
@@ -2665,6 +2726,11 @@ el('spinv_save') && (el('spinv_save').onclick = async ()=>{
   if(playerUpdates.length) await loadPlayers();
 
   toast(id ? 'Invoice updated' : 'Invoice created'); el('spinv_clear').click(); await loadSponsorships();
+  // Auto-create deliverable rows from templates if deliverable_templates are defined for this invoice's types
+  if(!id && allDeliverableTemplates.length){
+    const savedInv = allInvoices.find(i=>i.invoice_number === el('spinv_number')?.value) || allInvoices[0];
+    if(savedInv) await autoCreateDeliverables(savedInv.id, el('spinv_name')?.value||savedInv.sponsor_name);
+  }
 });
 el('spinv_search') && (el('spinv_search').oninput = renderSponsorshipsList);
 el('spinv_statusFilter') && (el('spinv_statusFilter').onchange = renderSponsorshipsList);
@@ -4502,12 +4568,14 @@ let allDeliverableTypes = [], allDeliverableRows = [];
 
 async function loadDeliverables(){
   if(!allInvoices.length){ await loadSponsorships(); }
-  const [{ data:types }, { data:rows }] = await Promise.all([
+  const [{ data:types }, { data:rows }, { data:templates }] = await Promise.all([
     sb.from('deliverable_types').select('*').eq('active',true).order('sort_order'),
-    sb.from('sponsor_deliverables').select('*, deliverable_types(name,category)').order('sponsor_name').order('created_at')
+    sb.from('sponsor_deliverables').select('*, deliverable_types(name,category)').order('sponsor_name').order('created_at'),
+    sb.from('deliverable_templates').select('*, deliverable_types(default_deadline)')
   ]);
-  allDeliverableTypes = types||[];
-  allDeliverableRows  = rows||[];
+  allDeliverableTypes     = types||[];
+  allDeliverableRows      = rows||[];
+  allDeliverableTemplates = templates||[];
   renderDelTypes();
   renderDelTracker();
   initDelModal();
@@ -4675,18 +4743,25 @@ function initDelModal(){
 function openDelModal(id){
   el('del_row_id').value = id||'';
   el('del_modal_title').textContent = id ? 'Edit deliverable' : 'Add deliverable row';
-  // Re-populate sponsor dropdown fresh each time (allInvoices may have loaded since init)
+  // Compute invoice totals from allSponsorships line items (not the stale i.total field)
+  const invTotal = invId => (allSponsorships||[]).filter(s=>s.invoice_id===invId).reduce((t,s)=>t+Number(s.amount||0),0);
+  const makeInvOptions = sponsorName => '<option value="">None</option>' +
+    (allInvoices||[]).filter(i=>i.sponsor_name===sponsorName).map(i=>{
+      const tot = invTotal(i.id);
+      return `<option value="${i.id}">${esc(i.invoice_number)} — £${tot.toFixed(0)}</option>`;
+    }).join('');
+  // Populate sponsor dropdown fresh
   const spSel = el('del_row_sponsor');
   const sponsors = [...new Set((allInvoices||[]).map(i=>i.sponsor_name).filter(Boolean))].sort();
   spSel.innerHTML = '<option value="">Select sponsor…</option>' + sponsors.map(s=>`<option value="${esc(s)}">${esc(s)}</option>`).join('');
-  // Re-populate type dropdown
+  spSel.onchange = ()=>{ el('del_row_invoice').innerHTML = makeInvOptions(spSel.value); onInvoiceSelected(); };
+  // Populate type dropdown fresh
   const typeSel = el('del_row_type');
   typeSel.innerHTML = '<option value="">Select type…</option>' + allDeliverableTypes.map(t=>`<option value="${t.id}">${esc(t.name)}</option>`).join('');
   if(id){
     const r = allDeliverableRows.find(x=>x.id===id); if(!r) return;
     spSel.value = r.sponsor_name||'';
-    // Populate invoice dropdown for this sponsor
-    el('del_row_invoice').innerHTML = '<option value="">None</option>' + (allInvoices||[]).filter(i=>i.sponsor_name===r.sponsor_name).map(i=>`<option value="${i.id}">${esc(i.invoice_number)} — £${Number(i.total||0).toFixed(0)}</option>`).join('');
+    el('del_row_invoice').innerHTML = makeInvOptions(r.sponsor_name);
     el('del_row_invoice').value = r.invoice_id||'';
     typeSel.value = r.deliverable_type_id||'';
     el('del_row_qty_agreed').value = r.quantity_agreed||1;
@@ -4702,7 +4777,42 @@ function openDelModal(id){
   el('del_row_modal').classList.add('show');
 }
 
-function closeDelModal(){ el('del_row_modal').classList.remove('show'); }
+function onInvoiceSelected(){
+  const invId = el('del_row_invoice').value;
+  if(!invId) return;
+  const inv = allInvoices.find(i=>i.id===invId); if(!inv) return;
+  const items = (allSponsorships||[]).filter(s=>s.invoice_id===invId);
+  if(!items.length) return;
+  // We're in single-row-add mode — just pre-fill qty from first line item
+  // Full auto-create (one row per line item) happens on invoice save via autoCreateDeliverables()
+  el('del_row_qty_agreed').value = items.reduce((t,s)=>t+1,0);
+}
+
+async function autoCreateDeliverables(invoiceId, sponsorName){
+  // Called after invoice save — creates one sponsor_deliverables row per line item
+  // if that invoice's sponsorship type has deliverable_templates defined
+  const items = (allSponsorships||[]).filter(s=>s.invoice_id===invoiceId);
+  for(const item of items){
+    if(!item.sponsorship_type_id) continue;
+    const templates = allDeliverableTemplates.filter(t=>t.sponsorship_type_id===item.sponsorship_type_id);
+    for(const tmpl of templates){
+      const existing = (allDeliverableRows||[]).find(r=>
+        r.invoice_id===invoiceId && r.deliverable_type_id===tmpl.deliverable_type_id
+      );
+      if(existing) continue; // don't duplicate
+      await sb.from('sponsor_deliverables').insert({
+        sponsor_name: sponsorName,
+        invoice_id: invoiceId,
+        deliverable_type_id: tmpl.deliverable_type_id,
+        quantity_agreed: tmpl.quantity_default||1,
+        quantity_delivered: 0,
+        deadline: tmpl.default_deadline||null
+      });
+    }
+  }
+}
+
+let allDeliverableTemplates = [];
 
 async function saveDelRow(){
   const id = el('del_row_id').value.trim(); // trim so empty string is reliably falsy
@@ -6170,6 +6280,6 @@ document.getElementById('rolesSaveBtn').onclick = async () => {
     </div>
   </div>
 </div>
-<!-- v1.10 — adminfantasy.html -->
+<!-- v1.11 — adminfantasy.html -->
 </body>
 </html>
