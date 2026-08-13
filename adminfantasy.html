@@ -998,6 +998,15 @@
           <span class="muted" style="font-size:.75rem; flex-shrink:0">Tap to expand</span>
         </summary>
         <p class="muted" style="margin-top:8px; font-size:.82rem">All active players with a sponsor assigned. Tick columns show whether a web link and logo are uploaded.</p>
+        <div class="row" style="margin-top:10px">
+          <input class="search" id="spr_pl_search" placeholder="Search player or sponsor…" style="flex:2">
+          <select id="spr_pl_team" style="flex:1"><option value="">All squads</option></select>
+          <select id="spr_pl_pos" style="flex:1">
+            <option value="">All positions</option>
+            <option value="forward">Forwards</option>
+            <option value="back">Backs</option>
+          </select>
+        </div>
         <div style="overflow-x:auto; margin-top:10px">
           <div id="spr_players_table"><div class="empty">Loading…</div></div>
         </div>
@@ -4344,9 +4353,27 @@ function renderSponsorReport(){
 }
 function renderSponsoredPlayers(){
   const box = el('spr_players_table'); if(!box) return;
-  const players = (allPlayers||[]).filter(p=>p.active && p.sponsor_name && p.sponsor_name.trim());
-  if(!players.length){ box.innerHTML='<div class="empty">No players currently have a sponsor assigned.</div>'; return; }
-  const sorted = [...players].sort((a,b)=>(a.sponsor_name||'').localeCompare(b.sponsor_name||''));
+  // Populate team filter once
+  const teamSel = el('spr_pl_team');
+  if(teamSel && teamSel.options.length<=1){
+    const teams = [...new Set((allPlayers||[]).filter(p=>p.active&&p.sponsor_name).map(p=>{ const t=allTeams.find(t=>t.id===p.team_id); return t?.name||''; }).filter(Boolean))].sort();
+    teams.forEach(t=>{ const o=document.createElement('option'); o.value=t; o.textContent=t; teamSel.appendChild(o); });
+    el('spr_pl_search') && (el('spr_pl_search').oninput = renderSponsoredPlayers);
+    teamSel.onchange = renderSponsoredPlayers;
+    el('spr_pl_pos') && (el('spr_pl_pos').onchange = renderSponsoredPlayers);
+  }
+  const q = (el('spr_pl_search')?.value||'').toLowerCase();
+  const teamF = el('spr_pl_team')?.value||'';
+  const posF = el('spr_pl_pos')?.value||'';
+  const players = (allPlayers||[]).filter(p=>{
+    if(!p.active || !p.sponsor_name?.trim()) return false;
+    const team = allTeams.find(t=>t.id===p.team_id);
+    if(teamF && team?.name !== teamF) return false;
+    if(posF && p.position !== posF) return false;
+    if(q && !(p.name||'').toLowerCase().includes(q) && !(p.sponsor_name||'').toLowerCase().includes(q)) return false;
+    return true;
+  }).sort((a,b)=>(a.sponsor_name||'').localeCompare(b.sponsor_name||''));
+  if(!players.length){ box.innerHTML='<div class="empty">No sponsored players match the current filters.</div>'; return; }
   const head = `<tr>
     <th style="text-align:left">Player</th>
     <th style="text-align:left">Squad</th>
@@ -4354,7 +4381,7 @@ function renderSponsoredPlayers(){
     <th style="text-align:center" title="Sponsor web link uploaded">🔗 Link</th>
     <th style="text-align:center" title="Sponsor logo uploaded">🖼 Logo</th>
   </tr>`;
-  const body = sorted.map(p=>{
+  const body = players.map(p=>{
     const team = allTeams.find(t=>t.id===p.team_id);
     const hasLink = !!(p.sponsor_link_url && p.sponsor_link_url.trim());
     const hasLogo = !!(p.sponsor_logo_url && p.sponsor_logo_url.trim());
@@ -4370,7 +4397,7 @@ function renderSponsoredPlayers(){
     </tr>`;
   }).join('');
   box.innerHTML = `<table class="rp-table"><thead>${head}</thead><tbody>${body}</tbody></table>
-    <p class="muted" style="font-size:.78rem; margin-top:8px">${sorted.length} sponsored player${sorted.length!==1?'s':''} · ✓ = uploaded · ✗ = missing</p>`;
+    <p class="muted" style="font-size:.78rem; margin-top:8px">${players.length} player${players.length!==1?'s':''} shown · ✓ = uploaded · ✗ = missing</p>`;
 }
 
 el('spr_export') && (el('spr_export').onclick = ()=>{
@@ -5777,6 +5804,6 @@ document.getElementById('rolesSaveBtn').onclick = async () => {
     </div>
   </div>
 </div>
-<!-- v1.7 — adminfantasy.html -->
+<!-- v1.8 — adminfantasy.html -->
 </body>
 </html>
