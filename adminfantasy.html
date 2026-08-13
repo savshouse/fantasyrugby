@@ -735,7 +735,7 @@
         <p class="muted" style="font-size:.82rem; margin-top:4px">Track what's been agreed with each sponsor and whether it's been delivered. Red = overdue or not yet complete.</p>
         <div class="row" style="margin-top:10px">
           <input class="search" id="del_search" placeholder="Search sponsor…" style="flex:2">
-          <select id="del_filter_cat" style="flex:1">
+          <select id="del_filter_cat" class="search" style="flex:1">
             <option value="">All categories</option>
             <option value="Kit">Kit</option>
             <option value="Advertising">Advertising</option>
@@ -743,7 +743,7 @@
             <option value="Digital">Digital</option>
             <option value="Players">Players</option>
           </select>
-          <select id="del_filter_status" style="flex:1">
+          <select id="del_filter_status" class="search" style="flex:1">
             <option value="">All statuses</option>
             <option value="outstanding">Outstanding</option>
             <option value="overdue">Overdue</option>
@@ -756,8 +756,8 @@
       </div>
 
       <!-- Add / Edit row modal -->
-      <div class="modal-overlay" id="del_row_modal" onclick="if(event.target===this)closeDelModal()">
-        <div class="modal-card" style="max-width:480px">
+      <div class="add-overlay" id="del_row_modal" onclick="if(event.target===this)closeDelModal()" style="align-items:center;justify-content:center;z-index:80">
+        <div class="modal-card" style="max-width:480px;width:100%;max-height:90vh;overflow-y:auto;position:relative">
           <button class="modal-close" onclick="closeDelModal()">✕</button>
           <div class="eyebrow" id="del_modal_title">Add deliverable row</div>
           <input type="hidden" id="del_row_id">
@@ -4501,6 +4501,7 @@ function renderSponsoredPlayers(){
 let allDeliverableTypes = [], allDeliverableRows = [];
 
 async function loadDeliverables(){
+  if(!allInvoices.length){ await loadSponsorships(); }
   const [{ data:types }, { data:rows }] = await Promise.all([
     sb.from('deliverable_types').select('*').eq('active',true).order('sort_order'),
     sb.from('sponsor_deliverables').select('*, deliverable_types(name,category)').order('sponsor_name').order('created_at')
@@ -4522,12 +4523,34 @@ function renderDelTypes(){
   box.innerHTML = Object.entries(grouped).map(([cat,types])=>`
     <div style="margin-bottom:10px">
       <div class="muted" style="font-size:.72rem; text-transform:uppercase; letter-spacing:.06em; font-weight:700; margin-bottom:6px">${esc(cat)}</div>
-      ${types.map(t=>`<div style="display:flex; align-items:center; justify-content:space-between; padding:6px 0; border-bottom:1px solid var(--line)">
-        <span style="font-size:.85rem">${esc(t.name)}${t.default_deadline?` <span class="muted" style="font-size:.75rem">(default deadline: ${t.default_deadline})</span>`:''}</span>
+      ${types.map((t,i)=>`<div style="display:flex; align-items:center; justify-content:space-between; padding:6px 0; border-bottom:1px solid var(--line); gap:8px">
+        <div style="display:flex; gap:4px; flex-shrink:0">
+          <button class="btn sec small" style="padding:2px 7px; font-size:.8rem" data-del-type-up="${t.id}" ${i===0?'disabled':''}>▲</button>
+          <button class="btn sec small" style="padding:2px 7px; font-size:.8rem" data-del-type-down="${t.id}" ${i===types.length-1?'disabled':''}>▼</button>
+        </div>
+        <span style="font-size:.85rem; flex:1">${esc(t.name)}${t.default_deadline?` <span class="muted" style="font-size:.75rem">(deadline: ${t.default_deadline})</span>`:''}</span>
         <button class="btn sec small" data-del-type-edit="${t.id}">Edit</button>
       </div>`).join('')}
     </div>`).join('');
   box.querySelectorAll('[data-del-type-edit]').forEach(b=>b.onclick=()=>editDelType(b.dataset.delTypeEdit));
+  box.querySelectorAll('[data-del-type-up]').forEach(b=>b.onclick=()=>reorderDelType(b.dataset.delTypeUp,-1));
+  box.querySelectorAll('[data-del-type-down]').forEach(b=>b.onclick=()=>reorderDelType(b.dataset.delTypeDown,1));
+}
+
+async function reorderDelType(id, direction){
+  const t = allDeliverableTypes.find(x=>x.id===id); if(!t) return;
+  const cat = t.category||'Other';
+  const catTypes = allDeliverableTypes.filter(x=>(x.category||'Other')===cat).sort((a,b)=>a.sort_order-b.sort_order);
+  const idx = catTypes.findIndex(x=>x.id===id);
+  const swapIdx = idx + direction;
+  if(swapIdx<0||swapIdx>=catTypes.length) return;
+  const other = catTypes[swapIdx];
+  const aSort = t.sort_order, bSort = other.sort_order;
+  await Promise.all([
+    sb.from('deliverable_types').update({sort_order:bSort}).eq('id',t.id),
+    sb.from('deliverable_types').update({sort_order:aSort}).eq('id',other.id)
+  ]);
+  await loadDeliverables();
 }
 
 function initDelTypeForm(){
@@ -4636,18 +4659,11 @@ function renderDelTracker(){
 
 // ── Deliverables modal ──
 function initDelModal(){
-  // Populate sponsor dropdown from invoices
-  const spSel = el('del_row_sponsor'); if(!spSel) return;
-  const sponsors = [...new Set((allInvoices||[]).map(i=>i.sponsor_name).filter(Boolean))].sort();
-  spSel.innerHTML = '<option value="">Select sponsor…</option>' + sponsors.map(s=>`<option value="${esc(s)}">${esc(s)}</option>`).join('');
-  spSel.onchange = ()=>{
-    const invSel = el('del_row_invoice');
-    const name = spSel.value;
-    invSel.innerHTML = '<option value="">None</option>' + (allInvoices||[]).filter(i=>i.sponsor_name===name).map(i=>`<option value="${i.id}">${esc(i.invoice_number)} — £${Number(i.total||0).toFixed(0)}</option>`).join('');
-  };
-  // Populate type dropdown
-  const typeSel = el('del_row_type');
-  typeSel.innerHTML = '<option value="">Select type…</option>' + allDeliverableTypes.map(t=>`<option value="${t.id}">${esc(t.name)}</option>`).join('');
+  // Sponsor invoice filter (delegated to openDelModal which repopulates fresh each time)
+  el('del_row_sponsor') && (el('del_row_sponsor').onchange = ()=>{
+    const name = el('del_row_sponsor').value;
+    el('del_row_invoice').innerHTML = '<option value="">None</option>' + (allInvoices||[]).filter(i=>i.sponsor_name===name).map(i=>`<option value="${i.id}">${esc(i.invoice_number)} — £${Number(i.total||0).toFixed(0)}</option>`).join('');
+  });
   el('del_add_btn') && (el('del_add_btn').onclick=()=>openDelModal(null));
   el('del_row_save') && (el('del_row_save').onclick=saveDelRow);
   el('del_export_btn') && (el('del_export_btn').onclick=exportDelCsv);
@@ -4659,20 +4675,28 @@ function initDelModal(){
 function openDelModal(id){
   el('del_row_id').value = id||'';
   el('del_modal_title').textContent = id ? 'Edit deliverable' : 'Add deliverable row';
+  // Re-populate sponsor dropdown fresh each time (allInvoices may have loaded since init)
+  const spSel = el('del_row_sponsor');
+  const sponsors = [...new Set((allInvoices||[]).map(i=>i.sponsor_name).filter(Boolean))].sort();
+  spSel.innerHTML = '<option value="">Select sponsor…</option>' + sponsors.map(s=>`<option value="${esc(s)}">${esc(s)}</option>`).join('');
+  // Re-populate type dropdown
+  const typeSel = el('del_row_type');
+  typeSel.innerHTML = '<option value="">Select type…</option>' + allDeliverableTypes.map(t=>`<option value="${t.id}">${esc(t.name)}</option>`).join('');
   if(id){
     const r = allDeliverableRows.find(x=>x.id===id); if(!r) return;
-    el('del_row_sponsor').value = r.sponsor_name||'';
-    el('del_row_sponsor').dispatchEvent(new Event('change'));
-    setTimeout(()=>{ el('del_row_invoice').value = r.invoice_id||''; },50);
-    el('del_row_type').value = r.deliverable_type_id||'';
+    spSel.value = r.sponsor_name||'';
+    // Populate invoice dropdown for this sponsor
+    el('del_row_invoice').innerHTML = '<option value="">None</option>' + (allInvoices||[]).filter(i=>i.sponsor_name===r.sponsor_name).map(i=>`<option value="${i.id}">${esc(i.invoice_number)} — £${Number(i.total||0).toFixed(0)}</option>`).join('');
+    el('del_row_invoice').value = r.invoice_id||'';
+    typeSel.value = r.deliverable_type_id||'';
     el('del_row_qty_agreed').value = r.quantity_agreed||1;
     el('del_row_qty_delivered').value = r.quantity_delivered||0;
     el('del_row_deadline').value = r.deadline||'';
     el('del_row_notes').value = r.notes||'';
   } else {
-    el('del_row_sponsor').value=''; el('del_row_invoice').value='';
-    el('del_row_type').value=''; el('del_row_qty_agreed').value=1;
-    el('del_row_qty_delivered').value=0; el('del_row_deadline').value=''; el('del_row_notes').value='';
+    el('del_row_invoice').innerHTML='<option value="">None</option>';
+    el('del_row_qty_agreed').value=1; el('del_row_qty_delivered').value=0;
+    el('del_row_deadline').value=''; el('del_row_notes').value='';
   }
   el('del_row_status').textContent='';
   el('del_row_modal').classList.add('show');
@@ -4681,9 +4705,9 @@ function openDelModal(id){
 function closeDelModal(){ el('del_row_modal').classList.remove('show'); }
 
 async function saveDelRow(){
-  const id = el('del_row_id').value;
+  const id = el('del_row_id').value.trim(); // trim so empty string is reliably falsy
   const sponsor = el('del_row_sponsor').value.trim();
-  const typeId = el('del_row_type').value;
+  const typeId = el('del_row_type').value.trim();
   if(!sponsor||!typeId){ el('del_row_status').textContent='Please select a sponsor and deliverable type.'; return; }
   const qAgreed = parseInt(el('del_row_qty_agreed').value||'1',10);
   const qDel = parseInt(el('del_row_qty_delivered').value||'0',10);
@@ -6146,6 +6170,6 @@ document.getElementById('rolesSaveBtn').onclick = async () => {
     </div>
   </div>
 </div>
-<!-- v1.9 — adminfantasy.html -->
+<!-- v1.10 — adminfantasy.html -->
 </body>
 </html>
