@@ -84,6 +84,8 @@
   .btn:disabled{opacity:.45; cursor:not-allowed}
 
   main{padding:14px 12px calc(40px + var(--pad)); max-width:800px; margin:0 auto; transition:margin-left .22s ease}
+  @media (min-width:1100px){ main{max-width:1200px} }
+  @media (min-width:1500px){ main{max-width:1500px} }
   section{display:none} section.active{display:block}
   .card{background:var(--card); border:1px solid var(--line); border-radius:14px; padding:16px; margin-bottom:12px}
   label{display:block; font-size:.75rem; font-weight:600; color:var(--muted); margin:10px 0 4px; text-transform:uppercase; letter-spacing:.04em}
@@ -442,6 +444,10 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg>
         Sponsor Report
       </button>
+      <button data-tab="deliverables">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+        Deliverables
+      </button>
       <button data-tab="sponsorsettings">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
         Sponsor Settings
@@ -684,6 +690,94 @@
           <div id="spenq_list"><div class="empty">Loading…</div></div>
         </div>
       </details>
+    </section>
+
+    <!-- DELIVERABLES -->
+    <section id="deliverables">
+      <!-- Deliverable types management -->
+      <details class="card" id="del_types_details">
+        <summary style="cursor:pointer; list-style:none; display:flex; align-items:center; justify-content:space-between">
+          <span class="eyebrow" style="margin:0">⚙️ Deliverable types</span>
+          <span class="muted" style="font-size:.75rem">Tap to manage</span>
+        </summary>
+        <p class="muted" style="margin-top:8px; font-size:.82rem">Define what can be delivered to a sponsor. These become the rows in the tracker below. Add custom types as needed.</p>
+        <div id="del_types_list" style="margin-top:10px"><div class="empty">Loading…</div></div>
+        <hr class="divider" style="margin:14px 0">
+        <div class="eyebrow">Add deliverable type</div>
+        <div class="row" style="margin-top:8px">
+          <div style="flex:2"><label>Name</label><input id="del_type_name" placeholder="e.g. Pitchside advertising banners"></div>
+          <div><label>Category</label>
+            <select id="del_type_cat">
+              <option value="Kit">Kit</option>
+              <option value="Advertising">Advertising</option>
+              <option value="Events">Events</option>
+              <option value="Digital">Digital</option>
+              <option value="Players">Players</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <div><label>Default deadline</label><input type="date" id="del_type_deadline"></div>
+          <div><label>Order</label><input type="number" id="del_type_sort" value="10" min="1" style="width:70px"></div>
+        </div>
+        <button class="btn navy" id="del_type_save" style="margin-top:10px">Add type</button>
+        <p class="muted" id="del_type_status" style="font-size:.82rem; margin-top:6px"></p>
+      </details>
+
+      <!-- Deliverables tracker -->
+      <div class="card">
+        <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px">
+          <div class="eyebrow" style="margin:0">📋 Sponsor deliverables tracker</div>
+          <div style="display:flex; gap:8px; flex-wrap:wrap">
+            <button class="btn sec small" id="del_add_btn">+ Add row</button>
+            <button class="btn sec small" id="del_export_btn">↓ Export CSV</button>
+          </div>
+        </div>
+        <p class="muted" style="font-size:.82rem; margin-top:4px">Track what's been agreed with each sponsor and whether it's been delivered. Red = overdue or not yet complete.</p>
+        <div class="row" style="margin-top:10px">
+          <input class="search" id="del_search" placeholder="Search sponsor…" style="flex:2">
+          <select id="del_filter_cat" style="flex:1">
+            <option value="">All categories</option>
+            <option value="Kit">Kit</option>
+            <option value="Advertising">Advertising</option>
+            <option value="Events">Events</option>
+            <option value="Digital">Digital</option>
+            <option value="Players">Players</option>
+          </select>
+          <select id="del_filter_status" style="flex:1">
+            <option value="">All statuses</option>
+            <option value="outstanding">Outstanding</option>
+            <option value="overdue">Overdue</option>
+            <option value="done">Fully delivered</option>
+          </select>
+        </div>
+        <div style="overflow-x:auto; margin-top:10px">
+          <div id="del_tracker_table"><div class="empty">Loading…</div></div>
+        </div>
+      </div>
+
+      <!-- Add / Edit row modal -->
+      <div class="modal-overlay" id="del_row_modal" onclick="if(event.target===this)closeDelModal()">
+        <div class="modal-card" style="max-width:480px">
+          <button class="modal-close" onclick="closeDelModal()">✕</button>
+          <div class="eyebrow" id="del_modal_title">Add deliverable row</div>
+          <input type="hidden" id="del_row_id">
+          <label>Sponsor name</label>
+          <select id="del_row_sponsor"><option value="">Select sponsor…</option></select>
+          <label style="margin-top:8px">Link to invoice (optional)</label>
+          <select id="del_row_invoice"><option value="">None</option></select>
+          <label style="margin-top:8px">Deliverable type</label>
+          <select id="del_row_type"><option value="">Select type…</option></select>
+          <div class="row" style="margin-top:8px">
+            <div><label>Qty agreed</label><input type="number" id="del_row_qty_agreed" min="1" value="1" style="width:80px"></div>
+            <div><label>Qty delivered</label><input type="number" id="del_row_qty_delivered" min="0" value="0" style="width:80px"></div>
+            <div><label>Deadline</label><input type="date" id="del_row_deadline"></div>
+          </div>
+          <label style="margin-top:8px">Notes</label>
+          <textarea id="del_row_notes" rows="2" placeholder="Any notes about this deliverable…" style="font-size:16px;width:100%;padding:10px 12px;border:1.5px solid var(--line);border-radius:10px;font-family:'Inter',sans-serif;box-sizing:border-box;resize:vertical"></textarea>
+          <button class="btn navy" id="del_row_save" style="margin-top:12px; width:100%">Save</button>
+          <p class="muted" id="del_row_status" style="font-size:.82rem; margin-top:6px; text-align:center"></p>
+        </div>
+      </div>
     </section>
 
     <!-- SPONSOR SETTINGS -->
@@ -1420,6 +1514,7 @@ function wireNavButtons(){
       if(tab==='leaderboard'){ loadLeaderboard(); }
       if(tab==='mgrreport'){ loadMgrReport(); }
       if(tab==='sponsorreport'){ loadSponsorReport(); }
+      if(tab==='deliverables'){ loadDeliverables(); }
       if(tab==='sponsors'){ loadSponsorTypes(); loadSponsorships(); loadSponsorEnquiries(); }
       if(tab==='sponsorsettings'){ loadSponsorTypes(); loadSponsorPlacements(); loadSponsors(); loadSponsorPageIntro(); }
       if(!document.body.classList.contains('drawer-pinned')){
@@ -4400,6 +4495,253 @@ function renderSponsoredPlayers(){
     <p class="muted" style="font-size:.78rem; margin-top:8px">${players.length} player${players.length!==1?'s':''} shown · ✓ = uploaded · ✗ = missing</p>`;
 }
 
+// ══════════════════════════════════════════════════════════════
+// DELIVERABLES
+// ══════════════════════════════════════════════════════════════
+let allDeliverableTypes = [], allDeliverableRows = [];
+
+async function loadDeliverables(){
+  const [{ data:types }, { data:rows }] = await Promise.all([
+    sb.from('deliverable_types').select('*').eq('active',true).order('sort_order'),
+    sb.from('sponsor_deliverables').select('*, deliverable_types(name,category)').order('sponsor_name').order('created_at')
+  ]);
+  allDeliverableTypes = types||[];
+  allDeliverableRows  = rows||[];
+  renderDelTypes();
+  renderDelTracker();
+  initDelModal();
+  initDelTypeForm();
+}
+
+// ── Deliverable types list ──
+function renderDelTypes(){
+  const box = el('del_types_list'); if(!box) return;
+  if(!allDeliverableTypes.length){ box.innerHTML='<div class="empty">No types yet — add one below.</div>'; return; }
+  const grouped = {};
+  allDeliverableTypes.forEach(t=>{ (grouped[t.category||'Other']||=[]).push(t); });
+  box.innerHTML = Object.entries(grouped).map(([cat,types])=>`
+    <div style="margin-bottom:10px">
+      <div class="muted" style="font-size:.72rem; text-transform:uppercase; letter-spacing:.06em; font-weight:700; margin-bottom:6px">${esc(cat)}</div>
+      ${types.map(t=>`<div style="display:flex; align-items:center; justify-content:space-between; padding:6px 0; border-bottom:1px solid var(--line)">
+        <span style="font-size:.85rem">${esc(t.name)}${t.default_deadline?` <span class="muted" style="font-size:.75rem">(default deadline: ${t.default_deadline})</span>`:''}</span>
+        <button class="btn sec small" data-del-type-edit="${t.id}">Edit</button>
+      </div>`).join('')}
+    </div>`).join('');
+  box.querySelectorAll('[data-del-type-edit]').forEach(b=>b.onclick=()=>editDelType(b.dataset.delTypeEdit));
+}
+
+function initDelTypeForm(){
+  el('del_type_save') && (el('del_type_save').onclick = async ()=>{
+    const name = el('del_type_name').value.trim();
+    if(!name){ el('del_type_status').textContent='Please enter a name.'; return; }
+    const rec = {
+      name, category: el('del_type_cat').value,
+      default_deadline: el('del_type_deadline').value||null,
+      sort_order: parseInt(el('del_type_sort').value||'10',10), active: true
+    };
+    const { error } = await sb.from('deliverable_types').insert(rec);
+    if(error){ el('del_type_status').textContent=error.message; return; }
+    el('del_type_name').value=''; el('del_type_deadline').value=''; el('del_type_sort').value='10';
+    el('del_type_status').textContent='✓ Added';
+    setTimeout(()=>el('del_type_status').textContent='',2500);
+    await loadDeliverables();
+  });
+}
+
+function editDelType(id){
+  const t = allDeliverableTypes.find(x=>x.id===id); if(!t) return;
+  el('del_type_name').value = t.name;
+  el('del_type_cat').value = t.category||'Other';
+  el('del_type_deadline').value = t.default_deadline||'';
+  el('del_type_sort').value = t.sort_order;
+  el('del_type_save').dataset.editingId = id;
+  el('del_type_save').textContent = 'Update type';
+  el('del_type_details').open = true;
+  el('del_type_name').focus();
+}
+
+// ── Deliverables tracker table ──
+const DEL_TODAY = ()=> new Date().toISOString().slice(0,10);
+function renderDelTracker(){
+  const box = el('del_tracker_table'); if(!box) return;
+  const q = (el('del_search')?.value||'').toLowerCase();
+  const catF = el('del_filter_cat')?.value||'';
+  const statusF = el('del_filter_status')?.value||'';
+
+  let rows = allDeliverableRows.filter(r=>{
+    if(q && !(r.sponsor_name||'').toLowerCase().includes(q)) return false;
+    if(catF && r.deliverable_types?.category !== catF) return false;
+    if(statusF==='done' && r.quantity_delivered < r.quantity_agreed) return false;
+    if(statusF==='outstanding' && r.quantity_delivered >= r.quantity_agreed) return false;
+    if(statusF==='overdue'){
+      const deadline = r.deadline || r.deliverable_types?.default_deadline;
+      if(!deadline || deadline > DEL_TODAY() || r.quantity_delivered >= r.quantity_agreed) return false;
+    }
+    return true;
+  });
+
+  if(!rows.length){ box.innerHTML='<div class="empty">No deliverable rows match the current filters.</div>'; return; }
+
+  const today = DEL_TODAY();
+  box.innerHTML = `<table class="rp-table">
+    <thead><tr>
+      <th style="text-align:left">Sponsor</th>
+      <th style="text-align:left">Deliverable</th>
+      <th style="text-align:left">Category</th>
+      <th style="text-align:center">Agreed</th>
+      <th style="text-align:center">Delivered</th>
+      <th style="text-align:left">Deadline</th>
+      <th style="text-align:left">Delivered by</th>
+      <th style="text-align:left">Notes</th>
+      <th></th>
+    </tr></thead>
+    <tbody>${rows.map(r=>{
+      const done = r.quantity_delivered >= r.quantity_agreed;
+      const deadline = r.deadline || r.deliverable_types?.default_deadline;
+      const overdue = !done && deadline && deadline < today;
+      const partDone = !done && r.quantity_delivered > 0;
+      const rowBg = overdue ? 'background:rgba(196,30,58,.06)' : '';
+      const dlDisplay = deadline ? `<span style="${overdue?'color:var(--crimson);font-weight:700':''}">${deadline}</span>` : '<span class="muted">—</span>';
+      const qtyDisplay = done
+        ? `<span style="color:#2a7a3b;font-weight:700">✓ ${r.quantity_delivered}/${r.quantity_agreed}</span>`
+        : partDone
+          ? `<span style="color:#b45309;font-weight:700">${r.quantity_delivered}/${r.quantity_agreed}</span>`
+          : `<span style="color:var(--crimson)">${r.quantity_delivered}/${r.quantity_agreed}</span>`;
+      return `<tr style="${rowBg}">
+        <td class="name-cell"><b>${esc(r.sponsor_name)}</b></td>
+        <td>${esc(r.deliverable_types?.name||'')}</td>
+        <td><span class="pill" style="background:var(--paper);color:var(--muted);font-size:.72rem">${esc(r.deliverable_types?.category||'')}</span></td>
+        <td style="text-align:center">${r.quantity_agreed}</td>
+        <td style="text-align:center">${qtyDisplay}</td>
+        <td>${dlDisplay}</td>
+        <td style="font-size:.8rem;color:var(--muted)">${r.delivered_by_name ? esc(r.delivered_by_name)+(r.delivered_at?` · ${new Date(r.delivered_at).toLocaleDateString('en-GB',{day:'numeric',month:'short'})}` :'') : '—'}</td>
+        <td style="font-size:.8rem;max-width:160px;white-space:normal">${esc(r.notes||'')}</td>
+        <td style="white-space:nowrap">
+          <button class="btn sec small" data-del-edit="${r.id}">Edit</button>
+          <button class="btn sec small" data-del-del="${r.id}" style="color:var(--crimson);border-color:var(--crimson)">✕</button>
+        </td>
+      </tr>`;
+    }).join('')}</tbody>
+  </table>
+  <p class="muted" style="font-size:.78rem;margin-top:8px">${rows.length} row${rows.length!==1?'s':''} · Red row = overdue · 🟡 partial · ✓ complete</p>`;
+
+  box.querySelectorAll('[data-del-edit]').forEach(b=>b.onclick=()=>openDelModal(b.dataset.delEdit));
+  box.querySelectorAll('[data-del-del]').forEach(b=>b.onclick=async()=>{
+    if(!confirm('Delete this deliverable row?')) return;
+    const { error } = await sb.from('sponsor_deliverables').delete().eq('id', b.dataset.delDel);
+    if(error){ toast(error.message,true); return; }
+    toast('Deleted'); await loadDeliverables();
+  });
+}
+
+// ── Deliverables modal ──
+function initDelModal(){
+  // Populate sponsor dropdown from invoices
+  const spSel = el('del_row_sponsor'); if(!spSel) return;
+  const sponsors = [...new Set((allInvoices||[]).map(i=>i.sponsor_name).filter(Boolean))].sort();
+  spSel.innerHTML = '<option value="">Select sponsor…</option>' + sponsors.map(s=>`<option value="${esc(s)}">${esc(s)}</option>`).join('');
+  spSel.onchange = ()=>{
+    const invSel = el('del_row_invoice');
+    const name = spSel.value;
+    invSel.innerHTML = '<option value="">None</option>' + (allInvoices||[]).filter(i=>i.sponsor_name===name).map(i=>`<option value="${i.id}">${esc(i.invoice_number)} — £${Number(i.total||0).toFixed(0)}</option>`).join('');
+  };
+  // Populate type dropdown
+  const typeSel = el('del_row_type');
+  typeSel.innerHTML = '<option value="">Select type…</option>' + allDeliverableTypes.map(t=>`<option value="${t.id}">${esc(t.name)}</option>`).join('');
+  el('del_add_btn') && (el('del_add_btn').onclick=()=>openDelModal(null));
+  el('del_row_save') && (el('del_row_save').onclick=saveDelRow);
+  el('del_export_btn') && (el('del_export_btn').onclick=exportDelCsv);
+  el('del_search') && (el('del_search').oninput=renderDelTracker);
+  el('del_filter_cat') && (el('del_filter_cat').onchange=renderDelTracker);
+  el('del_filter_status') && (el('del_filter_status').onchange=renderDelTracker);
+}
+
+function openDelModal(id){
+  el('del_row_id').value = id||'';
+  el('del_modal_title').textContent = id ? 'Edit deliverable' : 'Add deliverable row';
+  if(id){
+    const r = allDeliverableRows.find(x=>x.id===id); if(!r) return;
+    el('del_row_sponsor').value = r.sponsor_name||'';
+    el('del_row_sponsor').dispatchEvent(new Event('change'));
+    setTimeout(()=>{ el('del_row_invoice').value = r.invoice_id||''; },50);
+    el('del_row_type').value = r.deliverable_type_id||'';
+    el('del_row_qty_agreed').value = r.quantity_agreed||1;
+    el('del_row_qty_delivered').value = r.quantity_delivered||0;
+    el('del_row_deadline').value = r.deadline||'';
+    el('del_row_notes').value = r.notes||'';
+  } else {
+    el('del_row_sponsor').value=''; el('del_row_invoice').value='';
+    el('del_row_type').value=''; el('del_row_qty_agreed').value=1;
+    el('del_row_qty_delivered').value=0; el('del_row_deadline').value=''; el('del_row_notes').value='';
+  }
+  el('del_row_status').textContent='';
+  el('del_row_modal').classList.add('show');
+}
+
+function closeDelModal(){ el('del_row_modal').classList.remove('show'); }
+
+async function saveDelRow(){
+  const id = el('del_row_id').value;
+  const sponsor = el('del_row_sponsor').value.trim();
+  const typeId = el('del_row_type').value;
+  if(!sponsor||!typeId){ el('del_row_status').textContent='Please select a sponsor and deliverable type.'; return; }
+  const qAgreed = parseInt(el('del_row_qty_agreed').value||'1',10);
+  const qDel = parseInt(el('del_row_qty_delivered').value||'0',10);
+  const nowFull = qDel >= qAgreed;
+  // Snapshot delivered_by if newly fully delivered
+  let deliveredAt = null, deliveredById = null, deliveredByName = null;
+  if(id){
+    const existing = allDeliverableRows.find(r=>r.id===id);
+    const wasFull = existing && existing.quantity_delivered >= existing.quantity_agreed;
+    if(nowFull && !wasFull){
+      deliveredAt = new Date().toISOString();
+      const { data:{ user } } = await sb.auth.getUser();
+      deliveredById = user?.id;
+      const mgr = (allManagers||[]).find(m=>m.supabase_id===user?.id);
+      deliveredByName = mgr?.name || user?.email || 'Admin';
+    } else if(!nowFull) {
+      deliveredAt = null; deliveredById = null; deliveredByName = null;
+    } else {
+      deliveredAt = existing?.delivered_at; deliveredById = existing?.delivered_by_id; deliveredByName = existing?.delivered_by_name;
+    }
+  } else if(nowFull){
+    deliveredAt = new Date().toISOString();
+    const { data:{ user } } = await sb.auth.getUser();
+    deliveredById = user?.id;
+    const mgr = (allManagers||[]).find(m=>m.supabase_id===user?.id);
+    deliveredByName = mgr?.name || user?.email || 'Admin';
+  }
+  const rec = {
+    sponsor_name: sponsor,
+    invoice_id: el('del_row_invoice').value||null,
+    deliverable_type_id: typeId,
+    quantity_agreed: qAgreed, quantity_delivered: qDel,
+    deadline: el('del_row_deadline').value||null,
+    delivered_at: deliveredAt, delivered_by_id: deliveredById, delivered_by_name: deliveredByName,
+    notes: el('del_row_notes').value.trim()||null,
+    updated_at: new Date().toISOString()
+  };
+  const { error } = id
+    ? await sb.from('sponsor_deliverables').update(rec).eq('id',id)
+    : await sb.from('sponsor_deliverables').insert(rec);
+  if(error){ el('del_row_status').textContent=error.message; return; }
+  closeDelModal(); toast('Saved'); await loadDeliverables();
+}
+
+function exportDelCsv(){
+  const headers = ['Sponsor','Deliverable','Category','Qty Agreed','Qty Delivered','Deadline','Delivered By','Delivered At','Notes'];
+  const rows = allDeliverableRows.map(r=>[
+    r.sponsor_name, r.deliverable_types?.name||'', r.deliverable_types?.category||'',
+    r.quantity_agreed, r.quantity_delivered,
+    r.deadline||r.deliverable_types?.default_deadline||'',
+    r.delivered_by_name||'', r.delivered_at ? new Date(r.delivered_at).toLocaleDateString('en-GB') : '',
+    r.notes||''
+  ].map(v=>`"${String(v??'').replace(/"/g,'""')}"`).join(','));
+  const blob = new Blob([[headers.join(','),...rows].join('\n')],{type:'text/csv'});
+  const a = document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download='sponsor-deliverables.csv'; document.body.appendChild(a); a.click(); a.remove();
+}
+
 el('spr_export') && (el('spr_export').onclick = ()=>{
   const rows = window._sprVisibleRows || [];
   const fySel = el('spr_fy');
@@ -5634,7 +5976,7 @@ const ROLE_TABS = {
   scorer:     ['leaderboard','score','squads','stats','playerstats','totw'],
   registrar:  ['leaderboard','inbox','weeks','subs','players','teams','mgrreport','messages'],
   viewer:     ['leaderboard','playerstats','totw','reports','pastseasons','mgrreport'],
-  commercial: ['leaderboard','sponsors','sponsorreport']
+  commercial: ['leaderboard','sponsors','sponsorreport','deliverables']
 };
 
 function getPermittedTabs(roles){
@@ -5804,6 +6146,6 @@ document.getElementById('rolesSaveBtn').onclick = async () => {
     </div>
   </div>
 </div>
-<!-- v1.8 — adminfantasy.html -->
+<!-- v1.9 — adminfantasy.html -->
 </body>
 </html>
