@@ -2426,7 +2426,7 @@ el('spitem_type') && (el('spitem_type').onchange = ()=>{
   const playerSel = el('spitem_player');
   if(playerSel && playerSel._populateSpitemPlayers) playerSel._populateSpitemPlayers();
 });
-el('spitem_add') && (el('spitem_add').onclick = ()=>{
+el('spitem_add') && (el('spitem_add').onclick = async ()=>{
   const typeId = el('spitem_type').value;
   const playerId = el('spitem_player').value || null;
   const amount = parseFloat(el('spitem_amount').value);
@@ -2450,6 +2450,10 @@ el('spitem_add') && (el('spitem_add').onclick = ()=>{
   // Hard block: type capacity reached (existing sponsorships for this type, excluding this invoice, plus what's already in the basket)
   const type = allSponsorTypes.find(t=>t.id===typeId);
   if(type && type.capacity != null){
+    // Guard: if allSponsorships hasn't loaded yet, fetch now to avoid false-passing the capacity check
+    if(!allSponsorships.length && allInvoices.length){
+      await loadSponsorships();
+    }
     const usedElsewhere = allSponsorships.filter(s=> s.sponsorship_type_id===typeId && s.invoice_id!==currentInvoiceId).length;
     const usedInBasket = spBasket.filter(i=>i.sponsorship_type_id===typeId).length;
     const used = usedElsewhere + usedInBasket;
@@ -6282,6 +6286,6 @@ document.getElementById('rolesSaveBtn').onclick = async () => {
     </div>
   </div>
 </div>
-<!-- v1.12 — adminfantasy.html -->
+<!-- v1.13 — adminfantasy.html -->
 </body>
 </html>
