@@ -2635,6 +2635,7 @@ function renderSponsorshipsList(){
     if(refreshed) allDeliverableRows = refreshed;
     renderSponsorshipsList();
   });
+  box.querySelectorAll('[data-qf-sync]').forEach(b=>b.onclick=()=>{
     const inv = allInvoices.find(i=>i.id===b.dataset.qfSync);
     const isResync = !!(inv&&inv.quickfile_invoice_id);
     const msg = isResync
@@ -6401,6 +6402,6 @@ document.getElementById('rolesSaveBtn').onclick = async () => {
     </div>
   </div>
 </div>
-<!-- v1.17 — adminfantasy.html -->
+<!-- v1.18 — adminfantasy.html -->
 </body>
 </html>
