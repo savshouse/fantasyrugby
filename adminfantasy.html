@@ -1862,16 +1862,18 @@ el('msg_send') && (el('msg_send').onclick = async ()=>{
 });
 let allSponsorTypes = [];
 async function loadSponsorTypes(){
-  const [{ data, error }, { data:tmplData }] = await Promise.all([
+  const [{ data, error }, { data:tmplData }, { data:delTypes }] = await Promise.all([
     sb.from('sponsorship_types').select('*').order('sort_order'),
-    sb.from('deliverable_templates').select('*')
+    sb.from('deliverable_templates').select('*'),
+    sb.from('deliverable_types').select('*').eq('active',true).order('sort_order')
   ]);
   if(error){ toast(error.message, true); return; }
   allSponsorTypes = data || [];
   allDeliverableTemplates = tmplData || [];
+  if(delTypes) allDeliverableTypes = delTypes; // only overwrite if we got data
   renderSponsorTypeSelect();
   renderSponsorTypesList();
-  renderDelTypes(); // refresh deliverable types list in case it's open
+  renderDelTypes();
 }
 
 // Sponsor type image — handled by the cropper (wired in the IIFE at the bottom of the file)
@@ -6280,6 +6282,6 @@ document.getElementById('rolesSaveBtn').onclick = async () => {
     </div>
   </div>
 </div>
-<!-- v1.11 — adminfantasy.html -->
+<!-- v1.12 — adminfantasy.html -->
 </body>
 </html>
