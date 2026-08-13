@@ -2514,16 +2514,17 @@ function renderSponsorshipsList(){
   if(!rows.length){ box.innerHTML = '<div class="empty">No invoices found.</div>'; return; }
 
   const SPINV_WIDTHS = { sponsor_name:160, contact_name:130, invoice_number:110, type_names:130, item_count:44, total:90, invoice_date:96, due_date:96, status_label:84 };
-  const spinvTotalWidth = Object.values(SPINV_WIDTHS).reduce((a,b)=>a+b,0) + 460; // + 200px Actions + 260px Bookkeeping
+  const spinvTotalWidth = Object.values(SPINV_WIDTHS).reduce((a,b)=>a+b,0) + 510; // + 200px Actions + 310px Bookkeeping
   const head = SPINV_COLUMNS.map(c=>{
     if(c.key==='sponsor_name') return `<th data-col="${c.key}" class="${c.key===spinvSortCol?'sorted':''}" style="cursor:pointer; width:${SPINV_WIDTHS[c.key]}px; max-width:${SPINV_WIDTHS[c.key]}px">${c.label}${c.key===spinvSortCol?(spinvSortDir===1?' ▲':' ▼'):''}<span class="col-resize-handle" data-resize-col="${c.key}"></span></th>`
       + `<th data-col="contact_name" style="width:${SPINV_WIDTHS.contact_name}px; max-width:${SPINV_WIDTHS.contact_name}px">Contact<span class="col-resize-handle" data-resize-col="contact_name"></span></th>`;
     return `<th data-col="${c.key}" class="${c.key===spinvSortCol?'sorted':''}" style="cursor:pointer; width:${SPINV_WIDTHS[c.key]||110}px; max-width:${SPINV_WIDTHS[c.key]||110}px">${c.label}${c.key===spinvSortCol?(spinvSortDir===1?' ▲':' ▼'):''}<span class="col-resize-handle" data-resize-col="${c.key}"></span></th>`;
-  }).join('') + '<th style="width:200px; min-width:200px">Actions</th><th style="width:260px; min-width:260px">Bookkeeping</th>';
+  }).join('') + '<th style="width:200px; min-width:200px">Actions</th><th style="width:310px; min-width:310px">Bookkeeping</th>';
 
   const body = rows.map(inv=>{
     const stColor = inv.status_key==='paid' ? '#2a7a3b' : inv.status_key==='overdue' ? 'var(--crimson)' : '#b45309';
     const expanded = spInvExpanded.has(inv.id);
+    const hasDeliverables = (allDeliverableRows||[]).some(r=>r.invoice_id===inv.id);
     const detailRows = expanded ? inv.items.map(i=>{
       const tn = (allSponsorTypes.find(t=>t.id===i.sponsorship_type_id)||{}).name || '—';
       const pn = i.player_id ? displayNamePlain(allPlayers.find(p=>p.id===i.player_id)||{name:'Unknown'}) : '';
@@ -2551,6 +2552,9 @@ function renderSponsorshipsList(){
         <button class="btn sec small" data-email-spinv="${inv.id}">${inv.emailed_at?'Re-send':'Send'}</button>
         <button class="btn sec small" data-qf-sync="${inv.id}" title="${inv.quickfile_invoice_id ? 'Synced to QuickFile (click to re-sync)' : 'Push to QuickFile'}" style="${inv.quickfile_invoice_id ? 'color:#2a7a3b' : ''}">
           ${inv.quickfile_invoice_id ? '✓ QF' : 'Push QF'}
+        </button>
+        <button class="btn sec small" data-del-push="${inv.id}" data-del-sponsor="${esc(inv.sponsor_name)}" title="${hasDeliverables ? 'Deliverables already pushed — click to add any missing rows' : 'Push invoice to deliverables tracker'}" style="${hasDeliverables ? 'color:#2a7a3b' : ''}">
+          ${hasDeliverables ? '✓ Del' : 'Push Del'}
         </button>
         ${inv.status_key!=='paid' ? `<button class="btn sec small" data-mark-paid="${inv.id}" style="color:#2a7a3b;border-color:#2a7a3b">Paid ✓</button>` : `<button class="btn sec small" data-mark-unpaid="${inv.id}">Unpaid</button>`}
       </td>
@@ -2613,7 +2617,24 @@ function renderSponsorshipsList(){
     if(confirm(msg)) emailInvoice(b.dataset.emailSpinv);
   });
   box.querySelectorAll('[data-delete-spinv]').forEach(b=>b.onclick=()=>deleteInvoice(b.dataset.deleteSpinv));
-  box.querySelectorAll('[data-qf-sync]').forEach(b=>b.onclick=()=>{
+  box.querySelectorAll('[data-del-push]').forEach(b=>b.onclick=async()=>{
+    const invId = b.dataset.delPush;
+    const sponsorName = b.dataset.delSponsor;
+    const hasExisting = (allDeliverableRows||[]).some(r=>r.invoice_id===invId);
+    const msg = hasExisting
+      ? `Re-push deliverables for ${sponsorName}?\n\nThis will add any missing template rows for this invoice. Rows already in the tracker will not be duplicated.`
+      : `Push deliverables for ${sponsorName}?\n\nThis will create tracker rows from the package template for this invoice. You can then edit quantities, deadlines and notes in the Deliverables tab.`;
+    if(!confirm(msg)) return;
+    if(!allDeliverableTemplates.length || !allDeliverableTypes.length) await loadSponsorTypes();
+    // Reload allDeliverableRows fresh so we do not miss recent changes
+    const { data:fresh } = await sb.from('sponsor_deliverables').select('*, deliverable_types(name,category)').order('sponsor_name');
+    if(fresh) allDeliverableRows = fresh;
+    await autoCreateDeliverables(invId, sponsorName);
+    // Refresh row state so button turns green
+    const { data:refreshed } = await sb.from('sponsor_deliverables').select('*, deliverable_types(name,category)').order('sponsor_name');
+    if(refreshed) allDeliverableRows = refreshed;
+    renderSponsorshipsList();
+  });
     const inv = allInvoices.find(i=>i.id===b.dataset.qfSync);
     const isResync = !!(inv&&inv.quickfile_invoice_id);
     const msg = isResync
@@ -6380,6 +6401,6 @@ document.getElementById('rolesSaveBtn').onclick = async () => {
     </div>
   </div>
 </div>
-<!-- v1.16 — adminfantasy.html -->
+<!-- v1.17 — adminfantasy.html -->
 </body>
 </html>
