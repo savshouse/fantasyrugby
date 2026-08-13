@@ -1957,8 +1957,13 @@ function renderSponsorTypesList(){
   const box = el('sptype_list'); if(!box) return;
   if(!allSponsorTypes.length){ box.innerHTML = '<div class="empty">No sponsorship types yet.</div>'; return; }
   box.innerHTML = allSponsorTypes.map(t=>{
-    const sold = (allSponsorships||[]).filter(s=>s.sponsorship_type_id===t.id).length;
-    const capText = t.capacity!=null ? `${sold} of ${t.capacity} sold${sold>=t.capacity?' — <b style="color:var(--crimson)">FULL</b>':''}` : `${sold} sold · unlimited`;
+    const fyStart = fyBounds(currentFyStartYear());
+    const soldThisYear = (allSponsorships||[]).filter(s=>{
+      if(s.sponsorship_type_id!==t.id) return false;
+      const inv = allInvoices.find(i=>i.id===s.invoice_id);
+      return inv && inv.invoice_date >= fyStart.start && inv.invoice_date <= fyStart.end;
+    }).length;
+    const capText = t.capacity!=null ? `${soldThisYear} of ${t.capacity} sold this year${soldThisYear>=t.capacity?' — <b style="color:var(--crimson)">FULL</b>':''}` : `${soldThisYear} sold this year · unlimited`;
     return `<div class="list-item">
       <div>
         <b>${esc(t.name)}</b> — £${Number(t.default_amount).toFixed(2)} ${t.active?'':'<span class="pill inactive">inactive</span>'}
@@ -2454,11 +2459,16 @@ el('spitem_add') && (el('spitem_add').onclick = async ()=>{
     if(!allSponsorships.length && allInvoices.length){
       await loadSponsorships();
     }
-    const usedElsewhere = allSponsorships.filter(s=> s.sponsorship_type_id===typeId && s.invoice_id!==currentInvoiceId).length;
+    const fy = fyBounds(currentFyStartYear());
+    const usedElsewhere = allSponsorships.filter(s=>{
+      if(s.sponsorship_type_id!==typeId || s.invoice_id===currentInvoiceId) return false;
+      const inv = allInvoices.find(i=>i.id===s.invoice_id);
+      return inv && inv.invoice_date >= fy.start && inv.invoice_date <= fy.end;
+    }).length;
     const usedInBasket = spBasket.filter(i=>i.sponsorship_type_id===typeId).length;
     const used = usedElsewhere + usedInBasket;
     if(used >= type.capacity){
-      toast(`${type.name} is full — ${used} of ${type.capacity} already sold`, true);
+      toast(`${type.name} is full for this club year — ${used} of ${type.capacity} sold`, true);
       return;
     }
   }
@@ -6286,6 +6296,6 @@ document.getElementById('rolesSaveBtn').onclick = async () => {
     </div>
   </div>
 </div>
-<!-- v1.13 — adminfantasy.html -->
+<!-- v1.14 — adminfantasy.html -->
 </body>
 </html>
