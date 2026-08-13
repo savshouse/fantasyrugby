@@ -729,7 +729,6 @@
       <!-- Add / Edit row modal -->
       <div class="add-overlay" id="del_row_modal" style="align-items:center;justify-content:center;z-index:80">
         <div class="modal-card" style="max-width:480px;width:100%;max-height:90vh;overflow-y:auto;position:relative">
-          <button class="modal-close" onclick="closeDelModal()">✕</button>
           <div class="eyebrow" id="del_modal_title">Add deliverable row</div>
           <input type="hidden" id="del_row_id">
           <label>Sponsor name</label>
@@ -746,7 +745,7 @@
           <label style="margin-top:8px">Notes</label>
           <textarea id="del_row_notes" rows="2" placeholder="Any notes about this deliverable…" style="font-size:16px;width:100%;padding:10px 12px;border:1.5px solid var(--line);border-radius:10px;font-family:'Inter',sans-serif;box-sizing:border-box;resize:vertical"></textarea>
           <div class="row" style="margin-top:12px">
-            <button class="btn navy" id="del_row_save" style="flex:2">Save</button>
+            <button class="btn navy" id="del_row_save" onclick="saveDelRow()" style="flex:2">Save</button>
             <button class="btn sec" onclick="closeDelModal()" style="flex:1">Cancel</button>
           </div>
           <p class="muted" id="del_row_status" style="font-size:.82rem; margin-top:6px; text-align:center"></p>
@@ -2742,10 +2741,11 @@ el('spinv_save') && (el('spinv_save').onclick = async ()=>{
   if(playerUpdates.length) await loadPlayers();
 
   toast(id ? 'Invoice updated' : 'Invoice created'); el('spinv_clear').click(); await loadSponsorships();
-  // Auto-create deliverable rows from templates if deliverable_templates are defined for this invoice's types
-  if(!id && allDeliverableTemplates.length){
+  // Auto-create deliverable rows from templates
+  if(!id){
+    if(!allDeliverableTemplates.length || !allDeliverableTypes.length) await loadSponsorTypes();
     const savedInv = allInvoices.find(i=>i.invoice_number === el('spinv_number')?.value) || allInvoices[0];
-    if(savedInv) await autoCreateDeliverables(savedInv.id, el('spinv_name')?.value||savedInv.sponsor_name);
+    if(savedInv && allDeliverableTemplates.length) await autoCreateDeliverables(savedInv.id, el('spinv_name')?.value||savedInv.sponsor_name);
   }
 });
 el('spinv_search') && (el('spinv_search').oninput = renderSponsorshipsList);
@@ -4669,76 +4669,149 @@ function editDelType(id){
 
 // ── Deliverables tracker table ──
 const DEL_TODAY = ()=> new Date().toISOString().slice(0,10);
+let delExpandedSponsors = new Set(), delExpandedInvoices = new Set();
+
 function renderDelTracker(){
   const box = el('del_tracker_table'); if(!box) return;
   const q = (el('del_search')?.value||'').toLowerCase();
   const catF = el('del_filter_cat')?.value||'';
   const statusF = el('del_filter_status')?.value||'';
+  const today = DEL_TODAY();
 
-  let rows = allDeliverableRows.filter(r=>{
+  const filtered = allDeliverableRows.filter(r=>{
     if(q && !(r.sponsor_name||'').toLowerCase().includes(q)) return false;
     if(catF && r.deliverable_types?.category !== catF) return false;
-    if(statusF==='done' && r.quantity_delivered < r.quantity_agreed) return false;
-    if(statusF==='outstanding' && r.quantity_delivered >= r.quantity_agreed) return false;
-    if(statusF==='overdue'){
-      const deadline = r.deadline || r.deliverable_types?.default_deadline;
-      if(!deadline || deadline > DEL_TODAY() || r.quantity_delivered >= r.quantity_agreed) return false;
-    }
+    const done = r.quantity_delivered >= r.quantity_agreed;
+    const deadline = r.deadline || r.deliverable_types?.default_deadline;
+    if(statusF==='done' && !done) return false;
+    if(statusF==='outstanding' && done) return false;
+    if(statusF==='overdue' && (!deadline || deadline >= today || done)) return false;
     return true;
   });
 
-  if(!rows.length){ box.innerHTML='<div class="empty">No deliverable rows match the current filters.</div>'; return; }
+  if(!filtered.length){ box.innerHTML='<div class="empty">No deliverable rows match the current filters.</div>'; return; }
 
-  const today = DEL_TODAY();
-  box.innerHTML = `<table class="rp-table">
-    <thead><tr>
-      <th style="text-align:left">Sponsor</th>
-      <th style="text-align:left">Deliverable</th>
-      <th style="text-align:left">Category</th>
-      <th style="text-align:center">Agreed</th>
-      <th style="text-align:center">Delivered</th>
-      <th style="text-align:left">Deadline</th>
-      <th style="text-align:left">Delivered by</th>
-      <th style="text-align:left">Notes</th>
-      <th></th>
-    </tr></thead>
-    <tbody>${rows.map(r=>{
-      const done = r.quantity_delivered >= r.quantity_agreed;
-      const deadline = r.deadline || r.deliverable_types?.default_deadline;
-      const overdue = !done && deadline && deadline < today;
-      const partDone = !done && r.quantity_delivered > 0;
-      const rowBg = overdue ? 'background:rgba(196,30,58,.06)' : '';
-      const dlDisplay = deadline ? `<span style="${overdue?'color:var(--crimson);font-weight:700':''}">${deadline}</span>` : '<span class="muted">—</span>';
-      const qtyDisplay = done
-        ? `<span style="color:#2a7a3b;font-weight:700">✓ ${r.quantity_delivered}/${r.quantity_agreed}</span>`
-        : partDone
-          ? `<span style="color:#b45309;font-weight:700">${r.quantity_delivered}/${r.quantity_agreed}</span>`
-          : `<span style="color:var(--crimson)">${r.quantity_delivered}/${r.quantity_agreed}</span>`;
-      return `<tr style="${rowBg}">
-        <td class="name-cell"><b>${esc(r.sponsor_name)}</b></td>
-        <td>${esc(r.deliverable_types?.name||'')}</td>
-        <td><span class="pill" style="background:var(--paper);color:var(--muted);font-size:.72rem">${esc(r.deliverable_types?.category||'')}</span></td>
-        <td style="text-align:center">${r.quantity_agreed}</td>
-        <td style="text-align:center">${qtyDisplay}</td>
-        <td>${dlDisplay}</td>
-        <td style="font-size:.8rem;color:var(--muted)">${r.delivered_by_name ? esc(r.delivered_by_name)+(r.delivered_at?` · ${new Date(r.delivered_at).toLocaleDateString('en-GB',{day:'numeric',month:'short'})}` :'') : '—'}</td>
-        <td style="font-size:.8rem;max-width:160px;white-space:normal">${esc(r.notes||'')}</td>
-        <td style="white-space:nowrap">
-          <button class="btn sec small" data-del-edit="${r.id}">Edit</button>
-          <button class="btn sec small" data-del-del="${r.id}" style="color:var(--crimson);border-color:var(--crimson)">✕</button>
-        </td>
-      </tr>`;
-    }).join('')}</tbody>
-  </table>
-  <p class="muted" style="font-size:.78rem;margin-top:8px">${rows.length} row${rows.length!==1?'s':''} · Red row = overdue · 🟡 partial · ✓ complete</p>`;
-
-  box.querySelectorAll('[data-del-edit]').forEach(b=>b.onclick=()=>openDelModal(b.dataset.delEdit));
-  box.querySelectorAll('[data-del-del]').forEach(b=>b.onclick=async()=>{
-    if(!confirm('Delete this deliverable row?')) return;
-    const { error } = await sb.from('sponsor_deliverables').delete().eq('id', b.dataset.delDel);
-    if(error){ toast(error.message,true); return; }
-    toast('Deleted'); await loadDeliverables();
+  // Group by sponsor then invoice
+  const bySponsor = {};
+  filtered.forEach(r=>{
+    const sp = r.sponsor_name||'Unknown';
+    const inv = r.invoice_id||'_none';
+    if(!bySponsor[sp]) bySponsor[sp]={};
+    if(!bySponsor[sp][inv]) bySponsor[sp][inv]=[];
+    bySponsor[sp][inv].push(r);
   });
+
+  let html = '<div class="del-tree">';
+  for(const [sponsor, invoices] of Object.entries(bySponsor).sort()){
+    const spOpen = delExpandedSponsors.has(sponsor);
+    const allRows = Object.values(invoices).flat();
+    const spDone = allRows.filter(r=>r.quantity_delivered>=r.quantity_agreed).length;
+    const spTotal = allRows.length;
+    const spOverdue = allRows.some(r=>{ const dl=r.deadline||r.deliverable_types?.default_deadline; return dl && dl<today && r.quantity_delivered<r.quantity_agreed; });
+    html += `<div class="del-sponsor-row" style="margin-bottom:8px">
+      <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--navy);border-radius:10px;cursor:pointer;user-select:none" onclick="delToggleSponsor(${JSON.stringify(sponsor)})">
+        <span style="color:var(--gold);font-size:.9rem;flex-shrink:0">${spOpen?"▼":"▶"}</span>
+        <span style="font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:1.05rem;color:#fff;flex:1">${esc(sponsor)}</span>
+        <span style="font-size:.78rem;color:rgba(255,255,255,.7)">${spDone}/${spTotal} delivered${spOverdue?" · <span style='color:var(--gold)'>⚠ overdue</span>":""}</span>
+      </div>`;
+    if(spOpen){
+      for(const [invId, rows] of Object.entries(invoices)){
+        const inv = allInvoices.find(i=>i.id===invId);
+        const invTotal = (allSponsorships||[]).filter(s=>s.invoice_id===invId).reduce((t,s)=>t+Number(s.amount||0),0);
+        const invLabel = inv ? `${inv.invoice_number} — £${invTotal.toFixed(0)}` : 'No invoice linked';
+        const invKey = sponsor+'__'+invId;
+        const invOpen = delExpandedInvoices.has(invKey);
+        const invDone = rows.filter(r=>r.quantity_delivered>=r.quantity_agreed).length;
+        const invOverdue = rows.some(r=>{ const dl=r.deadline||r.deliverable_types?.default_deadline; return dl && dl<today && r.quantity_delivered<r.quantity_agreed; });
+        html += `<div style="margin:4px 0 4px 20px">
+          <div style="display:flex;align-items:center;gap:10px;padding:8px 14px;background:var(--paper);border:1px solid var(--line);border-radius:8px;cursor:pointer" onclick="delToggleInvoice(${JSON.stringify(invKey)})">
+            <span style="color:var(--muted);font-size:.8rem;flex-shrink:0">${invOpen?"▼":"▶"}</span>
+            <span style="font-weight:600;font-size:.85rem;flex:1">${esc(invLabel)}</span>
+            <span style="font-size:.75rem;color:var(--muted)">${invDone}/${rows.length} delivered${invOverdue?" · <span style='color:var(--crimson)'>⚠ overdue</span>":""}</span>
+          </div>`;
+        if(invOpen){
+          html += `<table class="rp-table" style="margin:4px 0">
+            <thead><tr>
+              <th style="text-align:left">Deliverable</th>
+              <th style="text-align:left">Cat</th>
+              <th style="text-align:center">Agreed</th>
+              <th style="text-align:center">Delivered</th>
+              <th style="text-align:left">Deadline</th>
+              <th style="text-align:left">By / When</th>
+              <th style="text-align:left">Notes</th>
+              <th></th>
+            </tr></thead><tbody>`;
+          rows.forEach(r=>{
+            const done = r.quantity_delivered >= r.quantity_agreed;
+            const deadline = r.deadline || r.deliverable_types?.default_deadline;
+            const overdue = !done && deadline && deadline < today;
+            const partDone = !done && r.quantity_delivered > 0;
+            const rowBg = overdue ? "background:rgba(196,30,58,.06)" : "";
+            const dlDisplay = deadline ? `<span style="${overdue?"color:var(--crimson);font-weight:700":""}">${deadline}</span>` : "<span class=\"muted\">—</span>";
+            const qtyDisplay = done
+              ? `<span style="color:#2a7a3b;font-weight:700">✓ ${r.quantity_delivered}/${r.quantity_agreed}</span>`
+              : partDone
+                ? `<span style="color:#b45309;font-weight:700">${r.quantity_delivered}/${r.quantity_agreed}</span>`
+                : `<span style="color:var(--crimson)">${r.quantity_delivered}/${r.quantity_agreed}</span>`;
+            html += `<tr style="${rowBg}">
+              <td>${esc(r.deliverable_types?.name||"")}</td>
+              <td><span class="pill" style="background:var(--paper);color:var(--muted);font-size:.72rem">${esc(r.deliverable_types?.category||"")}</span></td>
+              <td style="text-align:center">${r.quantity_agreed}</td>
+              <td style="text-align:center">${qtyDisplay}</td>
+              <td>${dlDisplay}</td>
+              <td style="font-size:.8rem;color:var(--muted)">${r.delivered_by_name?esc(r.delivered_by_name)+(r.delivered_at?" · "+new Date(r.delivered_at).toLocaleDateString("en-GB",{day:"numeric",month:"short"}):""):"—"}</td>
+              <td style="font-size:.8rem;max-width:140px;white-space:normal">${esc(r.notes||"")}</td>
+              <td style="white-space:nowrap">
+                ${!done?`<button class="btn sec small" style="color:#2a7a3b;border-color:#2a7a3b" data-del-markdone="${r.id}" data-qty="${r.quantity_agreed}">✓ Done</button>`:`<button class="btn sec small" style="color:var(--muted)" data-del-unmark="${r.id}">Undo</button>`}
+                <button class="btn sec small" data-del-edit="${r.id}">Edit</button>
+                <button class="btn sec small" data-del-del="${r.id}" style="color:var(--crimson);border-color:var(--crimson)">✕</button>
+              </td>
+            </tr>`;
+          });
+          html += `</tbody></table>`;
+        }
+        html += `</div>`;
+      }
+    }
+    html += `</div>`;
+  }
+  html += `</div><p class="muted" style="font-size:.78rem;margin-top:8px">${filtered.length} deliverable${filtered.length!==1?"s":""} · Red = overdue · ✓ = complete</p>`;
+  box.innerHTML = html;
+
+  box.querySelectorAll("[data-del-markdone]").forEach(b=>b.onclick=()=>markDelDone(b.dataset.delMarkdone,parseInt(b.dataset.qty)));
+  box.querySelectorAll("[data-del-unmark]").forEach(b=>b.onclick=()=>markDelDone(b.dataset.delUnmark,0));
+  box.querySelectorAll("[data-del-edit]").forEach(b=>b.onclick=()=>openDelModal(b.dataset.delEdit));
+  box.querySelectorAll("[data-del-del]").forEach(b=>b.onclick=async()=>{
+    if(!confirm("Delete this deliverable row?")) return;
+    const { error } = await sb.from("sponsor_deliverables").delete().eq("id",b.dataset.delDel);
+    if(error){ toast(error.message,true); return; }
+    toast("Deleted"); await loadDeliverables();
+  });
+}
+
+function delToggleSponsor(sp){ if(delExpandedSponsors.has(sp)) delExpandedSponsors.delete(sp); else delExpandedSponsors.add(sp); renderDelTracker(); }
+function delToggleInvoice(key){ if(delExpandedInvoices.has(key)) delExpandedInvoices.delete(key); else delExpandedInvoices.add(key); renderDelTracker(); }
+
+async function markDelDone(id, qty){
+  const r = allDeliverableRows.find(x=>x.id===id); if(!r) return;
+  const nowFull = qty >= r.quantity_agreed && qty > 0;
+  let deliveredAt=r.delivered_at, deliveredById=r.delivered_by_id, deliveredByName=r.delivered_by_name;
+  if(nowFull){
+    deliveredAt = new Date().toISOString();
+    const { data:{ user } } = await sb.auth.getUser();
+    deliveredById = user?.id;
+    const mgr = (allManagers||[]).find(m=>m.supabase_id===user?.id);
+    deliveredByName = mgr?.name || user?.email || "Admin";
+  } else {
+    deliveredAt=null; deliveredById=null; deliveredByName=null;
+  }
+  const { error } = await sb.from("sponsor_deliverables").update({
+    quantity_delivered:qty, delivered_at:deliveredAt, delivered_by_id:deliveredById,
+    delivered_by_name:deliveredByName, updated_at:new Date().toISOString()
+  }).eq("id",id);
+  if(error){ toast(error.message,true); return; }
+  toast(qty>0?"Marked as delivered":"Marked as not delivered");
+  await loadDeliverables();
 }
 
 // ── Deliverables modal ──
@@ -4805,27 +4878,36 @@ function onInvoiceSelected(){
 }
 
 async function autoCreateDeliverables(invoiceId, sponsorName){
-  // Called after invoice save — creates one sponsor_deliverables row per line item
-  // if that invoice's sponsorship type has deliverable_templates defined
+  if(!allDeliverableTemplates.length) return;
   const items = (allSponsorships||[]).filter(s=>s.invoice_id===invoiceId);
+  const inserts = [];
   for(const item of items){
     if(!item.sponsorship_type_id) continue;
     const templates = allDeliverableTemplates.filter(t=>t.sponsorship_type_id===item.sponsorship_type_id);
     for(const tmpl of templates){
+      // Don't duplicate: check this exact invoice + deliverable_type combo
       const existing = (allDeliverableRows||[]).find(r=>
         r.invoice_id===invoiceId && r.deliverable_type_id===tmpl.deliverable_type_id
       );
-      if(existing) continue; // don't duplicate
-      await sb.from('sponsor_deliverables').insert({
+      if(existing) continue;
+      // Already queued in this batch?
+      if(inserts.find(i=>i.deliverable_type_id===tmpl.deliverable_type_id)) continue;
+      // Get default_deadline from deliverable_types (not the template)
+      const delType = allDeliverableTypes.find(d=>d.id===tmpl.deliverable_type_id);
+      inserts.push({
         sponsor_name: sponsorName,
         invoice_id: invoiceId,
         deliverable_type_id: tmpl.deliverable_type_id,
         quantity_agreed: tmpl.quantity_default||1,
         quantity_delivered: 0,
-        deadline: tmpl.default_deadline||null
+        deadline: delType?.default_deadline||null
       });
     }
   }
+  if(!inserts.length) return;
+  const { error } = await sb.from('sponsor_deliverables').insert(inserts);
+  if(error) console.error('[autoCreateDeliverables]', error.message);
+  else toast(`${inserts.length} deliverable${inserts.length!==1?'s':''} auto-created from package template`);
 }
 
 let allDeliverableTemplates = [];
@@ -6296,6 +6378,6 @@ document.getElementById('rolesSaveBtn').onclick = async () => {
     </div>
   </div>
 </div>
-<!-- v1.14 — adminfantasy.html -->
+<!-- v1.15 — adminfantasy.html -->
 </body>
 </html>
