@@ -940,7 +940,8 @@
             <option value="appearances">An appearance</option>
           </select></div>
         </div>
-        <div id="rp_topscroll" style="overflow-x:auto; margin-top:10px"><div id="rp_topscroll_spacer" style="height:1px"></div></div>
+        <div id="rp_topscroll" style="overflow-x:scroll; margin-top:10px; -webkit-overflow-scrolling:touch"><div id="rp_topscroll_spacer" style="height:14px"></div></div>
+        <style>#rp_topscroll::-webkit-scrollbar{height:8px; display:block}#rp_topscroll::-webkit-scrollbar-thumb{background:var(--muted,#999); border-radius:4px}#rp_topscroll::-webkit-scrollbar-track{background:var(--line,#eee)}</style>
         <div id="rp_bottomscroll" style="overflow-x:auto">
           <div id="rp_tables"><div class="empty">Loading…</div></div>
         </div>
@@ -991,17 +992,34 @@
         <div id="spr_types"><div class="empty">Loading…</div></div>
       </div>
 
-      <div class="card">
-        <div class="inline" style="justify-content:space-between; align-items:center">
-          <div class="eyebrow">Invoices this financial year</div>
-          <button class="btn sec small" id="spr_export">&#8681; Export CSV</button>
+      <details class="card" id="spr_players_details">
+        <summary style="cursor:pointer; list-style:none; display:flex; align-items:center; justify-content:space-between">
+          <div class="eyebrow" style="margin:0">🏉 Sponsored players</div>
+          <span class="muted" style="font-size:.75rem; flex-shrink:0">Tap to expand</span>
+        </summary>
+        <p class="muted" style="margin-top:8px; font-size:.82rem">All active players with a sponsor assigned. Tick columns show whether a web link and logo are uploaded.</p>
+        <div style="overflow-x:auto; margin-top:10px">
+          <div id="spr_players_table"><div class="empty">Loading…</div></div>
         </div>
-        <input class="search" id="spr_search" placeholder="Search sponsor name or invoice number…" style="margin-top:8px">
-        <div id="spr_topscroll" style="overflow-x:auto; margin-top:10px"><div id="spr_topscroll_spacer" style="height:1px"></div></div>
-        <div id="spr_bottomscroll" style="overflow-x:auto">
-          <div id="spr_invoices"><div class="empty">Loading…</div></div>
+      </details>
+
+      <details class="card" id="spr_inv_details">
+        <summary style="cursor:pointer; list-style:none; display:flex; align-items:center; justify-content:space-between">
+          <div class="inline" style="align-items:center; gap:12px">
+            <div class="eyebrow" style="margin:0">Invoices this financial year</div>
+            <button class="btn sec small" id="spr_export" onclick="event.stopPropagation()">&#8681; Export CSV</button>
+          </div>
+          <span class="muted" style="font-size:.75rem; flex-shrink:0">Tap to expand</span>
+        </summary>
+        <div style="margin-top:10px">
+          <input class="search" id="spr_search" placeholder="Search sponsor name or invoice number…" style="margin-top:0">
+          <div id="spr_topscroll" style="overflow-x:scroll; margin-top:10px; -webkit-overflow-scrolling:touch"><div id="spr_topscroll_spacer" style="height:14px"></div></div>
+          <style>#spr_topscroll::-webkit-scrollbar{height:8px; display:block}#spr_topscroll::-webkit-scrollbar-thumb{background:var(--muted,#999); border-radius:4px}#spr_topscroll::-webkit-scrollbar-track{background:var(--line,#eee)}</style>
+          <div id="spr_bottomscroll" style="overflow-x:auto">
+            <div id="spr_invoices"><div class="empty">Loading…</div></div>
+          </div>
         </div>
-      </div>
+      </details>
     </section>
 
     <!-- GAMEWEEKS -->
@@ -4035,7 +4053,7 @@ function renderReports(){
     <td class="num">${p.yellows}</td>
     <td class="num">${p.reds}</td>
   </tr>`).join('');
-  box.innerHTML = rows.length ? `<div class="rp-scroll"><table class="rp-table"><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table></div>` : '<div class="empty">No matching players.</div>';
+  box.innerHTML = rows.length ? `<table class="rp-table"><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table>` : '<div class="empty">No matching players.</div>';
   box.querySelectorAll('th[data-col]').forEach(th=> th.onclick = ()=>{
     const col = th.dataset.col;
     if(rpSortCol===col) rpSortDir *= -1; else { rpSortCol = col; rpSortDir = -1; }
@@ -4046,7 +4064,10 @@ function renderReports(){
   const tbl = box.querySelector('table');
   const topS = el('rp_topscroll'), botS = el('rp_bottomscroll'), spc = el('rp_topscroll_spacer');
   if(tbl && topS && botS && spc){
-    requestAnimationFrame(()=>{ spc.style.width = tbl.scrollWidth + 'px'; });
+    const syncWidth = ()=>{ spc.style.width = tbl.scrollWidth + 'px'; };
+    syncWidth();
+    if(window.ResizeObserver){ new ResizeObserver(syncWidth).observe(tbl); }
+    else { requestAnimationFrame(syncWidth); setTimeout(syncWidth, 300); }
     let syncing = false;
     topS.onscroll = ()=>{ if(syncing) return; syncing = true; botS.scrollLeft = topS.scrollLeft; syncing = false; };
     botS.onscroll = ()=>{ if(syncing) return; syncing = true; topS.scrollLeft = botS.scrollLeft; syncing = false; };
@@ -4139,7 +4160,7 @@ function renderMgrReport(){
       <td></td>
     </tr>${isOpen ? detailRows : ''}`;
   }).join('');
-  box.innerHTML = rows.length ? `<div class="rp-scroll"><table class="rp-table"><thead><tr>${headFixed}</tr></thead><tbody>${body}</tbody></table></div>` : '<div class="empty">No manager data yet.</div>';
+  box.innerHTML = rows.length ? `<table class="rp-table"><thead><tr>${headFixed}</tr></thead><tbody>${body}</tbody></table>` : '<div class="empty">No manager data yet.</div>';
   box.querySelectorAll('th[data-col]').forEach(th=> th.onclick = ()=>{
     const col = th.dataset.col;
     if(mrSortCol===col) mrSortDir *= -1; else { mrSortCol = col; mrSortDir = -1; }
@@ -4218,6 +4239,7 @@ async function loadSponsorReport(){
     if(el('spr_search')) el('spr_search').oninput = renderSponsorReport;
   }
   renderSponsorReport();
+  renderSponsoredPlayers();
 }
 function renderSponsorReport(){
   const fySel = el('spr_fy'); if(!fySel || !fySel.value) return;
@@ -4301,7 +4323,7 @@ function renderSponsorReport(){
       <td><span class="pill" style="background:${stColor}; color:#fff">${inv.status_label}</span></td>
     </tr>`;
   }).join('');
-  invBox.innerHTML = `<div class="rp-scroll"><table class="rp-table"><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table></div>`;
+  invBox.innerHTML = `<table class="rp-table"><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table>`;
   invBox.querySelectorAll('th[data-col]').forEach(th=> th.onclick = ()=>{
     const col = th.dataset.col;
     if(sprSortCol===col) sprSortDir *= -1; else { sprSortCol = col; sprSortDir = -1; }
@@ -4311,12 +4333,46 @@ function renderSponsorReport(){
   const tbl = invBox.querySelector('table');
   const topS = el('spr_topscroll'), botS = el('spr_bottomscroll'), spc = el('spr_topscroll_spacer');
   if(tbl && topS && botS && spc){
-    requestAnimationFrame(()=>{ spc.style.width = tbl.scrollWidth + 'px'; });
+    const syncWidth = ()=>{ spc.style.width = tbl.scrollWidth + 'px'; };
+    syncWidth();
+    if(window.ResizeObserver){ new ResizeObserver(syncWidth).observe(tbl); }
+    else { requestAnimationFrame(syncWidth); setTimeout(syncWidth, 300); }
     let syncing = false;
     topS.onscroll = ()=>{ if(syncing) return; syncing = true; botS.scrollLeft = topS.scrollLeft; syncing = false; };
     botS.onscroll = ()=>{ if(syncing) return; syncing = true; topS.scrollLeft = botS.scrollLeft; syncing = false; };
   }
 }
+function renderSponsoredPlayers(){
+  const box = el('spr_players_table'); if(!box) return;
+  const players = (allPlayers||[]).filter(p=>p.active && p.sponsor_name && p.sponsor_name.trim());
+  if(!players.length){ box.innerHTML='<div class="empty">No players currently have a sponsor assigned.</div>'; return; }
+  const sorted = [...players].sort((a,b)=>(a.sponsor_name||'').localeCompare(b.sponsor_name||''));
+  const head = `<tr>
+    <th style="text-align:left">Player</th>
+    <th style="text-align:left">Squad</th>
+    <th style="text-align:left">Sponsor</th>
+    <th style="text-align:center" title="Sponsor web link uploaded">🔗 Link</th>
+    <th style="text-align:center" title="Sponsor logo uploaded">🖼 Logo</th>
+  </tr>`;
+  const body = sorted.map(p=>{
+    const team = allTeams.find(t=>t.id===p.team_id);
+    const hasLink = !!(p.sponsor_link_url && p.sponsor_link_url.trim());
+    const hasLogo = !!(p.sponsor_logo_url && p.sponsor_logo_url.trim());
+    const tick = (v,label) => v
+      ? `<td style="text-align:center; color:#2a7a3b; font-size:1.1rem" title="${label} uploaded">✓</td>`
+      : `<td style="text-align:center; color:var(--crimson); font-size:1.1rem" title="${label} missing">✗</td>`;
+    return `<tr>
+      <td class="name-cell"><b>${esc(displayNamePlain(p)||p.name||'')}</b></td>
+      <td>${esc(team?.name||'')}</td>
+      <td>${esc(p.sponsor_name)}</td>
+      ${tick(hasLink,'Web link')}
+      ${tick(hasLogo,'Logo')}
+    </tr>`;
+  }).join('');
+  box.innerHTML = `<table class="rp-table"><thead>${head}</thead><tbody>${body}</tbody></table>
+    <p class="muted" style="font-size:.78rem; margin-top:8px">${sorted.length} sponsored player${sorted.length!==1?'s':''} · ✓ = uploaded · ✗ = missing</p>`;
+}
+
 el('spr_export') && (el('spr_export').onclick = ()=>{
   const rows = window._sprVisibleRows || [];
   const fySel = el('spr_fy');
@@ -5014,7 +5070,7 @@ function renderSponsorEnquiries(){
     </tr>${detailRow}`;
   }).join('');
 
-  box.innerHTML = `<div class="rp-scroll"><table class="rp-table"><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table></div>`;
+  box.innerHTML = `<table class="rp-table"><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table>`;
   box.querySelectorAll('th[data-col]').forEach(th=> th.onclick = ()=>{
     const col = th.dataset.col;
     if(spenqSortCol===col) spenqSortDir *= -1; else { spenqSortCol = col; spenqSortDir = -1; }
@@ -5721,6 +5777,6 @@ document.getElementById('rolesSaveBtn').onclick = async () => {
     </div>
   </div>
 </div>
-<!-- v1.6 — adminfantasy.html -->
+<!-- v1.7 — adminfantasy.html -->
 </body>
 </html>
