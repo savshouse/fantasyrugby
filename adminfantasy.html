@@ -1119,6 +1119,24 @@
         <div id="spr_renewals_list" style="margin-top:10px"><div class="empty">Loading…</div></div>
       </details>
 
+      <details class="card" id="spr_deliverables_details">
+        <summary style="cursor:pointer; list-style:none; display:flex; align-items:center; justify-content:space-between">
+          <div class="eyebrow" style="margin:0">📋 Deliverables by sponsor</div>
+          <span class="muted" style="font-size:.75rem; flex-shrink:0">Tap to expand</span>
+        </summary>
+        <p class="muted" style="margin-top:8px; font-size:.82rem">All sponsors with deliverables tracked, showing progress at a glance.</p>
+        <div id="spr_deliverables_list" style="margin-top:10px"><div class="empty">Loading…</div></div>
+      </details>
+
+      <details class="card" id="spr_assets_details">
+        <summary style="cursor:pointer; list-style:none; display:flex; align-items:center; justify-content:space-between">
+          <div class="eyebrow" style="margin:0">🖼 Sponsor assets</div>
+          <span class="muted" style="font-size:.75rem; flex-shrink:0">Tap to expand</span>
+        </summary>
+        <p class="muted" style="margin-top:8px; font-size:.82rem">All active sponsors from invoices this club year — whether their logo and web link are on file.</p>
+        <div id="spr_assets_list" style="margin-top:10px"><div class="empty">Loading…</div></div>
+      </details>
+
       <details class="card" id="spr_players_details">
         <summary style="cursor:pointer; list-style:none; display:flex; align-items:center; justify-content:space-between">
           <div class="eyebrow" style="margin:0">🏉 Sponsored players</div>
@@ -4543,7 +4561,94 @@ async function loadSponsorReport(){
   renderSponsorReport();
   renderSponsoredPlayers();
   renderRenewals();
+  renderSprDeliverables();
+  renderSprAssets();
 }
+function renderSprDeliverables(){
+  const box = el('spr_deliverables_list'); if(!box) return;
+  if(!allDeliverableRows.length){ box.innerHTML='<div class="empty">No deliverables tracked yet. Use the Deliverables tab to add rows.</div>'; return; }
+  const today = new Date().toISOString().slice(0,10);
+  // Group by sponsor
+  const bySponsor = {};
+  allDeliverableRows.forEach(r=>{
+    const sp = r.sponsor_name||'Unknown';
+    if(!bySponsor[sp]) bySponsor[sp]={ done:0, outstanding:0, overdue:0, total:0 };
+    bySponsor[sp].total++;
+    const done = r.quantity_delivered >= r.quantity_agreed;
+    if(done){ bySponsor[sp].done++; return; }
+    const deadline = r.deadline || r.deliverable_types?.default_deadline;
+    if(deadline && deadline < today) bySponsor[sp].overdue++;
+    else bySponsor[sp].outstanding++;
+  });
+  const sponsors = Object.entries(bySponsor).sort((a,b)=>a[0].localeCompare(b[0]));
+  box.innerHTML = `<table class="rp-table"><thead><tr>
+    <th style="text-align:left">Sponsor</th>
+    <th style="text-align:center">Total</th>
+    <th style="text-align:center">✓ Done</th>
+    <th style="text-align:center">Outstanding</th>
+    <th style="text-align:center">⚠ Overdue</th>
+    <th>Progress</th>
+  </tr></thead><tbody>${sponsors.map(([name, s])=>{
+    const pct = Math.round((s.done/s.total)*100);
+    const rowBg = s.overdue > 0 ? 'background:rgba(196,30,58,.05)' : '';
+    const barColor = s.overdue > 0 ? 'var(--crimson)' : s.outstanding > 0 ? '#b45309' : '#2a7a3b';
+    return `<tr style="${rowBg}">
+      <td class="name-cell"><b>${esc(name)}</b></td>
+      <td style="text-align:center">${s.total}</td>
+      <td style="text-align:center;color:#2a7a3b;font-weight:700">${s.done}</td>
+      <td style="text-align:center;color:${s.outstanding>0?'#b45309':'var(--muted)'}">${s.outstanding}</td>
+      <td style="text-align:center;color:${s.overdue>0?'var(--crimson)':'var(--muted)'}; font-weight:${s.overdue>0?700:400}">${s.overdue}</td>
+      <td style="min-width:100px">
+        <div style="background:var(--line);border-radius:4px;height:8px;overflow:hidden">
+          <div style="width:${pct}%;height:100%;background:${barColor};border-radius:4px;transition:width .3s"></div>
+        </div>
+        <div class="muted" style="font-size:.7rem;margin-top:2px">${pct}% complete</div>
+      </td>
+    </tr>`;
+  }).join('')}</tbody></table>
+  <p class="muted" style="font-size:.78rem;margin-top:8px">${sponsors.length} sponsor${sponsors.length!==1?'s':''} · ⚠ = past deadline · Click Deliverables tab to update</p>`;
+}
+
+function renderSprAssets(){
+  const box = el('spr_assets_list'); if(!box) return;
+  const thisCY = currentClubYearLabel();
+  // Unique sponsors from invoices this club year
+  const sponsorNames = [...new Set(
+    (allInvoices||[])
+      .filter(i=>(i.club_year||clubYearFromDate(i.invoice_date))===thisCY)
+      .map(i=>i.sponsor_name).filter(Boolean)
+  )].sort();
+  if(!sponsorNames.length){ box.innerHTML='<div class="empty">No invoices for the current club year.</div>'; return; }
+  // For each sponsor, find all their players (any active player with that sponsor_name)
+  const tick = (v, label) => v
+    ? `<span style="color:#2a7a3b;font-size:1rem" title="${label} on file">✓</span>`
+    : `<span style="color:var(--crimson);font-size:1rem" title="${label} missing">✗</span>`;
+  box.innerHTML = `<table class="rp-table"><thead><tr>
+    <th style="text-align:left">Sponsor</th>
+    <th style="text-align:center">🖼 Logo</th>
+    <th style="text-align:center">🔗 Link</th>
+    <th style="text-align:left">Sponsored players</th>
+    <th style="text-align:center">All assets ✓</th>
+  </tr></thead><tbody>${sponsorNames.map(name=>{
+    const sponsoredPlayers = (allPlayers||[]).filter(p=>p.active && p.sponsor_name===name);
+    const hasLogo = sponsoredPlayers.some(p=>p.sponsor_logo_url?.trim());
+    const hasLink = sponsoredPlayers.some(p=>p.sponsor_link_url?.trim());
+    const allOk = sponsoredPlayers.length > 0 && hasLogo && hasLink;
+    const rowBg = sponsoredPlayers.length && (!hasLogo||!hasLink) ? 'background:rgba(196,30,58,.05)' : '';
+    const playerList = sponsoredPlayers.length
+      ? sponsoredPlayers.map(p=>esc(displayNamePlain(p)||p.name)).join(', ')
+      : '<span class="muted">None assigned</span>';
+    return `<tr style="${rowBg}">
+      <td class="name-cell"><b>${esc(name)}</b></td>
+      <td style="text-align:center">${sponsoredPlayers.length ? tick(hasLogo,'Logo') : '<span class="muted">—</span>'}</td>
+      <td style="text-align:center">${sponsoredPlayers.length ? tick(hasLink,'Web link') : '<span class="muted">—</span>'}</td>
+      <td style="font-size:.82rem;color:var(--muted)">${playerList}</td>
+      <td style="text-align:center">${sponsoredPlayers.length ? tick(allOk,'All assets') : '<span class="muted">—</span>'}</td>
+    </tr>`;
+  }).join('')}</tbody></table>
+  <p class="muted" style="font-size:.78rem;margin-top:8px">${sponsorNames.length} sponsor${sponsorNames.length!==1?'s':''} · ${thisCY} · ✓ = on file · ✗ = missing</p>`;
+}
+
 function renderRenewals(){
   const box = el('spr_renewals_list'); if(!box) return;
   const multiYear = (allInvoices||[]).filter(i=>i.contract_years>1);
@@ -6600,6 +6705,6 @@ document.getElementById('rolesSaveBtn').onclick = async () => {
     </div>
   </div>
 </div>
-<!-- v1.23 — adminfantasy.html -->
+<!-- v1.24 — adminfantasy.html -->
 </body>
 </html>
