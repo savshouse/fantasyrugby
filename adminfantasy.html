@@ -604,6 +604,19 @@
         <div class="row">
           <div><label for="spinv_invDate">Invoice date</label><input id="spinv_invDate" type="date"></div>
           <div><label for="spinv_dueDate">Due date</label><input id="spinv_dueDate" type="date"></div>
+          <div>
+            <label for="spinv_contract_years">Contract term</label>
+            <select id="spinv_contract_years">
+              <option value="1">1 year</option>
+              <option value="2">2 years</option>
+              <option value="3">3 years</option>
+              <option value="4">4 years</option>
+            </select>
+          </div>
+          <div style="min-width:90px">
+            <label>Runs to</label>
+            <div id="spinv_contract_end" class="muted" style="padding:10px 0; font-size:.85rem; font-weight:600"></div>
+          </div>
         </div>
         <label for="spinv_notes">Notes (optional) <span style="font-weight:400; text-transform:none">— shown on the invoice</span></label>
         <textarea id="spinv_notes" rows="2" placeholder="e.g. what this sponsor is getting — appears on the invoice" style="font-size:16px;width:100%;padding:11px 12px;border:1.5px solid var(--line);border-radius:10px;font-family:'Inter',sans-serif;box-sizing:border-box;resize:vertical"></textarea>
@@ -1095,6 +1108,16 @@
         <div class="eyebrow">By sponsorship type</div>
         <div id="spr_types"><div class="empty">Loading…</div></div>
       </div>
+
+      <!-- Multi-year renewals card -->
+      <details class="card" id="spr_renewals_details">
+        <summary style="cursor:pointer; list-style:none; display:flex; align-items:center; justify-content:space-between">
+          <div class="eyebrow" style="margin:0">🔄 Multi-year deals &amp; renewals</div>
+          <span class="muted" style="font-size:.75rem; flex-shrink:0">Tap to expand</span>
+        </summary>
+        <p class="muted" style="margin-top:8px; font-size:.82rem">All invoices with a contract term greater than 1 year. Deals needing renewal invoicing are highlighted in red.</p>
+        <div id="spr_renewals_list" style="margin-top:10px"><div class="empty">Loading…</div></div>
+      </details>
 
       <details class="card" id="spr_players_details">
         <summary style="cursor:pointer; list-style:none; display:flex; align-items:center; justify-content:space-between">
@@ -1961,10 +1984,12 @@ function renderSponsorTypesList(){
   if(!allSponsorTypes.length){ box.innerHTML = '<div class="empty">No sponsorship types yet.</div>'; return; }
   box.innerHTML = allSponsorTypes.map(t=>{
     const fyStart = fyBounds(currentFyStartYear());
+    const thisCY = currentClubYearLabel();
     const soldThisYear = (allSponsorships||[]).filter(s=>{
       if(s.sponsorship_type_id!==t.id) return false;
       const inv = allInvoices.find(i=>i.id===s.invoice_id);
-      return inv && inv.invoice_date >= fyStart.start && inv.invoice_date <= fyStart.end;
+      const cy = inv?.club_year || clubYearFromDate(inv?.invoice_date);
+      return cy === thisCY;
     }).length;
     const capText = t.capacity!=null ? `${soldThisYear} of ${t.capacity} sold this year${soldThisYear>=t.capacity?' — <b style="color:var(--crimson)">FULL</b>':''}` : `${soldThisYear} sold this year · unlimited`;
     return `<div class="list-item">
@@ -2105,7 +2130,9 @@ const SPINV_COLUMNS = [
   {key:'total', label:'Total', type:'num'},
   {key:'invoice_date', label:'Invoiced', type:'text'},
   {key:'due_date', label:'Due', type:'text'},
-  {key:'status_label', label:'Status', type:'text'}
+  {key:'status_label', label:'Status', type:'text'},
+  {key:'club_year', label:'Year', type:'text'},
+  {key:'contract_term', label:'Term', type:'text'}
 ];
 function todayISO(){ return new Date().toISOString().slice(0,10); }
 function addDaysISO(dateStr, days){
@@ -2462,11 +2489,12 @@ el('spitem_add') && (el('spitem_add').onclick = async ()=>{
     if(!allSponsorships.length && allInvoices.length){
       await loadSponsorships();
     }
-    const fy = fyBounds(currentFyStartYear());
+    const thisCY = currentClubYearLabel();
     const usedElsewhere = allSponsorships.filter(s=>{
       if(s.sponsorship_type_id!==typeId || s.invoice_id===currentInvoiceId) return false;
       const inv = allInvoices.find(i=>i.id===s.invoice_id);
-      return inv && inv.invoice_date >= fy.start && inv.invoice_date <= fy.end;
+      const cy = inv?.club_year || clubYearFromDate(inv?.invoice_date);
+      return cy === thisCY;
     }).length;
     const usedInBasket = spBasket.filter(i=>i.sponsorship_type_id===typeId).length;
     const used = usedElsewhere + usedInBasket;
@@ -2500,7 +2528,11 @@ function renderSponsorshipsList(){
       total: invoiceTotal(inv.id),
       type_names: items.map(i=>(allSponsorTypes.find(t=>t.id===i.sponsorship_type_id)||{}).name || '—').join(', '),
       status_key: st,
-      status_label: st==='paid' ? 'Paid' : st==='overdue' ? 'Overdue' : 'Unpaid'
+      status_label: st==='paid' ? 'Paid' : st==='overdue' ? 'Overdue' : 'Unpaid',
+      club_year: inv.club_year || clubYearFromDate(inv.invoice_date),
+      contract_term: inv.contract_years > 1
+        ? `<span style="color:var(--crimson);font-weight:700">${inv.contract_years}yr → ${inv.contract_end_year||''}</span>`
+        : '1yr'
     };
   }).filter(inv=>{
     const matchesQ = !q || inv.sponsor_name.toLowerCase().includes(q) || inv.invoice_number.toLowerCase().includes(q);
@@ -2517,7 +2549,7 @@ function renderSponsorshipsList(){
 
   if(!rows.length){ box.innerHTML = '<div class="empty">No invoices found.</div>'; return; }
 
-  const SPINV_WIDTHS = { sponsor_name:160, contact_name:130, invoice_number:110, type_names:130, item_count:44, total:90, invoice_date:96, due_date:96, status_label:84 };
+  const SPINV_WIDTHS = { sponsor_name:160, contact_name:130, invoice_number:110, type_names:130, item_count:44, total:90, invoice_date:96, due_date:96, status_label:84, club_year:70, contract_term:80 };
   const spinvTotalWidth = Object.values(SPINV_WIDTHS).reduce((a,b)=>a+b,0) + 510; // + 200px Actions + 310px Bookkeeping
   const head = SPINV_COLUMNS.map(c=>{
     if(c.key==='sponsor_name') return `<th data-col="${c.key}" class="${c.key===spinvSortCol?'sorted':''}" style="cursor:pointer; width:${SPINV_WIDTHS[c.key]}px; max-width:${SPINV_WIDTHS[c.key]}px">${c.label}${c.key===spinvSortCol?(spinvSortDir===1?' ▲':' ▼'):''}<span class="col-resize-handle" data-resize-col="${c.key}"></span></th>`
@@ -2532,7 +2564,7 @@ function renderSponsorshipsList(){
     const detailRows = expanded ? inv.items.map(i=>{
       const tn = (allSponsorTypes.find(t=>t.id===i.sponsorship_type_id)||{}).name || '—';
       const pn = i.player_id ? displayNamePlain(allPlayers.find(p=>p.id===i.player_id)||{name:'Unknown'}) : '';
-      return `<tr class="mr-item-row"><td class="name-cell" style="padding-left:28px; color:var(--muted); font-size:.82rem">${esc(tn)}${pn?' · '+esc(pn):''}</td><td colspan="4"></td><td class="num" style="font-weight:600">£${Number(i.amount).toFixed(2)}</td><td colspan="3"></td><td></td><td></td></tr>`;
+      return `<tr class="mr-item-row"><td class="name-cell" style="padding-left:28px; color:var(--muted); font-size:.82rem">${esc(tn)}${pn?' · '+esc(pn):''}</td><td colspan="4"></td><td class="num" style="font-weight:600">£${Number(i.amount).toFixed(2)}</td><td colspan="5"></td><td></td><td></td></tr>`;
     }).join('') : '';
     return `<tr data-toggle-inv="${inv.id}" style="cursor:pointer">
       <td class="name-cell">
@@ -2547,6 +2579,8 @@ function renderSponsorshipsList(){
       <td>${inv.invoice_date}</td>
       <td>${inv.due_date}</td>
       <td><span class="pill" style="background:${stColor}; color:#fff">${inv.status_label}</span></td>
+      <td style="font-size:.82rem;color:var(--muted)">${esc(inv.club_year||'')}</td>
+      <td style="font-size:.82rem">${inv.contract_term}</td>
       <td style="white-space:nowrap">
         <button class="btn sec small" data-edit-spinv="${inv.id}">Edit</button>
         <button class="btn sec small" data-pdf-spinv="${inv.id}">PDF</button>
@@ -2698,6 +2732,8 @@ function editInvoice(id){
   el('spinv_invDate').value = inv.invoice_date;
   el('spinv_dueDate').value = inv.due_date;
   el('spinv_notes').value = inv.notes || '';
+  if(el('spinv_contract_years')) el('spinv_contract_years').value = inv.contract_years || 1;
+  updateContractEndDisplay();
   el('spinv_formTitle').textContent = 'Edit invoice '+inv.invoice_number;
   spBasket = itemsForInvoice(inv.id).map(i=>({ sponsorship_type_id:i.sponsorship_type_id, player_id:i.player_id, amount:Number(i.amount) }));
   renderBasket();
@@ -2707,6 +2743,8 @@ el('spinv_clear') && (el('spinv_clear').onclick = ()=>{
   el('spinv_id').value=''; el('spinv_sponsorName').value=''; el('spinv_contactName').value=''; el('spinv_email').value=''; el('spinv_phone').value=''; el('spinv_address').value='';
   if(el('spinv_existing_sponsor')) el('spinv_existing_sponsor').value='';
   el('spinv_notes').value=''; el('spinv_status').textContent='';
+  if(el('spinv_contract_years')) el('spinv_contract_years').value='1';
+  updateContractEndDisplay();
   el('spitem_type').value=''; el('spitem_amount').value=''; el('spitem_player').value='';
   el('spinv_invDate').value = todayISO();
   el('spinv_dueDate').value = addDaysISO(todayISO(), 14);
@@ -2717,7 +2755,10 @@ el('spinv_clear') && (el('spinv_clear').onclick = ()=>{
 });
 el('spinv_invDate') && (el('spinv_invDate').onchange = ()=>{
   if(!el('spinv_id').value){ el('spinv_dueDate').value = addDaysISO(el('spinv_invDate').value, 14); }
+  updateContractEndDisplay();
 });
+el('spinv_contract_years') && (el('spinv_contract_years').onchange = ()=>updateContractEndDisplay());
+updateContractEndDisplay();
 el('spinv_save') && (el('spinv_save').onclick = async ()=>{
   const sponsorName = el('spinv_sponsorName').value.trim();
   if(!sponsorName){ toast('Enter a sponsor name', true); return; }
@@ -2731,7 +2772,10 @@ el('spinv_save') && (el('spinv_save').onclick = async ()=>{
     sponsor_address: el('spinv_address').value.trim() || null,
     invoice_date: el('spinv_invDate').value || todayISO(),
     due_date: el('spinv_dueDate').value || addDaysISO(todayISO(),14),
-    notes: el('spinv_notes').value.trim() || null
+    notes: el('spinv_notes').value.trim() || null,
+    club_year: clubYearFromDate(el('spinv_invDate').value),
+    contract_years: parseInt(el('spinv_contract_years')?.value||'1', 10),
+    contract_end_year: computeContractEndYear(el('spinv_invDate').value, parseInt(el('spinv_contract_years')?.value||'1',10))
   };
   let invoiceId = id;
   if(id){
@@ -4439,6 +4483,38 @@ function currentFyStartYear(){
   const y = now.getFullYear(); const m = now.getMonth()+1; // 1-12
   return m >= 6 ? y : y-1;
 }
+function clubYearFromDate(dateStr){
+  // Returns storable label e.g. '2026-27' for any date string yyyy-mm-dd
+  if(!dateStr) return currentClubYearLabel();
+  const [y, mo] = dateStr.split('-').map(Number);
+  const fyStart = mo >= 6 ? y : y-1;
+  return `${fyStart}-${String(fyStart+1).slice(2)}`;
+}
+function currentClubYearLabel(){
+  const fyStart = currentFyStartYear();
+  return `${fyStart}-${String(fyStart+1).slice(2)}`; // e.g. '2026-27'
+}
+function computeContractEndYear(dateStr, years){
+  // e.g. dateStr='2026-08-01', years=2 → '2027-28'
+  const cy = clubYearFromDate(dateStr);
+  const startYear = parseInt(cy.split('-')[0], 10);
+  const endStart = startYear + (years - 1);
+  return `${endStart}-${String(endStart+1).slice(2)}`;
+}
+function updateContractEndDisplay(){
+  const dateStr = el('spinv_invDate')?.value || todayISO();
+  const years = parseInt(el('spinv_contract_years')?.value||'1', 10);
+  const endYear = computeContractEndYear(dateStr, years);
+  const box = el('spinv_contract_end'); if(!box) return;
+  if(years === 1){
+    box.textContent = endYear;
+    box.style.color = 'var(--muted)';
+  } else {
+    box.textContent = endYear;
+    box.style.color = 'var(--crimson)';
+    box.style.fontWeight = '800';
+  }
+}
 async function loadSponsorReport(){
   // Ensure sponsor data is loaded (types + invoices + line items)
   if(!allInvoices.length && !allSponsorTypes.length){ await loadSponsorTypes(); await loadSponsorships(); }
@@ -4466,12 +4542,86 @@ async function loadSponsorReport(){
   }
   renderSponsorReport();
   renderSponsoredPlayers();
+  renderRenewals();
+}
+function renderRenewals(){
+  const box = el('spr_renewals_list'); if(!box) return;
+  const multiYear = (allInvoices||[]).filter(i=>i.contract_years>1);
+  if(!multiYear.length){ box.innerHTML='<div class="empty">No multi-year deals recorded yet.</div>'; return; }
+  const thisCY = currentClubYearLabel();
+  const rows = multiYear.sort((a,b)=>a.contract_end_year?.localeCompare(b.contract_end_year||'')||0);
+  box.innerHTML = `<table class="rp-table"><thead><tr>
+    <th style="text-align:left">Sponsor</th>
+    <th>Invoice</th>
+    <th>Started</th>
+    <th>Term</th>
+    <th>Ends</th>
+    <th>Status</th>
+    <th></th>
+  </tr></thead><tbody>${rows.map(inv=>{
+    const ended = inv.contract_end_year < thisCY;
+    const ending = inv.contract_end_year === thisCY;
+    const needsRenewal = !inv.renewal_invoiced && (ending || ended);
+    const statusBg = needsRenewal ? 'var(--crimson)' : ending ? '#b45309' : '#2a7a3b';
+    const statusLabel = inv.renewal_invoiced ? 'Renewal raised' : ended ? 'Expired — needs renewal' : ending ? 'Ends this year — renew soon' : 'Active';
+    const invTotal = (allSponsorships||[]).filter(s=>s.invoice_id===inv.id).reduce((t,s)=>t+Number(s.amount||0),0);
+    return `<tr style="${needsRenewal?'background:rgba(196,30,58,.06)':''}">
+      <td class="name-cell"><b>${esc(inv.sponsor_name)}</b></td>
+      <td style="font-size:.82rem">${esc(inv.invoice_number)} — £${invTotal.toFixed(0)}/yr</td>
+      <td style="font-size:.82rem;color:var(--muted)">${esc(inv.club_year||'')}</td>
+      <td style="text-align:center">${inv.contract_years}yr</td>
+      <td style="font-weight:700">${esc(inv.contract_end_year||'')}</td>
+      <td><span class="pill" style="background:${statusBg};color:#fff;font-size:.72rem">${statusLabel}</span></td>
+      <td style="white-space:nowrap">
+        ${!inv.renewal_invoiced ? `<button class="btn sec small" style="color:var(--navy);border-color:var(--navy)" data-renewal-inv="${inv.id}">Create renewal</button>` : '<span class="muted" style="font-size:.8rem">✓ Done</span>'}
+      </td>
+    </tr>`;
+  }).join('')}</tbody></table>`;
+  box.querySelectorAll('[data-renewal-inv]').forEach(b=>b.onclick=()=>createRenewalInvoice(b.dataset.renewalInv));
+}
+async function createRenewalInvoice(invoiceId){
+  const orig = allInvoices.find(i=>i.id===invoiceId); if(!orig) return;
+  const nextCY = computeContractEndYear(orig.invoice_date, 1); // just +1 from current
+  if(!confirm(`Create a draft renewal invoice for ${orig.sponsor_name}?\n\nThis will pre-fill a new invoice for ${nextCY} at the same amount. You can review and edit before sending.`)) return;
+  // Pre-fill the invoice form with the original's details
+  el('spinv_clear').click();
+  setTimeout(()=>{
+    el('spinv_sponsorName').value = orig.sponsor_name;
+    if(el('spinv_contactName')) el('spinv_contactName').value = orig.contact_name||'';
+    if(el('spinv_email')) el('spinv_email').value = orig.sponsor_email||'';
+    if(el('spinv_phone')) el('spinv_phone').value = orig.sponsor_phone||'';
+    if(el('spinv_address')) el('spinv_address').value = orig.sponsor_address||'';
+    // Set date to 1 Jun of the next club year
+    const nextYrStart = parseInt(nextCY.split('-')[0],10);
+    el('spinv_invDate').value = `${nextYrStart}-06-01`;
+    el('spinv_dueDate').value = addDaysISO(`${nextYrStart}-06-01`, 30);
+    if(el('spinv_contract_years')) el('spinv_contract_years').value = orig.contract_years||1;
+    updateContractEndDisplay();
+    // Copy basket from original invoice
+    spBasket = itemsForInvoice(invoiceId).map(i=>({ sponsorship_type_id:i.sponsorship_type_id, player_id:i.player_id, amount:Number(i.amount) }));
+    renderBasket();
+    // Mark the original as renewal_invoiced
+    sb.from('invoices').update({ renewal_invoiced:true }).eq('id', invoiceId).then(()=>loadSponsorships());
+    // Navigate to invoicing tab
+    navTo('sponsors');
+    setTimeout(()=>{
+      const d = document.getElementById('spinv_create_details');
+      if(d) d.open = true;
+      window.scrollTo({top:0,behavior:'smooth'});
+      toast(`Renewal draft ready — review and save when ready`);
+    }, 300);
+  }, 100);
 }
 function renderSponsorReport(){
   const fySel = el('spr_fy'); if(!fySel || !fySel.value) return;
   const fyStart = parseInt(fySel.value, 10);
   const b = fyBounds(fyStart);
-  const invoicesInFy = (allInvoices||[]).filter(inv => inv.invoice_date >= b.start && inv.invoice_date <= b.end);
+  const selectedCY = `${fyStart}-${String(fyStart+1).slice(2)}`; // e.g. '2026-27'
+  // Filter by club_year first, fall back to date bounds for backcompat with invoices created before the migration
+  const invoicesInFy = (allInvoices||[]).filter(inv => {
+    const cy = inv.club_year || clubYearFromDate(inv.invoice_date);
+    return cy === selectedCY;
+  });
 
   const typeName = id => (allSponsorTypes.find(t=>t.id===id)||{}).name || '—';
   const playerName = id => id ? displayNamePlain(allPlayers.find(p=>p.id===id)||{name:'Unknown'}) : '';
@@ -6450,6 +6600,6 @@ document.getElementById('rolesSaveBtn').onclick = async () => {
     </div>
   </div>
 </div>
-<!-- v1.21 — adminfantasy.html -->
+<!-- v1.23 — adminfantasy.html -->
 </body>
 </html>
