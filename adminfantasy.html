@@ -261,6 +261,11 @@
 
   .add-overlay{position:fixed; inset:0; background:var(--paper); z-index:60; display:none; flex-direction:column}
   .add-overlay.show{display:flex}
+  @media (max-width:600px){
+    #sdb_modal{ align-items:flex-end !important; }
+    .sdb-modal-card{ max-width:100% !important; width:100% !important; border-radius:18px 18px 0 0 !important; margin:0 !important; max-height:88vh !important; }
+  }
+  .add-overlay.show{display:flex}
   .add-sheet{display:flex; flex-direction:column; height:100%; padding:calc(12px + var(--top)) 12px calc(12px + var(--pad))}
   .add-sheet-head{display:flex; gap:8px; align-items:center; margin-bottom:10px}
   .add-sheet-head input{flex:1}
@@ -600,8 +605,8 @@
       </div>
 
       <!-- Edit / Add modal -->
-      <div class="add-overlay" id="sdb_modal" style="align-items:flex-end;justify-content:center;z-index:80">
-        <div class="modal-card" style="max-width:560px;width:100%;max-height:92vh;overflow-y:auto;position:relative;border-radius:18px 18px 0 0;margin:0">
+      <div class="add-overlay" id="sdb_modal" style="align-items:center;justify-content:center;z-index:80;background:rgba(0,0,0,.45)">
+        <div class="modal-card sdb-modal-card" style="max-width:520px;width:calc(100% - 32px);max-height:90vh;overflow-y:auto;position:relative">
           <div class="eyebrow" id="sdb_modal_title">Add sponsor</div>
           <input type="hidden" id="sdb_id">
 
@@ -820,7 +825,7 @@
       </div>
 
       <!-- Add / Edit row modal -->
-      <div class="add-overlay" id="del_row_modal" style="align-items:center;justify-content:center;z-index:80">
+      <div class="add-overlay" id="del_row_modal" style="align-items:center;justify-content:center;z-index:80;background:rgba(0,0,0,.45)">
         <div class="modal-card" style="max-width:480px;width:100%;max-height:90vh;overflow-y:auto;position:relative">
           <div class="eyebrow" id="del_modal_title">Add deliverable row</div>
           <input type="hidden" id="del_row_id">
@@ -7013,6 +7018,6 @@ document.getElementById('rolesSaveBtn').onclick = async () => {
     </div>
   </div>
 </div>
-<!-- v1.33 — adminfantasy.html -->
+<!-- v1.34 — adminfantasy.html -->
 </body>
 </html>
