@@ -2395,7 +2395,13 @@ function openSponsorDbModal(id){
   el('sdb_modal').classList.add('show');
 }
 
-function closeSponsorDbModal(){ el('sdb_modal').classList.remove('show'); }
+function closeSponsorDbModal(){
+  el('sdb_modal').classList.remove('show');
+  window._pendingSdbLogo = null;
+  // Reset file input so it doesn't retain the previous selection
+  const fileEl = el('sdb_logo_file');
+  if(fileEl) fileEl.value = '';
+}
 
 async function saveSponsorDb(){
   const id = el('sdb_id').value.trim();
@@ -5440,25 +5446,31 @@ function updateDelPlayerPicker(){
   const wrap = el('del_row_player_wrap'); if(!wrap) return;
   wrap.style.display = isPlayer ? 'block' : 'none';
   if(!isPlayer){ el('del_row_player').innerHTML='<option value="">Select player…</option>'; return; }
-  // Populate from invoice's player line items
   const invId = el('del_row_invoice').value;
   const playerItems = invId
     ? (allSponsorships||[]).filter(s=>s.invoice_id===invId && s.player_id)
     : [];
   const plSel = el('del_row_player');
   if(playerItems.length){
+    // Players from this invoice's line items
     plSel.innerHTML = '<option value="">Select player…</option>' +
       playerItems.map(s=>{
         const p = (allPlayers||[]).find(x=>x.id===s.player_id);
         const name = p ? (p.nickname ? `${p.name} "${p.nickname}"` : p.name) : s.player_id;
         return `<option value="${esc(name)}">${esc(name)}</option>`;
       }).join('');
-    plSel.onchange = ()=>{
-      if(plSel.value) el('del_row_notes').value = `Sponsored player — ${plSel.value}`;
-    };
   } else {
-    plSel.innerHTML = '<option value="">No player line items on this invoice</option>';
+    // Fall back to all active players — useful when player wasn't assigned at invoice creation
+    const activePlayers = (allPlayers||[]).filter(p=>p.active).sort((a,b)=>(a.name||'').localeCompare(b.name||''));
+    plSel.innerHTML = '<option value="">Select player (all active)…</option>' +
+      activePlayers.map(p=>{
+        const name = p.nickname ? `${p.name} "${p.nickname}"` : p.name;
+        return `<option value="${esc(name)}">${esc(name)}</option>`;
+      }).join('');
   }
+  plSel.onchange = ()=>{
+    if(plSel.value) el('del_row_notes').value = `Sponsored player — ${plSel.value}`;
+  };
 }
 
 function closeDelModal(){ el('del_row_modal').classList.remove('show'); }
@@ -6974,6 +6986,6 @@ document.getElementById('rolesSaveBtn').onclick = async () => {
     </div>
   </div>
 </div>
-<!-- v1.28 — adminfantasy.html -->
+<!-- v1.29 — adminfantasy.html -->
 </body>
 </html>
