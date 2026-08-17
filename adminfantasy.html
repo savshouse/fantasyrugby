@@ -436,17 +436,21 @@
         Manager Report
       </button>
       <div class="nav-group-label">Sponsors</div>
+      <button data-tab="sponsordb">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        Sponsors
+      </button>
       <button data-tab="sponsors">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
         Invoicing
       </button>
-      <button data-tab="sponsorreport">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg>
-        Sponsor Report
-      </button>
       <button data-tab="deliverables">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
         Deliverables
+      </button>
+      <button data-tab="sponsorreport">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg>
+        Sponsor Report
       </button>
       <button data-tab="sponsorsettings">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
@@ -578,6 +582,92 @@
     </section>
 
     <!-- SPONSORS -->
+    <!-- SPONSOR DATABASE -->
+    <section id="sponsordb">
+      <div class="card" style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
+        <div>
+          <div class="eyebrow" style="margin:0">Sponsor database</div>
+          <p class="muted" style="font-size:.82rem;margin-top:2px">One record per sponsor — logo, contacts, and links all in one place.</p>
+        </div>
+        <button class="btn navy" id="sdb_add_btn">+ Add sponsor</button>
+      </div>
+      <div class="card" style="padding:0;margin-top:0">
+        <div style="padding:14px 18px;border-bottom:1px solid var(--line);display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+          <input class="search" id="sdb_search" placeholder="Search sponsors…" style="flex:2;margin:0">
+          <label class="inline" style="flex-shrink:0;gap:6px;font-size:.82rem"><input type="checkbox" class="chk" id="sdb_show_inactive"> Show inactive</label>
+        </div>
+        <div id="sdb_list"><div class="empty" style="padding:24px">Loading…</div></div>
+      </div>
+
+      <!-- Edit / Add modal -->
+      <div class="add-overlay" id="sdb_modal" style="align-items:center;justify-content:center;z-index:80">
+        <div class="modal-card" style="max-width:520px;width:100%;max-height:90vh;overflow-y:auto;position:relative">
+          <div class="eyebrow" id="sdb_modal_title">Add sponsor</div>
+          <input type="hidden" id="sdb_id">
+
+          <label>Sponsor name *</label>
+          <input id="sdb_name" placeholder="e.g. True Potential Wealth Management">
+
+          <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--line)">
+            <div style="font-weight:700;font-size:.85rem;color:var(--navy);margin-bottom:8px">Assets</div>
+            <label>Logo</label>
+            <div class="upload-row">
+              <label class="btn ghost" style="flex:1;text-align:center;cursor:pointer">
+                Choose logo <input type="file" id="sdb_logo_file" accept="image/*">
+              </label>
+              <button class="btn sec small" id="sdb_logo_clear" type="button">Clear</button>
+            </div>
+            <p class="muted" id="sdb_logo_name" style="font-size:.78rem;margin-top:4px"></p>
+            <div id="sdb_logo_preview" style="margin-top:8px"></div>
+            <input type="hidden" id="sdb_logo_url">
+
+            <label style="margin-top:10px">Website URL</label>
+            <input id="sdb_website" placeholder="https://www.example.com" type="url">
+
+            <div class="row" style="margin-top:10px;flex-wrap:wrap;gap:8px">
+              <label class="inline" style="gap:8px"><input type="checkbox" class="chk" id="sdb_show_carousel" checked> Show in sponsor carousel</label>
+              <label class="inline" style="gap:8px"><input type="checkbox" class="chk" id="sdb_active" checked> Active</label>
+            </div>
+          </div>
+
+          <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--line)">
+            <div style="font-weight:700;font-size:.85rem;color:var(--navy);margin-bottom:8px">Primary contact</div>
+            <div class="row">
+              <div style="flex:2"><label>Name</label><input id="sdb_contact_name" placeholder="Full name"></div>
+              <div style="flex:2"><label>Email</label><input id="sdb_contact_email" type="email" placeholder="name@company.com"></div>
+              <div style="flex:1"><label>Phone</label><input id="sdb_contact_phone" placeholder="07700…"></div>
+            </div>
+          </div>
+
+          <div style="margin-top:12px;padding:12px;background:var(--paper);border-radius:10px;border:1px solid var(--line)">
+            <label class="inline" style="gap:8px"><input type="checkbox" class="chk" id="sdb_has_second"> Add second contact</label>
+            <div id="sdb_second_wrap" style="display:none;margin-top:10px">
+              <div style="font-weight:700;font-size:.85rem;color:var(--navy);margin-bottom:8px">Second contact</div>
+              <div class="row">
+                <div style="flex:2"><label>Name</label><input id="sdb_contact2_name" placeholder="Full name"></div>
+                <div style="flex:2"><label>Email</label><input id="sdb_contact2_email" type="email" placeholder="name@company.com"></div>
+                <div style="flex:1"><label>Phone</label><input id="sdb_contact2_phone" placeholder="07700…"></div>
+              </div>
+            </div>
+          </div>
+
+          <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--line)">
+            <div style="font-weight:700;font-size:.85rem;color:var(--navy);margin-bottom:8px">Address</div>
+            <textarea id="sdb_address" rows="2" placeholder="Company address…" style="width:100%;font-size:16px;padding:10px 12px;border:1.5px solid var(--line);border-radius:10px;font-family:'Inter',sans-serif;box-sizing:border-box;resize:vertical"></textarea>
+          </div>
+
+          <label style="margin-top:10px">Notes</label>
+          <textarea id="sdb_notes" rows="2" placeholder="Any internal notes about this sponsor…" style="width:100%;font-size:16px;padding:10px 12px;border:1.5px solid var(--line);border-radius:10px;font-family:'Inter',sans-serif;box-sizing:border-box;resize:vertical"></textarea>
+
+          <div class="row" style="margin-top:14px">
+            <button class="btn navy" onclick="saveSponsorDb()" style="flex:2">Save</button>
+            <button class="btn sec" onclick="closeSponsorDbModal()" style="flex:1">Cancel</button>
+          </div>
+          <p class="muted" id="sdb_status" style="font-size:.82rem;margin-top:6px;text-align:center"></p>
+        </div>
+      </div>
+    </section>
+
     <section id="sponsors">
       <details class="card" id="spinv_create_details" open>
         <summary style="cursor:pointer; list-style:none; display:flex; align-items:center; justify-content:space-between">
@@ -1566,6 +1656,7 @@ function wireNavButtons(){
       if(tab==='mgrreport'){ loadMgrReport(); }
       if(tab==='sponsorreport'){ loadSponsorReport(); }
       if(tab==='deliverables'){ loadDeliverables(); }
+      if(tab==='sponsordb'){ loadSponsorDb(); }
       if(tab==='sponsors'){ loadSponsorTypes(); loadSponsorships(); loadSponsorEnquiries(); }
       if(tab==='sponsorsettings'){ loadSponsorTypes(); loadSponsorPlacements(); loadSponsors(); loadSponsorPageIntro(); }
       if(!document.body.classList.contains('drawer-pinned')){
@@ -2159,14 +2250,20 @@ function addDaysISO(dateStr, days){
 }
 function populateExistingSponsorDropdown(){
   const sel = el('spinv_existing_sponsor'); if(!sel) return;
-  // Build unique sponsors from existing invoices, sorted alphabetically
-  const seen = new Map(); // sponsor_name → most recent invoice data
-  (allInvoices||[]).slice().reverse().forEach(inv=>{
-    if(inv.sponsor_name) seen.set(inv.sponsor_name, inv);
-  });
-  const sponsors = [...seen.values()].sort((a,b)=>a.sponsor_name.localeCompare(b.sponsor_name));
-  sel.innerHTML = '<option value="">— New sponsor / type below —</option>' +
-    sponsors.map(inv=>`<option value="${esc(inv.sponsor_name)}" data-email="${esc(inv.sponsor_email||'')}" data-phone="${esc(inv.sponsor_phone||'')}" data-address="${esc(inv.sponsor_address||'')}" data-contact="${esc(inv.contact_name||'')}">${esc(inv.sponsor_name)}</option>`).join('');
+  // Prefer sponsors table (canonical), fall back to invoice names
+  let sponsors;
+  if(allSponsorDb.length){
+    sponsors = allSponsorDb.filter(s=>s.active).sort((a,b)=>a.name.localeCompare(b.name));
+    sel.innerHTML = '<option value="">— New sponsor / type below —</option>' +
+      sponsors.map(s=>`<option value="${esc(s.name)}" data-email="${esc(s.contact_email||'')}" data-phone="${esc(s.contact_phone||'')}" data-address="${esc(s.address||'')}" data-contact="${esc(s.contact_name||'')}" data-id="${esc(s.id)}">${esc(s.name)}</option>`).join('');
+  } else {
+    // Fall back to invoice names before sponsors table is loaded
+    const seen = new Map();
+    (allInvoices||[]).slice().reverse().forEach(inv=>{ if(inv.sponsor_name) seen.set(inv.sponsor_name, inv); });
+    sponsors = [...seen.values()].sort((a,b)=>a.sponsor_name.localeCompare(b.sponsor_name));
+    sel.innerHTML = '<option value="">— New sponsor / type below —</option>' +
+      sponsors.map(inv=>`<option value="${esc(inv.sponsor_name)}" data-email="${esc(inv.sponsor_email||'')}" data-phone="${esc(inv.sponsor_phone||'')}" data-address="${esc(inv.sponsor_address||'')}" data-contact="${esc(inv.contact_name||'')}">${esc(inv.sponsor_name)}</option>`).join('');
+  }
 }
 el('spinv_existing_sponsor') && (el('spinv_existing_sponsor').onchange = function(){
   const opt = this.selectedOptions[0];
@@ -2200,6 +2297,159 @@ async function nextInvoiceNumber(){
   if(updateErr) throw new Error('Could not update invoice sequence: ' + updateErr.message);
   return `INV-${year}-${String(nextSeq).padStart(3,'0')}`;
 }
+// ══════════════════════════════════════════════════════════════
+// SPONSOR DATABASE
+// ══════════════════════════════════════════════════════════════
+let allSponsorDb = [];
+
+async function loadSponsorDb(){
+  const { data, error } = await sb.from('sponsors').select('*').order('name');
+  if(error){ toast(error.message, true); return; }
+  allSponsorDb = data || [];
+  renderSponsorDb();
+  initSponsorDbModal();
+  // Also refresh the existing sponsor dropdown on the invoice form
+  populateExistingSponsorDropdown();
+}
+
+function renderSponsorDb(){
+  const box = el('sdb_list'); if(!box) return;
+  const q = (el('sdb_search')?.value||'').toLowerCase();
+  const showInactive = el('sdb_show_inactive')?.checked;
+  const list = allSponsorDb.filter(s=>{
+    if(!showInactive && !s.active) return false;
+    if(q && !(s.name||'').toLowerCase().includes(q) && !(s.contact_name||'').toLowerCase().includes(q)) return false;
+    return true;
+  });
+  if(!list.length){ box.innerHTML='<div class="empty" style="padding:24px">No sponsors found.</div>'; return; }
+  box.innerHTML = list.map(s=>{
+    const logoHtml = s.logo_url
+      ? `<img src="${esc(s.logo_url)}" style="height:36px;max-width:90px;object-fit:contain;border-radius:6px;background:var(--paper);padding:4px">`
+      : `<div style="width:48px;height:36px;background:var(--line);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:.7rem;color:var(--muted)">No logo</div>`;
+    const hasLogo = !!s.logo_url, hasLink = !!s.website_url;
+    const tick = v => v ? `<span style="color:#2a7a3b">✓</span>` : `<span style="color:var(--crimson)">✗</span>`;
+    const contacts = [s.contact_name, s.has_second_contact ? s.contact2_name : null].filter(Boolean).join(', ');
+    return `<div style="display:flex;align-items:center;gap:14px;padding:12px 18px;border-bottom:1px solid var(--line);${!s.active?'opacity:.5':''}">
+      <div style="flex-shrink:0">${logoHtml}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:700;font-size:.9rem;color:var(--navy)">${esc(s.name)}${!s.active?' <span class="pill" style="font-size:.65rem;background:var(--line)">Inactive</span>':''}</div>
+        <div class="muted" style="font-size:.78rem;margin-top:2px">${esc(contacts||'No contact recorded')}</div>
+      </div>
+      <div style="display:flex;gap:10px;align-items:center;font-size:.78rem;flex-shrink:0">
+        <span title="Logo">${tick(hasLogo)} Logo</span>
+        <span title="Website">${tick(hasLink)} Link</span>
+        <span title="Carousel" style="color:${s.show_in_carousel?'#2a7a3b':'var(--muted)'}">${s.show_in_carousel?'✓':'✗'} Carousel</span>
+      </div>
+      <button class="btn sec small" data-sdb-edit="${s.id}">Edit</button>
+    </div>`;
+  }).join('');
+  box.querySelectorAll('[data-sdb-edit]').forEach(b=>b.onclick=()=>openSponsorDbModal(b.dataset.sdbEdit));
+}
+
+function initSponsorDbModal(){
+  el('sdb_add_btn') && (el('sdb_add_btn').onclick = ()=>openSponsorDbModal(null));
+  el('sdb_search') && (el('sdb_search').oninput = renderSponsorDb);
+  el('sdb_show_inactive') && (el('sdb_show_inactive').onchange = renderSponsorDb);
+  el('sdb_has_second') && (el('sdb_has_second').onchange = ()=>{
+    const wrap = el('sdb_second_wrap');
+    if(wrap) wrap.style.display = el('sdb_has_second').checked ? 'block' : 'none';
+  });
+  el('sdb_logo_clear') && (el('sdb_logo_clear').onclick = ()=>{
+    el('sdb_logo_url').value=''; el('sdb_logo_name').textContent='';
+    el('sdb_logo_preview').innerHTML=''; window._pendingSdbLogo=null;
+  });
+  el('sdb_logo_file') && (el('sdb_logo_file').onchange = async ()=>{
+    const file = el('sdb_logo_file').files[0]; if(!file) return;
+    el('sdb_logo_name').textContent = `${file.name} (${(file.size/1024).toFixed(0)}kb)`;
+    const reader = new FileReader();
+    reader.onload = e=>{ el('sdb_logo_preview').innerHTML=`<img src="${e.target.result}" style="max-height:60px;border-radius:8px;margin-top:4px">`; };
+    reader.readAsDataURL(file);
+    window._pendingSdbLogo = file;
+  });
+}
+
+function openSponsorDbModal(id){
+  const s = id ? allSponsorDb.find(x=>x.id===id) : null;
+  el('sdb_modal_title').textContent = s ? 'Edit sponsor' : 'Add sponsor';
+  el('sdb_id').value = id||'';
+  el('sdb_name').value = s?.name||'';
+  el('sdb_website').value = s?.website_url||'';
+  el('sdb_logo_url').value = s?.logo_url||'';
+  el('sdb_logo_name').textContent = s?.logo_url ? 'Current logo saved' : '';
+  el('sdb_logo_preview').innerHTML = s?.logo_url ? `<img src="${esc(s.logo_url)}" style="max-height:60px;border-radius:8px;margin-top:4px">` : '';
+  el('sdb_show_carousel').checked = s?.show_in_carousel !== false;
+  el('sdb_active').checked = s?.active !== false;
+  el('sdb_contact_name').value = s?.contact_name||'';
+  el('sdb_contact_email').value = s?.contact_email||'';
+  el('sdb_contact_phone').value = s?.contact_phone||'';
+  el('sdb_has_second').checked = s?.has_second_contact||false;
+  const wrap = el('sdb_second_wrap');
+  if(wrap) wrap.style.display = s?.has_second_contact ? 'block' : 'none';
+  el('sdb_contact2_name').value = s?.contact2_name||'';
+  el('sdb_contact2_email').value = s?.contact2_email||'';
+  el('sdb_contact2_phone').value = s?.contact2_phone||'';
+  el('sdb_address').value = s?.address||'';
+  el('sdb_notes').value = s?.notes||'';
+  el('sdb_status').textContent = '';
+  window._pendingSdbLogo = null;
+  el('sdb_modal').classList.add('show');
+}
+
+function closeSponsorDbModal(){ el('sdb_modal').classList.remove('show'); }
+
+async function saveSponsorDb(){
+  const id = el('sdb_id').value.trim();
+  const name = el('sdb_name').value.trim();
+  if(!name){ el('sdb_status').textContent='Name is required.'; return; }
+  el('sdb_status').textContent='Saving…';
+  // Upload logo if pending
+  let logoUrl = el('sdb_logo_url').value.trim()||null;
+  if(window._pendingSdbLogo){
+    const ext = window._pendingSdbLogo.name.split('.').pop();
+    const path = `sponsor-logos/${name.replace(/[^a-z0-9]/gi,'_').toLowerCase()}.${ext}`;
+    const { data:upData, error:upErr } = await sb.storage.from('sponsor-assets').upload(path, window._pendingSdbLogo, { upsert:true, contentType:window._pendingSdbLogo.type });
+    if(upErr){ el('sdb_status').textContent=`Logo upload failed: ${upErr.message}`; return; }
+    const { data:{ publicUrl } } = sb.storage.from('sponsor-assets').getPublicUrl(path);
+    logoUrl = publicUrl;
+  }
+  const rec = {
+    name, logo_url:logoUrl,
+    website_url: el('sdb_website').value.trim()||null,
+    show_in_carousel: el('sdb_show_carousel').checked,
+    active: el('sdb_active').checked,
+    contact_name: el('sdb_contact_name').value.trim()||null,
+    contact_email: el('sdb_contact_email').value.trim()||null,
+    contact_phone: el('sdb_contact_phone').value.trim()||null,
+    has_second_contact: el('sdb_has_second').checked,
+    contact2_name: el('sdb_contact2_name').value.trim()||null,
+    contact2_email: el('sdb_contact2_email').value.trim()||null,
+    contact2_phone: el('sdb_contact2_phone').value.trim()||null,
+    address: el('sdb_address').value.trim()||null,
+    notes: el('sdb_notes').value.trim()||null,
+    updated_at: new Date().toISOString()
+  };
+  const { data:saved, error } = id
+    ? await sb.from('sponsors').update(rec).eq('id',id).select().single()
+    : await sb.from('sponsors').insert(rec).select().single();
+  if(error){ el('sdb_status').textContent=error.message; return; }
+  // Propagate logo + website to all players with this sponsor name
+  if(logoUrl !== undefined || rec.website_url !== undefined){
+    await sb.from('players').update({
+      sponsor_logo_url: logoUrl,
+      sponsor_link_url: rec.website_url
+    }).eq('sponsor_name', name);
+  }
+  // Propagate sponsor_id to invoices and deliverables where name matches
+  if(saved?.id){
+    await sb.from('invoices').update({ sponsor_id:saved.id }).eq('sponsor_name', name).is('sponsor_id', null);
+    await sb.from('sponsor_deliverables').update({ sponsor_id:saved.id }).eq('sponsor_name', name).is('sponsor_id', null);
+  }
+  closeSponsorDbModal();
+  toast(id ? 'Sponsor updated' : 'Sponsor added');
+  await loadSponsorDb();
+  if(allPlayers.length) await loadPlayers();
+}
+
 async function loadSponsorships(){
   const box = el('spinv_list'); if(!box) return;
   const [{ data: inv, error: e1 }, { data: items, error: e2 }] = await Promise.all([
@@ -6554,7 +6804,7 @@ const ROLE_TABS = {
   scorer:     ['leaderboard','score','squads','stats','playerstats','totw'],
   registrar:  ['leaderboard','inbox','weeks','subs','players','teams','mgrreport','messages'],
   viewer:     ['leaderboard','playerstats','totw','reports','pastseasons','mgrreport'],
-  commercial: ['leaderboard','sponsors','sponsorreport','deliverables']
+  commercial: ['leaderboard','sponsors','sponsorreport','deliverables','sponsordb']
 };
 
 function getPermittedTabs(roles){
@@ -6724,6 +6974,6 @@ document.getElementById('rolesSaveBtn').onclick = async () => {
     </div>
   </div>
 </div>
-<!-- v1.27 — adminfantasy.html -->
+<!-- v1.28 — adminfantasy.html -->
 </body>
 </html>
