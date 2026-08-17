@@ -723,13 +723,7 @@
         <div id="spitem_playerWrap" style="display:none">
           <label for="spitem_player">Player (optional)</label>
           <select id="spitem_player"><option value="">— none —</option></select>
-          <div id="spitem_playerDetailsWrap" style="display:none">
-            <p class="muted" style="font-size:.78rem; margin:8px 0 0">These will be saved onto the player's profile so they show as sponsored across the app.</p>
-            <label for="spitem_logo">Sponsor logo URL <span style="text-transform:none;font-weight:400">(optional)</span></label>
-            <input id="spitem_logo" placeholder="https://…/logo.png">
-            <label for="spitem_website">Sponsor website <span style="text-transform:none;font-weight:400">(optional)</span></label>
-            <input id="spitem_website" placeholder="https://…">
-          </div>
+          <p class="muted" style="font-size:.78rem; margin:6px 0 0">Logo and website are pulled automatically from the sponsor record.</p>
         </div>
         <div style="height:10px"></div>
         <button class="btn sec" id="spitem_add" type="button">+ Add item to invoice</button>
@@ -2072,10 +2066,7 @@ function renderSponsorTypeSelect(){
     };
     populateSpitemPlayers();
     playerSel._populateSpitemPlayers = populateSpitemPlayers; // exposed so the type dropdown's change handler can re-run it
-    playerSel.onchange = ()=>{
-      const wrap = el('spitem_playerDetailsWrap');
-      if(wrap) wrap.style.display = playerSel.value ? 'block' : 'none';
-    };
+    playerSel.onchange = ()=>{}; // logo/website now pulled from sponsors table automatically
   }
   const typeFilter = el('spinv_typeFilter');
   if(typeFilter){
@@ -2778,11 +2769,14 @@ el('spitem_add') && (el('spitem_add').onclick = async ()=>{
     }
   }
 
-  spBasket.push({ sponsorship_type_id: typeId, player_id: playerId, amount, sponsor_logo_url: playerId ? (el('spitem_logo').value.trim()||null) : null, sponsor_website: playerId ? (el('spitem_website').value.trim()||null) : null });
+  const sponsorRec = (allSponsorDb||[]).find(s=>s.name===(el('spinv_sponsorName')?.value||'').trim());
+  spBasket.push({ sponsorship_type_id: typeId, player_id: playerId, amount,
+    sponsor_logo_url: playerId ? (sponsorRec?.logo_url||null) : null,
+    sponsor_website: playerId ? (sponsorRec?.website_url||null) : null });
   renderBasket();
   el('spitem_type').value = ''; el('spitem_amount').value = ''; el('spitem_player').value = '';
-  el('spitem_logo').value = ''; el('spitem_website').value = '';
-  el('spitem_playerDetailsWrap') && (el('spitem_playerDetailsWrap').style.display = 'none');
+  el('spitem_player').value = ''; el('spitem_playerWrap').style.display='none';
+  el('spitem_player').value = '';
   updateSpitemPlayerVisibility();
 });
 
@@ -7023,6 +7017,6 @@ document.getElementById('rolesSaveBtn').onclick = async () => {
     </div>
   </div>
 </div>
-<!-- v1.30 — adminfantasy.html -->
+<!-- v1.31 — adminfantasy.html -->
 </body>
 </html>
