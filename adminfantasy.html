@@ -600,8 +600,8 @@
       </div>
 
       <!-- Edit / Add modal -->
-      <div class="add-overlay" id="sdb_modal" style="align-items:center;justify-content:center;z-index:80">
-        <div class="modal-card" style="max-width:520px;width:100%;max-height:90vh;overflow-y:auto;position:relative">
+      <div class="add-overlay" id="sdb_modal" style="align-items:flex-end;justify-content:center;z-index:80">
+        <div class="modal-card" style="max-width:560px;width:100%;max-height:92vh;overflow-y:auto;position:relative;border-radius:18px 18px 0 0;margin:0">
           <div class="eyebrow" id="sdb_modal_title">Add sponsor</div>
           <input type="hidden" id="sdb_id">
 
@@ -624,30 +624,26 @@
             <label style="margin-top:10px">Website URL</label>
             <input id="sdb_website" placeholder="https://www.example.com" type="url">
 
-            <div class="row" style="margin-top:10px;flex-wrap:wrap;gap:8px">
-              <label class="inline" style="gap:8px"><input type="checkbox" class="chk" id="sdb_show_carousel" checked> Show in sponsor carousel</label>
+            <div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:10px">
+              <label class="inline" style="gap:8px"><input type="checkbox" class="chk" id="sdb_show_carousel" checked> Show in carousel</label>
               <label class="inline" style="gap:8px"><input type="checkbox" class="chk" id="sdb_active" checked> Active</label>
             </div>
           </div>
 
           <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--line)">
             <div style="font-weight:700;font-size:.85rem;color:var(--navy);margin-bottom:8px">Primary contact</div>
-            <div class="row">
-              <div style="flex:2"><label>Name</label><input id="sdb_contact_name" placeholder="Full name"></div>
-              <div style="flex:2"><label>Email</label><input id="sdb_contact_email" type="email" placeholder="name@company.com"></div>
-              <div style="flex:1"><label>Phone</label><input id="sdb_contact_phone" placeholder="07700…"></div>
-            </div>
+            <label>Name</label><input id="sdb_contact_name" placeholder="Full name">
+            <label style="margin-top:8px">Email</label><input id="sdb_contact_email" type="email" placeholder="name@company.com">
+            <label style="margin-top:8px">Phone</label><input id="sdb_contact_phone" placeholder="07700…">
           </div>
 
           <div style="margin-top:12px;padding:12px;background:var(--paper);border-radius:10px;border:1px solid var(--line)">
             <label class="inline" style="gap:8px"><input type="checkbox" class="chk" id="sdb_has_second"> Add second contact</label>
             <div id="sdb_second_wrap" style="display:none;margin-top:10px">
               <div style="font-weight:700;font-size:.85rem;color:var(--navy);margin-bottom:8px">Second contact</div>
-              <div class="row">
-                <div style="flex:2"><label>Name</label><input id="sdb_contact2_name" placeholder="Full name"></div>
-                <div style="flex:2"><label>Email</label><input id="sdb_contact2_email" type="email" placeholder="name@company.com"></div>
-                <div style="flex:1"><label>Phone</label><input id="sdb_contact2_phone" placeholder="07700…"></div>
-              </div>
+              <label>Name</label><input id="sdb_contact2_name" placeholder="Full name">
+              <label style="margin-top:8px">Email</label><input id="sdb_contact2_email" type="email" placeholder="name@company.com">
+              <label style="margin-top:8px">Phone</label><input id="sdb_contact2_phone" placeholder="07700…">
             </div>
           </div>
 
@@ -5299,7 +5295,7 @@ function renderDelTracker(){
               ⚠ Invoice not yet paid — deliverables shown for reference only
             </div>`;
           }
-          html += `<table class="rp-table" style="margin:0;border-top:1px solid var(--line)">
+          html += `<div style="overflow-x:auto;-webkit-overflow-scrolling:touch"><table class="rp-table" style="margin:0;border-top:1px solid var(--line);min-width:560px">
             <thead><tr>
               <th style="text-align:left">Deliverable</th>
               <th style="text-align:left">Cat</th>
@@ -5337,7 +5333,7 @@ function renderDelTracker(){
               </td>
             </tr>`;
           });
-          html += `</tbody></table>`;
+          html += `</tbody></table></div>`;
         }
         html += `</div>`;
       }
@@ -7017,6 +7013,6 @@ document.getElementById('rolesSaveBtn').onclick = async () => {
     </div>
   </div>
 </div>
-<!-- v1.31 — adminfantasy.html -->
+<!-- v1.33 — adminfantasy.html -->
 </body>
 </html>
