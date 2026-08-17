@@ -1854,10 +1854,11 @@ function buildCtaCard(cta){
   </a>`;
 }
 async function loadSponsorBanner(){
-  const [{ data: all }, { data: placements }, { data: ctas }] = await Promise.all([
+  const [{ data: all }, { data: placements }, { data: ctas }, { data: sponsorDbRows }] = await Promise.all([
     sb.from('sponsor_banners').select('*').eq('active',true).order('sort_order'),
     sb.from('sponsor_placements').select('*'),
-    sb.from('app_cta_placements').select('*')
+    sb.from('app_cta_placements').select('*'),
+    sb.from('sponsors').select('name,logo_url,website_url,show_in_carousel').eq('active',true).eq('show_in_carousel',true).not('logo_url','is',null)
   ]);
   const byId = {}; (all||[]).forEach(s=>byId[s.id]=s);
   const placeByPage = {}; (placements||[]).forEach(p=>placeByPage[p.page_key]=p);
@@ -1890,38 +1891,56 @@ async function loadSponsorBanner(){
     if(ctaEl) ctaEl.innerHTML = buildCtaCard(ctaByPage[pg.key]);
     // Carousel — shown/hidden per page based on the admin Placements table
     if(place?.show_carousel){
-      buildSponsorCarousel(all, allPlayers, pg.carouselSuffix);
+      buildSponsorCarousel(mergeCarouselSources(sponsorDbRows||[], all||[]), allPlayers, pg.carouselSuffix);
     } else {
       const wrap = el('sponsorCarouselWrap_'+pg.carouselSuffix);
       if(wrap) wrap.style.display = 'none';
     }
     if(pg.key === 'team'){
-      _teamCarouselState = place?.show_carousel ? { all } : null;
+      _teamCarouselState = place?.show_carousel ? { all, sponsorDbRows } : null;
     }
   });
   // Team page top is always injected directly; footer is via renderPicker cache
   cachedSponsorHTML.top = cache['sponsorBanner'] || '';
   cachedSponsorHTML.bot = cache['sponsorFooter'] || '';
 }
-function buildSponsorCarousel(banners, players, pageSuffix){
+function mergeCarouselSources(sponsorDbRows, legacyBanners){
+  const seen = new Set();
+  const items = [];
+  (sponsorDbRows||[]).forEach(s=>{
+    if(s.logo_url && !seen.has(s.logo_url)){
+      seen.add(s.logo_url);
+      items.push({ name:s.name||'', logo:s.logo_url, link:s.website_url||'' });
+    }
+  });
+  (legacyBanners||[]).forEach(b=>{
+    if(b.logo_url && !seen.has(b.logo_url)){
+      seen.add(b.logo_url);
+      items.push({ name:b.name||'', logo:b.logo_url, link:b.link_url||'' });
+    }
+  });
+  return items;
+}
+
+function buildSponsorCarousel(items, players, pageSuffix){
   const suffix = pageSuffix ? '_'+pageSuffix : '';
   const wrap = document.getElementById('sponsorCarouselWrap'+suffix);
   const track = document.getElementById('sponsorCarousel'+suffix);
   if(!wrap || !track) return;
-  // Collect logos from sponsor_banners (name + logo_url) and player sponsors (sponsor_name + sponsor_logo_url)
-  const items = [];
-  const seen = new Set();
-  (banners||[]).forEach(b=>{
-    if(b.logo_url && !seen.has(b.logo_url)){ seen.add(b.logo_url); items.push({ name: b.name||'', logo: b.logo_url, link: b.link_url||'' }); }
-  });
+  // items is pre-merged from mergeCarouselSources(); add player sponsor logos not already present
+  const seen = new Set(items.map(i=>i.logo));
+  const allItems = [...items];
   (players||[]).forEach(p=>{
-    if(p.sponsor_logo_url && !seen.has(p.sponsor_logo_url)){ seen.add(p.sponsor_logo_url); items.push({ name: p.sponsor_name||'', logo: p.sponsor_logo_url, link: p.sponsor_link_url||'' }); }
+    if(p.sponsor_logo_url && !seen.has(p.sponsor_logo_url)){
+      seen.add(p.sponsor_logo_url);
+      allItems.push({ name:p.sponsor_name||'', logo:p.sponsor_logo_url, link:p.sponsor_link_url||'' });
+    }
   });
 
   // "Sponsor a player" CTA — always shown (even with zero logos, this becomes the whole point of the block)
   const ctaHtml = `<div class="sponsor-cta"><span>Want to sponsor a player or add your logo here?</span><button class="sponsor-cta-btn" type="button" onclick="openSponsorEnquiry()">Get in touch</button></div>`;
 
-  if(!items.length){
+  if(!allItems.length){
     wrap.querySelector('.sponsor-carousel-title')?.remove();
     track.innerHTML = '';
     const existingCta = wrap.querySelector('.sponsor-cta'); if(existingCta) existingCta.remove();
@@ -1933,7 +1952,7 @@ function buildSponsorCarousel(banners, players, pageSuffix){
     ? `<a class="sponsor-carousel-item" href="${esc(it.link)}" target="_blank" rel="noopener"><img src="${esc(it.logo)}" alt="${esc(it.name)}" title="${esc(it.name)}"></a>`
     : `<div class="sponsor-carousel-item"><img src="${esc(it.logo)}" alt="${esc(it.name)}" title="${esc(it.name)}"></div>`;
   // Duplicate the list so the CSS scroll-loop is seamless
-  const html = items.map(cell).join('') + items.map(cell).join('');
+  const html = allItems.map(cell).join('') + allItems.map(cell).join('');
   track.innerHTML = `<div class="sponsor-carousel-track">${html}</div>`;
   const existingCta = wrap.querySelector('.sponsor-cta'); if(existingCta) existingCta.remove();
   wrap.insertAdjacentHTML('beforeend', ctaHtml);
@@ -2175,7 +2194,7 @@ function renderPicker(){
   // renderPicker() rebuilds this whole page's HTML, wiping any carousel content that
   // loadSponsorBanner() had already injected — re-populate it here using the cached state.
   if(_teamCarouselState){
-    buildSponsorCarousel(_teamCarouselState.all, allPlayers, 'team');
+    buildSponsorCarousel(mergeCarouselSources(_teamCarouselState.sponsorDbRows||[], _teamCarouselState.all||[]), allPlayers, 'team');
   }
 
   box.querySelectorAll('[data-slot]').forEach(b=>b.onclick=()=>{const[g,i]=b.dataset.slot.split('-');openChooser(g,parseInt(i,10));});
@@ -3941,6 +3960,6 @@ boot();
     <button class="btn ghost block" id="idleLogoutBtn" style="margin-top:8px">Sign out now</button>
   </div>
 </div>
-<!-- v1.4 — manager.html -->
+<!-- v1.5 — manager.html -->
 </body>
 </html>

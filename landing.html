@@ -685,24 +685,45 @@ function buildSponsorBanner(data, placement){
   return `<div class="${cls}">${inner}</div>`;
 }
 
-function buildSponsorCarousel(banners, players){
+function mergeCarouselSources(sponsorDbRows, legacyBanners){
+  // Build unified list: sponsors table (primary) + sponsor_banners (legacy fallback)
+  // Both normalised to { name, logo, link }
+  const seen = new Set();
+  const items = [];
+  (sponsorDbRows||[]).forEach(s=>{
+    if(s.logo_url && !seen.has(s.logo_url)){
+      seen.add(s.logo_url);
+      items.push({ name:s.name||'', logo:s.logo_url, link:s.website_url||'' });
+    }
+  });
+  (legacyBanners||[]).forEach(b=>{
+    if(b.logo_url && !seen.has(b.logo_url)){
+      seen.add(b.logo_url);
+      items.push({ name:b.name||'', logo:b.logo_url, link:b.link_url||'' });
+    }
+  });
+  return items;
+}
+
+function buildSponsorCarousel(items, players){
   const wrap = document.getElementById('sponsorCarouselWrap');
   const track = document.getElementById('sponsorCarousel');
   if(!wrap || !track) return;
-  // Collect logos from sponsor_banners (name + logo_url) and player sponsors (sponsor_name + sponsor_logo_url)
-  const items = [];
-  const seen = new Set();
-  (banners||[]).forEach(b=>{
-    if(b.logo_url && !seen.has(b.logo_url)){ seen.add(b.logo_url); items.push({ name: b.name||'', logo: b.logo_url, link: b.link_url||'' }); }
-  });
+  // items is already a merged list from mergeCarouselSources()
+  // also add any player sponsor logos not already included
+  const seen = new Set(items.map(i=>i.logo));
+  const allItems = [...items];
   (players||[]).forEach(p=>{
-    if(p.sponsor_logo_url && !seen.has(p.sponsor_logo_url)){ seen.add(p.sponsor_logo_url); items.push({ name: p.sponsor_name||'', logo: p.sponsor_logo_url, link: p.sponsor_link_url||'' }); }
+    if(p.sponsor_logo_url && !seen.has(p.sponsor_logo_url)){
+      seen.add(p.sponsor_logo_url);
+      allItems.push({ name:p.sponsor_name||'', logo:p.sponsor_logo_url, link:p.sponsor_link_url||'' });
+    }
   });
 
   // "Sponsor a player" CTA — always shown (even with zero logos, this becomes the whole point of the block)
   const ctaHtml = `<div class="sponsor-cta"><span>Want to sponsor a player or add your logo here?</span><button class="sponsor-cta-btn" type="button" onclick="openSponsorEnquiry()">Get in touch</button></div>`;
 
-  if(!items.length){
+  if(!allItems.length){
     wrap.querySelector('.sponsor-carousel-title')?.remove();
     track.innerHTML = '';
     const existingCta = wrap.querySelector('.sponsor-cta'); if(existingCta) existingCta.remove();
@@ -714,7 +735,7 @@ function buildSponsorCarousel(banners, players){
     ? `<a class="sponsor-carousel-item" href="${esc(it.link)}" target="_blank" rel="noopener"><img src="${esc(it.logo)}" alt="${esc(it.name)}" title="${esc(it.name)}"></a>`
     : `<div class="sponsor-carousel-item"><img src="${esc(it.logo)}" alt="${esc(it.name)}" title="${esc(it.name)}"></div>`;
   // Duplicate the list so the CSS scroll-loop is seamless
-  const html = items.map(cell).join('') + items.map(cell).join('');
+  const html = allItems.map(cell).join('') + allItems.map(cell).join('');
   track.innerHTML = `<div class="sponsor-carousel-track">${html}</div>`;
   const existingCta = wrap.querySelector('.sponsor-cta'); if(existingCta) existingCta.remove();
   wrap.insertAdjacentHTML('beforeend', ctaHtml);
@@ -1047,11 +1068,14 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeModal();closeM
 // ── Main load ──
 async function loadAll(){
   // Settings + seasons
-  const [{data:settings},{data:allSponsors},{data:placements}]=await Promise.all([
+  const [{data:settings},{data:allSponsors},{data:placements},{data:sponsorDbRows}]=await Promise.all([
     sb.from('app_settings').select('current_season,sponsor_contact_info,deadline_weekday,deadline_time').limit(1).single(),
     sb.from('sponsor_banners').select('*').eq('active',true).order('sort_order'),
-    sb.from('sponsor_placements').select('*').eq('page_key','landing').maybeSingle()
+    sb.from('sponsor_placements').select('*').eq('page_key','landing').maybeSingle(),
+    sb.from('sponsors').select('name,logo_url,website_url,show_in_carousel').eq('active',true).eq('show_in_carousel',true).not('logo_url','is',null)
   ]);
+  // Merge sponsors table into carousel banners — sponsors table is primary source, banner table is secondary
+  const allCarouselSponsors = mergeCarouselSources(sponsorDbRows||[], allSponsors||[]);
   const season=settings?.current_season||'Season 1';
   // Deadline text — use the actual next gameweek deadline (same source as the manager Week banner),
   // falling back to the app_settings template, then a sensible default.
@@ -1095,7 +1119,7 @@ async function loadAll(){
 
   // Sponsor thank-you carousel — from sponsor_banners + player sponsor logos, only if enabled for this page
   if(placements?.show_carousel){
-    buildSponsorCarousel(allSponsors, players);
+    buildSponsorCarousel(allCarouselSponsors, players);
   } else {
     const wrap = document.getElementById('sponsorCarouselWrap');
     if(wrap) wrap.style.display = 'none';
@@ -1287,6 +1311,6 @@ document.addEventListener('click', e => {
   }
 });
 </script>
-<!-- v1.1 — landing.html -->
+<!-- v1.2 — landing.html -->
 </body>
 </html>
