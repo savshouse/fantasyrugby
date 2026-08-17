@@ -261,8 +261,9 @@
 
   .add-overlay{position:fixed; inset:0; background:var(--paper); z-index:60; display:none; flex-direction:column}
   .add-overlay.show{display:flex}
+  .modal-overlay-bg{background:rgba(0,0,0,.5) !important}
   @media (max-width:600px){
-    #sdb_modal{ align-items:flex-end !important; }
+    .modal-overlay-bg{ align-items:flex-end !important; }
     .sdb-modal-card{ max-width:100% !important; width:100% !important; border-radius:18px 18px 0 0 !important; margin:0 !important; max-height:88vh !important; }
   }
   .add-overlay.show{display:flex}
@@ -605,8 +606,8 @@
       </div>
 
       <!-- Edit / Add modal -->
-      <div class="add-overlay" id="sdb_modal" style="align-items:center;justify-content:center;z-index:80;background:rgba(0,0,0,.45)">
-        <div class="modal-card sdb-modal-card" style="max-width:520px;width:calc(100% - 32px);max-height:90vh;overflow-y:auto;position:relative">
+      <div class="add-overlay modal-overlay-bg" id="sdb_modal" style="align-items:center;justify-content:center;z-index:80">
+        <div class="modal-card sdb-modal-card" style="max-width:520px;width:calc(100% - 32px);max-height:90vh;overflow-y:auto;position:relative;background:var(--card);border-radius:14px;padding:20px">
           <div class="eyebrow" id="sdb_modal_title">Add sponsor</div>
           <input type="hidden" id="sdb_id">
 
@@ -825,7 +826,7 @@
       </div>
 
       <!-- Add / Edit row modal -->
-      <div class="add-overlay" id="del_row_modal" style="align-items:center;justify-content:center;z-index:80;background:rgba(0,0,0,.45)">
+      <div class="add-overlay modal-overlay-bg" id="del_row_modal" style="align-items:center;justify-content:center;z-index:80">
         <div class="modal-card" style="max-width:480px;width:100%;max-height:90vh;overflow-y:auto;position:relative">
           <div class="eyebrow" id="del_modal_title">Add deliverable row</div>
           <input type="hidden" id="del_row_id">
@@ -7018,6 +7019,6 @@ document.getElementById('rolesSaveBtn').onclick = async () => {
     </div>
   </div>
 </div>
-<!-- v1.34 — adminfantasy.html -->
+<!-- v1.35 — adminfantasy.html -->
 </body>
 </html>
