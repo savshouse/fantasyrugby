@@ -4792,6 +4792,11 @@ function updateContractEndDisplay(){
 async function loadSponsorReport(){
   // Ensure all data is loaded
   if(!allInvoices.length && !allSponsorTypes.length){ await loadSponsorTypes(); await loadSponsorships(); }
+  // Load sponsor DB records for asset checking
+  if(!allSponsorDb.length){
+    const { data } = await sb.from('sponsors').select('*').order('name');
+    if(data) allSponsorDb = data;
+  }
   // Deliverable rows needed for deliverables-by-sponsor card
   if(!allDeliverableRows.length){
     const [{ data:rows }, { data:types }] = await Promise.all([
@@ -4877,14 +4882,12 @@ function renderSprDeliverables(){
 function renderSprAssets(){
   const box = el('spr_assets_list'); if(!box) return;
   const thisCY = currentClubYearLabel();
-  // Unique sponsors from invoices this club year
   const sponsorNames = [...new Set(
     (allInvoices||[])
       .filter(i=>(i.club_year||clubYearFromDate(i.invoice_date))===thisCY)
       .map(i=>i.sponsor_name).filter(Boolean)
   )].sort();
   if(!sponsorNames.length){ box.innerHTML='<div class="empty">No invoices for the current club year.</div>'; return; }
-  // For each sponsor, find all their players (any active player with that sponsor_name)
   const tick = (v, label) => v
     ? `<span style="color:#2a7a3b;font-size:1rem" title="${label} on file">✓</span>`
     : `<span style="color:var(--crimson);font-size:1rem" title="${label} missing">✗</span>`;
@@ -4896,19 +4899,21 @@ function renderSprAssets(){
     <th style="text-align:center">All assets ✓</th>
   </tr></thead><tbody>${sponsorNames.map(name=>{
     const sponsoredPlayers = (allPlayers||[]).filter(p=>p.active && p.sponsor_name===name);
-    const hasLogo = sponsoredPlayers.some(p=>p.sponsor_logo_url?.trim());
-    const hasLink = sponsoredPlayers.some(p=>p.sponsor_link_url?.trim());
-    const allOk = sponsoredPlayers.length > 0 && hasLogo && hasLink;
-    const rowBg = sponsoredPlayers.length && (!hasLogo||!hasLink) ? 'background:rgba(196,30,58,.05)' : '';
+    // Read logo/link from sponsors table first (canonical), fall back to player record
+    const sponsorRec = (allSponsorDb||[]).find(s=>s.name===name);
+    const hasLogo = !!(sponsorRec?.logo_url?.trim() || sponsoredPlayers.some(p=>p.sponsor_logo_url?.trim()));
+    const hasLink = !!(sponsorRec?.website_url?.trim() || sponsoredPlayers.some(p=>p.sponsor_link_url?.trim()));
+    const allOk = hasLogo && hasLink && (sponsoredPlayers.length > 0 || sponsorRec);
+    const rowBg = (!hasLogo || !hasLink) ? 'background:rgba(196,30,58,.05)' : '';
     const playerList = sponsoredPlayers.length
       ? sponsoredPlayers.map(p=>esc(displayNamePlain(p)||p.name)).join(', ')
       : '<span class="muted">None assigned</span>';
     return `<tr style="${rowBg}">
       <td class="name-cell"><b>${esc(name)}</b></td>
-      <td style="text-align:center">${sponsoredPlayers.length ? tick(hasLogo,'Logo') : '<span class="muted">—</span>'}</td>
-      <td style="text-align:center">${sponsoredPlayers.length ? tick(hasLink,'Web link') : '<span class="muted">—</span>'}</td>
+      <td style="text-align:center">${tick(hasLogo,'Logo')}</td>
+      <td style="text-align:center">${tick(hasLink,'Web link')}</td>
       <td style="font-size:.82rem;color:var(--muted)">${playerList}</td>
-      <td style="text-align:center">${sponsoredPlayers.length ? tick(allOk,'All assets') : '<span class="muted">—</span>'}</td>
+      <td style="text-align:center">${tick(allOk,'All assets')}</td>
     </tr>`;
   }).join('')}</tbody></table>
   <p class="muted" style="font-size:.78rem;margin-top:8px">${sponsorNames.length} sponsor${sponsorNames.length!==1?'s':''} · ${thisCY} · ✓ = on file · ✗ = missing</p>`;
@@ -5460,13 +5465,29 @@ function updateDelPlayerPicker(){
         return `<option value="${esc(name)}">${esc(name)}</option>`;
       }).join('');
   } else {
-    // Fall back to all active players — useful when player wasn't assigned at invoice creation
-    const activePlayers = (allPlayers||[]).filter(p=>p.active).sort((a,b)=>(a.name||'').localeCompare(b.name||''));
-    plSel.innerHTML = '<option value="">Select player (all active)…</option>' +
-      activePlayers.map(p=>{
-        const name = p.nickname ? `${p.name} "${p.nickname}"` : p.name;
-        return `<option value="${esc(name)}">${esc(name)}</option>`;
-      }).join('');
+    // Fallback: all active players without a sponsor, grouped by position
+    // Determine position context from the deliverable type name (Mens/Womens/Ladies hint)
+    const typeOpt = typeSel.selectedOptions[0];
+    const typeName = (typeOpt?.text||'').toLowerCase();
+    const isMens = typeName.includes('men') && !typeName.includes('women') && !typeName.includes('ladies');
+    const isWomens = typeName.includes('women') || typeName.includes('ladies');
+    const availablePlayers = (allPlayers||[]).filter(p=>{
+      if(!p.active) return false;
+      if(p.sponsor_name?.trim()) return false; // already has a sponsor
+      // Filter by gender if the type name gives us a hint
+      const squad = (allTeams||[]).find(t=>t.id===p.team_id)?.name?.toLowerCase()||'';
+      if(isMens && (squad.includes('ladies') || squad.includes('women'))) return false;
+      if(isWomens && !squad.includes('ladies') && !squad.includes('women')) return false;
+      return true;
+    }).sort((a,b)=>(a.name||'').localeCompare(b.name||''));
+    plSel.innerHTML = (availablePlayers.length
+      ? '<option value="">Select unsponsored player…</option>' +
+        availablePlayers.map(p=>{
+          const name = p.nickname ? `${p.name} "${p.nickname}"` : p.name;
+          const squad = (allTeams||[]).find(t=>t.id===p.team_id)?.name||'';
+          return `<option value="${esc(name)}">${esc(name)}${squad?' — '+esc(squad):''}`;
+        }).join('')
+      : '<option value="">No unsponsored players available</option>');
   }
   plSel.onchange = ()=>{
     if(plSel.value) el('del_row_notes').value = `Sponsored player — ${plSel.value}`;
@@ -5565,6 +5586,22 @@ async function saveDelRow(){
     ? await sb.from('sponsor_deliverables').update(rec).eq('id',id)
     : await sb.from('sponsor_deliverables').insert(rec);
   if(error){ el('del_row_status').textContent=error.message; return; }
+  // If this is a player deliverable, update the player's sponsor fields
+  const notesVal = el('del_row_notes').value.trim();
+  const playerName = notesVal.startsWith('Sponsored player — ') ? notesVal.replace('Sponsored player — ','').trim() : null;
+  if(playerName && el('del_row_player')?.value){
+    const sponsorName = el('del_row_sponsor').value;
+    const sponsorRec = (allSponsorDb||[]).find(s=>s.name===sponsorName);
+    const matchPlayer = (allPlayers||[]).find(p=>(p.nickname?`${p.name} "${p.nickname}"`:p.name)===playerName || p.name===playerName);
+    if(matchPlayer){
+      await sb.from('players').update({
+        sponsor_name: sponsorName,
+        sponsor_logo_url: sponsorRec?.logo_url||null,
+        sponsor_link_url: sponsorRec?.website_url||null
+      }).eq('id', matchPlayer.id);
+      if(allPlayers.length) await loadPlayers();
+    }
+  }
   closeDelModal(); toast('Saved'); await loadDeliverables();
 }
 
@@ -6986,6 +7023,6 @@ document.getElementById('rolesSaveBtn').onclick = async () => {
     </div>
   </div>
 </div>
-<!-- v1.29 — adminfantasy.html -->
+<!-- v1.30 — adminfantasy.html -->
 </body>
 </html>
