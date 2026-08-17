@@ -5012,17 +5012,22 @@ function renderDelTracker(){
     const spDone = allRows.filter(r=>r.quantity_delivered>=r.quantity_agreed).length;
     const spTotal = allRows.length;
     const spOverdue = allRows.some(r=>{ const dl=r.deadline||r.deliverable_types?.default_deadline; return dl && dl<today && r.quantity_delivered<r.quantity_agreed; });
+    const spHasUnpaid = Object.keys(invoices).some(invId=>{ const inv=allInvoices.find(i=>i.id===invId); return inv && inv.status!=='paid'; });
     html += `<div class="del-sponsor-row" style="margin-bottom:6px;border:1.5px solid var(--line);border-radius:10px;overflow:hidden">
       <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--paper);cursor:pointer;user-select:none;border-left:4px solid var(--crimson)" data-del-sp-toggle="${esc(sponsor)}">
         <span style="color:var(--crimson);font-size:.8rem;flex-shrink:0">${spOpen?"▼":"▶"}</span>
         <span style="font-weight:700;font-size:.9rem;color:var(--navy);flex:1">${esc(sponsor)}</span>
-        <span style="font-size:.75rem;color:var(--muted)">${spDone}/${spTotal} delivered${spOverdue?` · <span style="color:var(--crimson);font-weight:700">⚠ overdue</span>`:""}</span>
+        <span style="font-size:.75rem;color:var(--muted)">${spDone}/${spTotal} delivered${spHasUnpaid?` · <span style="color:#b45309">⚠ unpaid</span>`:""}${spOverdue?` · <span style="color:var(--crimson);font-weight:700">⚠ overdue</span>`:""}</span>
       </div>`;
     if(spOpen){
       for(const [invId, rows] of Object.entries(invoices)){
         const inv = allInvoices.find(i=>i.id===invId);
         const invTotal = (allSponsorships||[]).filter(s=>s.invoice_id===invId).reduce((t,s)=>t+Number(s.amount||0),0);
         const invLabel = inv ? `${inv.invoice_number} — £${invTotal.toFixed(0)}` : 'No invoice linked';
+        const invPaid = inv?.status === 'paid';
+        const paidPill = inv ? (invPaid
+          ? `<span class="pill" style="background:#2a7a3b;color:#fff;font-size:.68rem;margin-left:6px">Paid</span>`
+          : `<span class="pill" style="background:#b45309;color:#fff;font-size:.68rem;margin-left:6px">Unpaid</span>`) : '';
         const invKey = sponsor+'__'+invId;
         const invOpen = delExpandedInvoices.has(invKey);
         const invDone = rows.filter(r=>r.quantity_delivered>=r.quantity_agreed).length;
@@ -5030,10 +5035,15 @@ function renderDelTracker(){
         html += `<div style="margin:0 0 0 0;border-top:1px solid var(--line)">
           <div style="display:flex;align-items:center;gap:10px;padding:8px 14px 8px 22px;background:#fafafa;cursor:pointer;user-select:none" data-del-inv-toggle="${esc(invKey)}">
             <span style="color:var(--muted);font-size:.75rem;flex-shrink:0">${invOpen?"▼":"▶"}</span>
-            <span style="font-size:.82rem;color:var(--navy);flex:1">${esc(invLabel)}</span>
+            <span style="font-size:.82rem;color:var(--navy);flex:1">${esc(invLabel)}${paidPill}</span>
             <span style="font-size:.72rem;color:var(--muted)">${invDone}/${rows.length} done${invOverdue?` · <span style="color:var(--crimson)">⚠ overdue</span>`:""}</span>
           </div>`;
         if(invOpen){
+          if(!invPaid){
+            html += `<div style="padding:8px 14px 8px 22px;background:#fffbf0;border-top:1px solid #f5d87a;font-size:.8rem;color:#b45309">
+              ⚠ Invoice not yet paid — deliverables shown for reference only
+            </div>`;
+          }
           html += `<table class="rp-table" style="margin:0;border-top:1px solid var(--line)">
             <thead><tr>
               <th style="text-align:left">Deliverable</th>
@@ -6714,6 +6724,6 @@ document.getElementById('rolesSaveBtn').onclick = async () => {
     </div>
   </div>
 </div>
-<!-- v1.26 — adminfantasy.html -->
+<!-- v1.27 — adminfantasy.html -->
 </body>
 </html>
