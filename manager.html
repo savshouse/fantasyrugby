@@ -154,6 +154,30 @@
   .group-header span{font-size:.75rem; color:var(--muted); font-weight:500}
 
   .slot{display:flex; align-items:center; gap:10px; border:1.5px solid var(--line);
+
+  /* ── PITCH VIEW ── */
+  .pitch-toggle{display:flex;background:var(--line);border-radius:20px;padding:3px;gap:0;margin:0 auto 14px;width:fit-content}
+  .pitch-toggle button{border:none;background:none;border-radius:16px;padding:6px 20px;font-size:.82rem;font-weight:700;font-family:'Inter',sans-serif;cursor:pointer;color:var(--muted);transition:all .18s}
+  .pitch-toggle button.active{background:#fff;color:var(--navy);box-shadow:0 1px 4px rgba(0,0,0,.12)}
+  .pitch-wrap{position:relative;width:100%;border-radius:12px;overflow:hidden;background:#2d8a4e;padding:0}
+  .pitch-lines{position:absolute;inset:0;pointer-events:none}
+  .pitch-row{display:flex;justify-content:center;gap:8px;padding:10px 8px;position:relative;z-index:1}
+  .pitch-row.bench-row{background:rgba(0,0,0,.18);gap:8px;padding:10px 8px}
+  .pitch-divider{height:2px;background:rgba(255,255,255,.25);margin:0 12px}
+  .pitch-label{text-align:center;font-size:.62rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.55);padding:4px 0 0}
+  .pcard{display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;width:72px;flex-shrink:0}
+  .pcard-avatar{width:46px;height:46px;border-radius:50%;border:2.5px solid rgba(255,255,255,.9);object-fit:cover;background:var(--navy);display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:1rem;color:#fff;flex-shrink:0}
+  .pcard-avatar img{width:100%;height:100%;border-radius:50%;object-fit:cover}
+  .pcard-name{font-size:.68rem;font-weight:700;color:#fff;text-align:center;line-height:1.2;max-width:70px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-shadow:0 1px 3px rgba(0,0,0,.6)}
+  .pcard-team{font-size:.6rem;color:rgba(255,255,255,.7);text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:70px}
+  .pcard-pts{font-size:.65rem;font-weight:800;color:var(--gold);text-align:center}
+  .pcard-badge{display:inline-block;font-size:.58rem;font-weight:800;padding:1px 5px;border-radius:8px;color:#fff;margin-top:1px}
+  .pcard-badge.C{background:var(--gold);color:var(--navy)}
+  .pcard-badge.VC{background:rgba(255,255,255,.25);color:#fff}
+  .pcard.empty .pcard-avatar{border-style:dashed;border-color:rgba(255,255,255,.4);background:rgba(255,255,255,.08)}
+  .pcard.empty .pcard-name{color:rgba(255,255,255,.5);font-weight:400}
+  .pcard-rm{position:absolute;top:-2px;right:-2px;width:16px;height:16px;border-radius:50%;background:var(--crimson);color:#fff;border:none;font-size:.65rem;line-height:16px;text-align:center;cursor:pointer;display:none}
+  .pcard:hover .pcard-rm{display:block}
     border-radius:12px; padding:9px 12px; margin-bottom:8px; background:#fff; transition:border-color .15s}
   .slot.empty{border-style:dashed; border-color:#c8c0b8; justify-content:center;
     color:var(--muted); font-weight:600; font-size:.9rem; cursor:pointer; padding:14px 12px}
@@ -2163,53 +2187,144 @@ function renderPicker(){
     `<span style="opacity:.6;font-size:.68rem">min ${minXv} each</span></div>`:'';
   head.innerHTML+=`<div class="budget ${rem<0?'over':''}"><div><div class="label">Budget remaining</div>${xvHtml}</div><div class="big">${rem}</div></div>`;
 
-  const rowsF=slots.F.map((id,i)=>slotRow('F',i,id,'forward')).join('');
-  const rowsB=slots.B.map((id,i)=>slotRow('B',i,id,'back')).join('');
-  const rowsX=slots.X.map((id,i)=>slotRow('X',i,id,'any')).join('');
+  // ── View toggle ──
+  let pitchView = localStorage.getItem('ons_team_view')==='pitch';
+  const toggleHtml=`<div class="pitch-toggle">
+    <button id="tvList" class="${pitchView?'':'active'}">List</button>
+    <button id="tvPitch" class="${pitchView?'active':''}">Pitch</button>
+  </div>`;
+
   const sids=starterIds();
   const capOpts=id=>sids.map(pid=>`<option value="${pid}" ${id===pid?'selected':''}>${playerById[pid]?namePlain(playerById[pid]):''}</option>`).join('');
 
-  box.innerHTML=`
-    <div class="card">
-      <div class="group-header"><h3>Forwards</h3><span>4 required</span></div>${rowsF}
-      <div class="group-header"><h3>Backs</h3><span>3 required</span></div>${rowsB}
-      <div class="group-header"><h3>Bench</h3><span>3 · any position</span></div>${rowsX}
-    </div>
-    <div class="cap-card">
-      <div class="eyebrow">Armband</div>
-      <p>Your captain scores double. If they don't play, the vice steps up.</p>
-      <label>Captain</label>
-      <select id="capSel" ${editable?'':'disabled'}><option value="">— choose —</option>${capOpts(captain)}</select>
-      <label>Vice-captain</label>
-      <select id="viceSel" ${editable?'':'disabled'}><option value="">— choose —</option>${capOpts(vice)}</select>
-    </div>
-    ${editable?`<button class="btn gold block" id="saveTeam" style="font-size:1rem;padding:14px">Save my team</button>`:''}
-    <div id="sponsorFooter"></div>
-    <div class="sponsor-carousel-wrap" id="sponsorCarouselWrap_team" style="display:none">
-      <p class="sponsor-carousel-title">Thank you to our sponsors</p>
-      <div class="sponsor-carousel" id="sponsorCarousel_team"></div>
-    </div>
-    <div style="height:8px"></div>
-  `;
-  // renderPicker() rebuilds this whole page's HTML, wiping any carousel content that
-  // loadSponsorBanner() had already injected — re-populate it here using the cached state.
+  if(pitchView){
+    box.innerHTML=`
+      <div class="card" style="padding:12px">
+        ${toggleHtml}
+        ${renderPitchView()}
+      </div>
+      <div class="cap-card">
+        <div class="eyebrow">Armband</div>
+        <p>Your captain scores double. If they don't play, the vice steps up.</p>
+        <label>Captain</label>
+        <select id="capSel" ${editable?'':'disabled'}><option value="">— choose —</option>${capOpts(captain)}</select>
+        <label>Vice-captain</label>
+        <select id="viceSel" ${editable?'':'disabled'}><option value="">— choose —</option>${capOpts(vice)}</select>
+      </div>
+      ${editable?`<button class="btn gold block" id="saveTeam" style="font-size:1rem;padding:14px">Save my team</button>`:''}
+      <div id="sponsorFooter"></div>
+      <div class="sponsor-carousel-wrap" id="sponsorCarouselWrap_team" style="display:none">
+        <p class="sponsor-carousel-title">Thank you to our sponsors</p>
+        <div class="sponsor-carousel" id="sponsorCarousel_team"></div>
+      </div>
+      <div style="height:8px"></div>`;
+  } else {
+    const rowsF=slots.F.map((id,i)=>slotRow('F',i,id,'forward')).join('');
+    const rowsB=slots.B.map((id,i)=>slotRow('B',i,id,'back')).join('');
+    const rowsX=slots.X.map((id,i)=>slotRow('X',i,id,'any')).join('');
+    box.innerHTML=`
+      <div class="card">
+        ${toggleHtml}
+        <div class="group-header"><h3>Forwards</h3><span>4 required</span></div>${rowsF}
+        <div class="group-header"><h3>Backs</h3><span>3 required</span></div>${rowsB}
+        <div class="group-header"><h3>Bench</h3><span>3 · any position</span></div>${rowsX}
+      </div>
+      <div class="cap-card">
+        <div class="eyebrow">Armband</div>
+        <p>Your captain scores double. If they don't play, the vice steps up.</p>
+        <label>Captain</label>
+        <select id="capSel" ${editable?'':'disabled'}><option value="">— choose —</option>${capOpts(captain)}</select>
+        <label>Vice-captain</label>
+        <select id="viceSel" ${editable?'':'disabled'}><option value="">— choose —</option>${capOpts(vice)}</select>
+      </div>
+      ${editable?`<button class="btn gold block" id="saveTeam" style="font-size:1rem;padding:14px">Save my team</button>`:''}
+      <div id="sponsorFooter"></div>
+      <div class="sponsor-carousel-wrap" id="sponsorCarouselWrap_team" style="display:none">
+        <p class="sponsor-carousel-title">Thank you to our sponsors</p>
+        <div class="sponsor-carousel" id="sponsorCarousel_team"></div>
+      </div>
+      <div style="height:8px"></div>`;
+  }
+
+  // ── Re-populate carousel ──
   if(_teamCarouselState){
     buildSponsorCarousel(mergeCarouselSources(_teamCarouselState.sponsorDbRows||[], _teamCarouselState.all||[]), allPlayers, 'team');
   }
 
-  box.querySelectorAll('[data-slot]').forEach(b=>b.onclick=()=>{const[g,i]=b.dataset.slot.split('-');openChooser(g,parseInt(i,10));});
-  box.querySelectorAll('[data-rm]').forEach(b=>b.onclick=()=>{
-    const[g,i]=b.dataset.rm.split('-');const pid=slots[g][parseInt(i,10)];
-    slots[g][parseInt(i,10)]=null;
-    if(captain===pid)captain=null;if(vice===pid)vice=null;renderPicker();
-  });
-  if(editable){
-    el('capSel').onchange=e=>{captain=e.target.value||null;if(captain&&captain===vice)vice=null;renderPicker();};
-    el('viceSel').onchange=e=>{vice=e.target.value||null;if(vice&&vice===captain)captain=null;renderPicker();};
-    el('saveTeam').onclick=saveTeam;
+  // ── Wire up ──
+  el('tvList') && (el('tvList').onclick=()=>{ localStorage.setItem('ons_team_view','list'); renderPicker(); });
+  el('tvPitch') && (el('tvPitch').onclick=()=>{ localStorage.setItem('ons_team_view','pitch'); renderPicker(); });
+
+  if(!pitchView){
+    box.querySelectorAll('[data-slot]').forEach(b=>b.onclick=()=>{const[g,i]=b.dataset.slot.split('-');openChooser(g,parseInt(i,10));});
+    box.querySelectorAll('[data-rm]').forEach(b=>b.onclick=()=>{
+      const[g,i]=b.dataset.rm.split('-');const pid=slots[g][parseInt(i,10)];
+      slots[g][parseInt(i,10)]=null;
+      if(captain===pid)captain=null;if(vice===pid)vice=null;renderPicker();
+    });
+  } else {
+    box.querySelectorAll('[data-slot]').forEach(b=>b.onclick=()=>{const[g,i]=b.dataset.slot.split('-');openChooser(g,parseInt(i,10));});
+    box.querySelectorAll('[data-rm]').forEach(b=>b.onclick=()=>{
+      const[g,i]=b.dataset.rm.split('-');const pid=slots[g][parseInt(i,10)];
+      slots[g][parseInt(i,10)]=null;
+      if(captain===pid)captain=null;if(vice===pid)vice=null;renderPicker();
+    });
   }
-  // Re-inject footer sponsor banner — renderPicker recreates the DOM so we must restore it each time
+  if(editable){
+    el('capSel') && (el('capSel').onchange=e=>{captain=e.target.value||null;if(captain&&captain===vice)vice=null;renderPicker();});
+    el('viceSel') && (el('viceSel').onchange=e=>{vice=e.target.value||null;if(vice&&vice===captain)captain=null;renderPicker();});
+    el('saveTeam') && (el('saveTeam').onclick=saveTeam);
+  }
   const sf=el('sponsorFooter'); if(sf) sf.innerHTML=cachedSponsorHTML.bot||'';
+}
+
+function pitchCard(grp, i, id, pos){
+  const p = id ? (playerById[id]||{}) : null;
+  const isCap = id===captain, isVc = id===vice;
+  if(!p || !id){
+    const lbl = pos==='forward'?'+ Forward': pos==='back'?'+ Back':'+ Player';
+    return `<div class="pcard empty" ${editable?`data-slot="${grp}-${i}"`:''}><div class="pcard-avatar" style="font-size:1.4rem">+</div><div class="pcard-name">${editable?lbl:'Empty'}</div></div>`;
+  }
+  const ini=(p.name||'?').trim().split(/\s+/).map(w=>w[0]).slice(0,2).join('').toUpperCase();
+  const avatar=p.avatar_url
+    ? `<img src="${esc(p.avatar_url)}" alt="${esc(p.name)}" style="width:100%;height:100%;border-radius:50%;object-fit:cover">`
+    : `<span style="font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:.9rem">${ini}</span>`;
+  const badge = isCap?`<span class="pcard-badge C">C</span>`:isVc?`<span class="pcard-badge VC">VC</span>`:'';
+  const pts = p.season_points||0;
+  return `<div class="pcard" style="position:relative" ${editable?`data-slot="${grp}-${i}"`:''}>
+    <div class="pcard-avatar" style="background:${pos==='forward'?'var(--crimson)':'var(--navy)'}">${avatar}</div>
+    ${editable?`<button class="pcard-rm" data-rm="${grp}-${i}" onclick="event.stopPropagation()">×</button>`:''}
+    <div class="pcard-name">${esc(namePlain(p))}</div>
+    <div class="pcard-team">${esc(teamLabel(p))}</div>
+    <div class="pcard-pts">${pts} pts</div>
+    ${badge}
+  </div>`;
+}
+
+function renderPitchView(){
+  const fCards = slots.F.map((id,i)=>pitchCard('F',i,id,'forward')).join('');
+  const bCards = slots.B.map((id,i)=>pitchCard('B',i,id,'back')).join('');
+  const xCards = slots.X.map((id,i)=>pitchCard('X',i,id,'any')).join('');
+  return `<div class="pitch-wrap">
+    <svg class="pitch-lines" viewBox="0 0 100 140" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+      <rect x="0" y="0" width="100" height="140" fill="none"/>
+      <rect x="2" y="2" width="96" height="136" fill="none" stroke="rgba(255,255,255,.3)" stroke-width=".8"/>
+      <line x1="2" y1="70" x2="98" y2="70" stroke="rgba(255,255,255,.3)" stroke-width=".8"/>
+      <ellipse cx="50" cy="70" rx="12" ry="8" fill="none" stroke="rgba(255,255,255,.25)" stroke-width=".8"/>
+      <rect x="30" y="2" width="40" height="14" fill="none" stroke="rgba(255,255,255,.2)" stroke-width=".8"/>
+      <rect x="30" y="124" width="40" height="14" fill="none" stroke="rgba(255,255,255,.2)" stroke-width=".8"/>
+    </svg>
+    <div class="pitch-label">FORWARDS</div>
+    <div class="pitch-row">${fCards}</div>
+    <div class="pitch-divider"></div>
+    <div class="pitch-label">BACKS</div>
+    <div class="pitch-row">${bCards}</div>
+    <div class="pitch-divider" style="background:rgba(255,255,255,.1)"></div>
+    <div class="pitch-row bench-row">
+      <div style="position:absolute;left:8px;top:50%;transform:translateY(-50%);font-size:.6rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.45)">BENCH</div>
+      ${xCards}
+    </div>
+  </div>`;
 }
 
 function slotRow(grp,i,id,pos){
@@ -3960,6 +4075,6 @@ boot();
     <button class="btn ghost block" id="idleLogoutBtn" style="margin-top:8px">Sign out now</button>
   </div>
 </div>
-<!-- v1.5 — manager.html -->
+<!-- v1.6 — manager.html -->
 </body>
 </html>
