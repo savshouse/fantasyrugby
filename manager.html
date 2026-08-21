@@ -154,6 +154,14 @@
   .group-header span{font-size:.75rem; color:var(--muted); font-weight:500}
 
   .slot{display:flex; align-items:center; gap:10px; border:1.5px solid var(--line);
+    border-radius:12px; padding:9px 12px; margin-bottom:8px; background:#fff; transition:border-color .15s}
+  .slot.empty{border-style:dashed; border-color:#c8c0b8; justify-content:center;
+    color:var(--muted); font-weight:600; font-size:.9rem; cursor:pointer; padding:14px 12px}
+  .slot.empty:active{background:#f5f0eb}
+  .slot .nm{flex:1; font-weight:600; font-size:.92rem}
+  .slot .price{font-variant-numeric:tabular-nums; font-weight:700; font-size:.9rem; color:var(--navy)}
+  .rm-btn{background:none; border:0; color:#bbb; font-size:1.4rem; line-height:1; cursor:pointer; padding:2px 4px}
+  .rm-btn:active{color:var(--crimson)}
 
   /* ── PITCH VIEW ── */
   .pitch-toggle{display:flex;background:var(--line);border-radius:20px;padding:3px;gap:0;margin:0 auto 14px;width:fit-content}
@@ -162,7 +170,7 @@
   .pitch-wrap{position:relative;width:100%;border-radius:12px;overflow:hidden;background:#2d8a4e;padding:0}
   .pitch-lines{position:absolute;inset:0;pointer-events:none}
   .pitch-row{display:flex;justify-content:center;gap:8px;padding:10px 8px;position:relative;z-index:1}
-  .pitch-row.bench-row{background:rgba(0,0,0,.18);gap:8px;padding:10px 8px}
+  .pitch-row.bench-row{background:rgba(0,0,0,.18);gap:8px;padding:10px 8px;position:relative}
   .pitch-divider{height:2px;background:rgba(255,255,255,.25);margin:0 12px}
   .pitch-label{text-align:center;font-size:.62rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.55);padding:4px 0 0}
   .pcard{display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;width:72px;flex-shrink:0}
@@ -178,14 +186,6 @@
   .pcard.empty .pcard-name{color:rgba(255,255,255,.5);font-weight:400}
   .pcard-rm{position:absolute;top:-2px;right:-2px;width:16px;height:16px;border-radius:50%;background:var(--crimson);color:#fff;border:none;font-size:.65rem;line-height:16px;text-align:center;cursor:pointer;display:none}
   .pcard:hover .pcard-rm{display:block}
-    border-radius:12px; padding:9px 12px; margin-bottom:8px; background:#fff; transition:border-color .15s}
-  .slot.empty{border-style:dashed; border-color:#c8c0b8; justify-content:center;
-    color:var(--muted); font-weight:600; font-size:.9rem; cursor:pointer; padding:14px 12px}
-  .slot.empty:active{background:#f5f0eb}
-  .slot .nm{flex:1; font-weight:600; font-size:.92rem}
-  .slot .price{font-variant-numeric:tabular-nums; font-weight:700; font-size:.9rem; color:var(--navy)}
-  .rm-btn{background:none; border:0; color:#bbb; font-size:1.4rem; line-height:1; cursor:pointer; padding:2px 4px}
-  .rm-btn:active{color:var(--crimson)}
 
   .avatar{width:38px; height:38px; border-radius:50%; object-fit:cover; flex:0 0 auto; background:#eee}
   .avatar-fallback{width:38px; height:38px; border-radius:50%; flex:0 0 auto; display:flex; align-items:center; justify-content:center;
