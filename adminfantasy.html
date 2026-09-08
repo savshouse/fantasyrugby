@@ -173,6 +173,8 @@
   .mgr-table td{padding:7px 8px; border-bottom:1px solid var(--line); vertical-align:middle}
   .mgr-table tr:last-child td{border-bottom:0}
   .mgr-table input[type=text], .mgr-table input:not([type]){width:110px; padding:6px 8px; font-size:.85rem}
+  .mgr-table th:first-child{position:sticky; left:0; z-index:3; background:var(--card)}
+  .mgr-table td:first-child{position:sticky; left:0; z-index:2; background:var(--card); box-shadow:2px 0 4px rgba(0,0,0,.06)}
   .mgr-table tr.archived{opacity:.5}
   .nickname{font-style:italic; color:var(--muted); font-weight:500}
 
@@ -1018,30 +1020,37 @@
         </div>
         <div id="sptype_list" style="margin-top:14px"></div>
 
-        <details style="margin-top:16px; border-top:1px solid var(--line); padding-top:12px">
-          <summary style="cursor:pointer; list-style:none; font-size:.82rem; color:var(--muted); font-weight:600">⚙️ Manage deliverable types</summary>
-          <p class="muted" style="font-size:.78rem; margin:8px 0">Add, edit or reorder the deliverable types that appear in the checklist above and in the tracker.</p>
-          <div id="del_types_list" style="margin-top:8px"><div class="empty">Loading…</div></div>
-          <hr style="margin:12px 0; border:none; border-top:1px solid var(--line)">
-          <div style="font-size:.82rem; font-weight:600; margin-bottom:6px">Add deliverable type</div>
-          <div class="row">
-            <div style="flex:2"><label>Name</label><input id="del_type_name" placeholder="e.g. Pitchside advertising banners"></div>
-            <div><label>Category</label>
-              <select id="del_type_cat">
-                <option value="Kit">Kit</option>
-                <option value="Advertising">Advertising</option>
-                <option value="Events">Events</option>
-                <option value="Digital">Digital</option>
-                <option value="Players">Players</option>
-                <option value="Other">Other</option>
-              </select>
-            </div>
-            <div><label>Default deadline</label><input type="date" id="del_type_deadline"></div>
-            <div><label>Order</label><input type="number" id="del_type_sort" value="10" min="1" style="width:70px"></div>
-          </div>
-          <button class="btn navy" id="del_type_save" style="margin-top:10px">Add type</button>
-          <p class="muted" id="del_type_status" style="font-size:.82rem; margin-top:6px"></p>
+        <details style="margin-top:16px; border-top:1px solid var(--line); padding-top:12px" id="del_types_inner_placeholder">
         </details>
+      </details>
+
+      <!-- Deliverable types — standalone card for easy access -->
+      <details class="card" id="del_types_standalone">
+        <summary style="cursor:pointer; list-style:none; display:flex; align-items:center; justify-content:space-between">
+          <span class="eyebrow" style="margin:0">⚙️ Deliverable types</span>
+          <span class="muted" style="font-size:.75rem">Tap to manage</span>
+        </summary>
+        <p class="muted" style="margin-top:8px; font-size:.82rem">Add, edit or reorder the deliverable types that appear in the sponsorship package checklist and the deliverables tracker.</p>
+        <div id="del_types_list" style="margin-top:10px"><div class="empty">Loading…</div></div>
+        <hr style="margin:12px 0; border:none; border-top:1px solid var(--line)">
+        <div style="font-size:.85rem; font-weight:700; color:var(--navy); margin-bottom:8px">Add deliverable type</div>
+        <div class="row">
+          <div style="flex:2"><label>Name</label><input id="del_type_name" placeholder="e.g. Pitchside advertising banners"></div>
+          <div><label>Category</label>
+            <select id="del_type_cat">
+              <option value="Kit">Kit</option>
+              <option value="Advertising">Advertising</option>
+              <option value="Events">Events</option>
+              <option value="Digital">Digital</option>
+              <option value="Players">Players</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <div><label>Default deadline</label><input type="date" id="del_type_deadline"></div>
+          <div><label>Order</label><input type="number" id="del_type_sort" value="10" min="1" style="width:70px"></div>
+        </div>
+        <button class="btn navy" id="del_type_save" style="margin-top:10px">Add type</button>
+        <p class="muted" id="del_type_status" style="font-size:.82rem; margin-top:6px"></p>
       </details>
 
     </section>
@@ -1634,6 +1643,24 @@ function setPinned(on){
 el('pinBtn').onclick = ()=> setPinned(!document.body.classList.contains('drawer-pinned'));
 el('openDrawer').onclick = ()=>{ el('drawer').classList.add('open'); if(!document.body.classList.contains('drawer-pinned')) el('drawerOverlay').classList.add('show'); };
 el('drawerOverlay').onclick = ()=>{ el('drawer').classList.remove('open'); el('drawerOverlay').classList.remove('show'); };
+
+// Swipe from left edge to open drawer
+(()=>{
+  let _tx=0, _ty=0;
+  document.addEventListener('touchstart', e=>{
+    _tx = e.touches[0].clientX;
+    _ty = e.touches[0].clientY;
+  }, { passive:true });
+  document.addEventListener('touchend', e=>{
+    const dx = e.changedTouches[0].clientX - _tx;
+    const dy = Math.abs(e.changedTouches[0].clientY - _ty);
+    // Only if started within 20px of left edge, swiped right >60px, mostly horizontal
+    if(_tx < 20 && dx > 60 && dy < 80){
+      el('drawer').classList.add('open');
+      if(!document.body.classList.contains('drawer-pinned')) el('drawerOverlay').classList.add('show');
+    }
+  }, { passive:true });
+})();
 function wireNavButtons(){
   document.querySelectorAll('#drawerNav button').forEach(b=>{
     b.onclick = ()=>{
@@ -2125,7 +2152,7 @@ function editSponsorType(id){
 function renderSponsorTypeDelChecklist(sptypeId){
   const box = el('sptype_del_checklist'); if(!box) return;
   if(!allDeliverableTypes.length){
-    box.innerHTML = '<div class="muted" style="font-size:.82rem">No deliverable types defined yet — add them using the "Manage deliverable types" section below.</div>';
+    box.innerHTML = '<div class="muted" style="font-size:.82rem">No deliverable types defined yet — add them using the <b>⚙️ Deliverable types</b> card below.</div>';
     return;
   }
   const currentTemplates = sptypeId ? (allDeliverableTemplates||[]).filter(t=>t.sponsorship_type_id===sptypeId) : [];
@@ -5224,7 +5251,8 @@ function editDelType(id){
   el('del_type_sort').value = t.sort_order;
   el('del_type_save').dataset.editingId = id;
   el('del_type_save').textContent = 'Update type';
-  el('del_type_details').open = true;
+  const standalone = el('del_types_standalone');
+  if(standalone) standalone.open = true;
   el('del_type_name').focus();
 }
 
@@ -7019,6 +7047,6 @@ document.getElementById('rolesSaveBtn').onclick = async () => {
     </div>
   </div>
 </div>
-<!-- v1.35 — adminfantasy.html -->
+<!-- v1.37 — adminfantasy.html -->
 </body>
 </html>
