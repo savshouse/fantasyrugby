@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
 <title>Sponsor ONs' Fantasy Rugby Manager — Old Northamptonians RFC</title>
 <meta name="description" content="Sponsor ONs' Fantasy Rugby Manager to support the club and get your brand in front of our members all season long.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -12,7 +12,7 @@
 <style>
 :root{
   --crimson:#C41E3A; --navy:#1B2A4A; --gold:#D4A017;
-  --ink:#1a1a2e; --muted:#7a7a8c; --line:#e8e5e0; --paper:#f7f6f4;
+  --ink:#1a1a2e; --muted:#6b7280; --line:#e5e0d8; --paper:#f8f5f2;
 }
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Inter',sans-serif;color:var(--ink);background:#fff;font-size:16px}
@@ -127,7 +127,7 @@ a{color:inherit;text-decoration:none}
 /* ── ENQUIRY MODAL (identical to landing.html) ── */
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:100;display:none;align-items:center;justify-content:center;padding:16px}
 .modal-overlay.show{display:flex}
-.modal-card{background:#fff;border-radius:20px;max-width:380px;width:100%;max-height:88vh;overflow-y:auto;-webkit-overflow-scrolling:touch;box-shadow:0 20px 60px rgba(0,0,0,.25)}
+.modal-card{background:#fff;border-radius:20px;max-width:380px;width:100%;max-height:88svh;max-height:88vh;overflow-y:auto;-webkit-overflow-scrolling:touch;box-shadow:0 20px 60px rgba(0,0,0,.25)}
 .enq-label{display:block;font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.03em;color:var(--muted);margin:12px 0 5px}
 .enq-label:first-child{margin-top:0}
 .enq-input{width:100%;padding:11px 12px;border:1.5px solid var(--line);border-radius:10px;font-size:16px;font-family:'Inter',sans-serif;box-sizing:border-box;background:#fff}
@@ -143,6 +143,8 @@ textarea.enq-input{resize:vertical}
 footer{background:var(--navy);color:rgba(255,255,255,.5);text-align:center;padding:24px 16px;font-size:.8rem}
 footer b{color:#fff}
 footer a{color:var(--gold)}
+/* ── Safe-area insets (notched iPhones with viewport-fit=cover) ── */
+.site-nav{padding-top:env(safe-area-inset-top)}
 </style>
 </head>
 <body>
@@ -258,7 +260,8 @@ footer a{color:var(--gold)}
 
 <footer>
   <b>Old Northamptonians RFC</b> · ONs' Fantasy Rugby Manager ·
-  <a href="manager.html">Manager app</a>
+  <a href="manager.html">Manager app</a> ·
+  <a href="privacy.html">Privacy Notice</a>
 </footer>
 
 <script>
@@ -602,6 +605,6 @@ document.addEventListener('click', e => {
   }
 });
 </script>
-<!-- v1.3 — sponsor.html -->
+<!-- v1.4 — sponsor.html -->
 </body>
 </html>

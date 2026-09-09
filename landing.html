@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
 <title>ONs' Fantasy Rugby Manager — Join the Competition</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -12,7 +12,7 @@
 <style>
 :root{
   --crimson:#C41E3A; --navy:#1B2A4A; --gold:#D4A017;
-  --ink:#1a1a2e; --muted:#7a7a8c; --line:#e8e5e0; --paper:#f7f6f4;
+  --ink:#1a1a2e; --muted:#6b7280; --line:#e5e0d8; --paper:#f8f5f2;
 }
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Inter',sans-serif;color:var(--ink);background:#fff;font-size:16px}
@@ -271,6 +271,10 @@ footer a{color:var(--gold)}
 .btn-wt{border:none;border-radius:10px;padding:11px;font-weight:700;font-size:.9rem;cursor:pointer;font-family:inherit}
 .btn-wt.ghost{flex:1;background:var(--paper);color:var(--navy)}
 .btn-wt.primary{flex:2;background:var(--crimson);color:#fff}
+/* ── Safe-area insets (notched iPhones with viewport-fit=cover) ── */
+.site-nav{padding-top:env(safe-area-inset-top)}
+.floating-login-btn{bottom:calc(20px + env(safe-area-inset-bottom))}
+@media(max-width:480px){.floating-login-btn{bottom:calc(16px + env(safe-area-inset-bottom))}}
 </style>
   <!-- PWA / Home Screen icon — upload a 180x180 PNG to /images/ons-crest.png for best results -->
   <link rel="apple-touch-icon" href="https://fantasyrugby.uk/images/ons-crest.png">
@@ -606,7 +610,8 @@ footer a{color:var(--gold)}
 const SB_URL='https://qcsxydxbtzcblugzdbjw.supabase.co';
 const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFjc3h5ZHhidHpjYmx1Z3pkYmp3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMxNzk3MDMsImV4cCI6MjA5ODc1NTcwM30.zlrehItuExPe1DD0P2OA4whNfrY7kfPQDHz-HkH54E0';
 const sb=supabase.createClient(SB_URL,SB_KEY);
-const esc=s=>String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+const esc=s=>(s??'').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+const ja=o=>JSON.stringify(o).replace(/'/g,"&#39;");
 const medals=['🥇','🥈','🥉'];
 const POSITION_COLOURS={forward:'#C41E3A',back:'#1B2A4A'};
 
@@ -809,7 +814,7 @@ function renderPlayerDatabase(){
   const pageRows = rows.slice(_pdbPage*PDB_PAGE_SIZE, _pdbPage*PDB_PAGE_SIZE + PDB_PAGE_SIZE);
 
   body.innerHTML = pageRows.map(p=>`
-    <tr onclick='openPlayerModal(${JSON.stringify(p)})'>
+    <tr onclick='openPlayerModal(${ja(p)})'>
       <td class="pdb-td-photo">${avatarImg(p.avatar_url,namePlain(p),p.position,'pdb-avatar')}</td>
       <td class="pdb-td-name">
         ${esc(namePlain(p))}
@@ -1185,7 +1190,7 @@ async function loadAll(){
   });
   window._mgrRows=mgrRows;
   document.getElementById('managerLb').innerHTML=mgrRows.length
-    ? mgrPod2+mgrRows.slice(3).map((r,i)=>`<div class="lb-row" onclick='openManagerModal(${JSON.stringify({id:r.id,name:r.name,avatar_url:r.avatar_url,pts:r.pts,rank:i+4,ws:r.ws})})' style="cursor:pointer"><span class="lb-rank">${i+4}.</span>${r.avatar_url?`<img class="lb-avatar" src="${esc(r.avatar_url)}" alt="${esc(r.name)}">`:`<div class="lb-avatar-ini" style="background:var(--navy);font-family:'Barlow Condensed',sans-serif;font-size:.9rem;font-weight:800;color:#fff">${initials(r.name)}</div>`}<div class="lb-info"><div class="lb-name">${esc(r.name)}</div></div><span class="lb-pts">${r.pts}</span></div>`).join('')
+    ? mgrPod2+mgrRows.slice(3).map((r,i)=>`<div class="lb-row" onclick='openManagerModal(${ja({id:r.id,name:r.name,avatar_url:r.avatar_url,pts:r.pts,rank:i+4,ws:r.ws})})' style="cursor:pointer"><span class="lb-rank">${i+4}.</span>${r.avatar_url?`<img class="lb-avatar" src="${esc(r.avatar_url)}" alt="${esc(r.name)}">`:`<div class="lb-avatar-ini" style="background:var(--navy);font-family:'Barlow Condensed',sans-serif;font-size:.9rem;font-weight:800;color:#fff">${initials(r.name)}</div>`}<div class="lb-info"><div class="lb-name">${esc(r.name)}</div></div><span class="lb-pts">${r.pts}</span></div>`).join('')
     : '<div class="loading">No scores yet — check back after the first gameweek.</div>';
   // Wire manager podium clicks
   setTimeout(()=>{
@@ -1209,7 +1214,7 @@ async function loadAll(){
       :`<div class="pod-initials" style="background:${bg};color:${rank===1?'#1B2A4A':'#fff'};width:64px;height:64px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:Barlow Condensed,sans-serif;font-size:1.4rem;font-weight:800">${initials(r.name)}</div>`;
   });
   document.getElementById('playerLb').innerHTML=playerRows.length
-    ?playerPod+playerRows.slice(3).map((p,i)=>`<div class="lb-row" onclick='openPlayerModal(${JSON.stringify(p)})'>
+    ?playerPod+playerRows.slice(3).map((p,i)=>`<div class="lb-row" onclick='openPlayerModal(${ja(p)})'>
       <span class="lb-rank">${i+4}.</span>
       ${avatarImg(p.avatar_url,p.name,p.position,'lb-avatar')}
       <div class="lb-info"><div class="lb-name">${esc(namePlain(p))}</div><div class="lb-team">${esc(p.team)}</div></div>
@@ -1265,7 +1270,7 @@ async function loadAll(){
       :`<div class="pod-initials" style="background:${bg};color:${rank===1?'#1B2A4A':'#fff'};width:64px;height:64px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:Barlow Condensed,sans-serif;font-size:1.4rem;font-weight:800">${initials(r.name)}</div>`;
   });
   document.getElementById('totwLb').innerHTML=totwRows.length
-    ?totwPod+totwRows.slice(3).map((p,i)=>`<div class="lb-row" onclick='openPlayerModal(${JSON.stringify(p)})'>
+    ?totwPod+totwRows.slice(3).map((p,i)=>`<div class="lb-row" onclick='openPlayerModal(${ja(p)})'>
       <span class="lb-rank">${i+4}.</span>
       ${avatarImg(p.avatar_url,p.name,p.position,'lb-avatar')}
       <div class="lb-info"><div class="lb-name">${esc(namePlain(p))}</div><div class="lb-team">${esc(p.team)}</div></div>
@@ -1311,6 +1316,6 @@ document.addEventListener('click', e => {
   }
 });
 </script>
-<!-- v1.2 — landing.html -->
+<!-- v1.3 — landing.html -->
 </body>
 </html>

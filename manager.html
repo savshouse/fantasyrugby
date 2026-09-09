@@ -215,7 +215,7 @@
   /* ── CHOOSER SHEET ───────────────────────────────────────── */
   .overlay{position:fixed; inset:0; background:rgba(10,15,30,.6); z-index:40; display:none}
   .overlay.show{display:block}
-  .sheet{position:fixed; left:0; right:0; bottom:0; height:92vh;
+  .sheet{position:fixed; left:0; right:0; bottom:0; height:92vh; height:92dvh;
     background:var(--paper); border-radius:20px 20px 0 0;
     overflow:hidden; box-shadow:0 -8px 40px rgba(0,0,0,.2);
     display:flex; flex-direction:column}
@@ -1102,8 +1102,21 @@ function toast(m,e){ const t=el('toast'); t.textContent=m; t.className='toast sh
 function esc(s){ return (s??'').toString().replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 // Prevent the page behind a scrollable modal from scrolling on mobile, so a
 // touch-drag over the modal moves the modal's own content instead of the page.
-function lockBodyScroll(){ document.body.style.overflow = 'hidden'; }
-function unlockBodyScroll(){ document.body.style.overflow = ''; }
+let _bodyScrollY = 0;
+function lockBodyScroll(){
+  _bodyScrollY = window.scrollY;
+  document.body.style.overflow = 'hidden';
+  document.body.style.position = 'fixed';
+  document.body.style.width = '100%';
+  document.body.style.top = `-${_bodyScrollY}px`;
+}
+function unlockBodyScroll(){
+  document.body.style.overflow = '';
+  document.body.style.position = '';
+  document.body.style.width = '';
+  document.body.style.top = '';
+  window.scrollTo(0, _bodyScrollY);
+}
 function initials(name){ return (name||'?').trim().split(/\s+/).map(w=>w[0]).slice(0,2).join('').toUpperCase(); }
 function nameHtml(p){ return p.nickname ? `${esc(p.name)} <span style="font-style:italic;font-weight:400;color:var(--muted)">"${esc(p.nickname)}"</span>` : esc(p.name); }
 
@@ -4110,6 +4123,6 @@ boot();
     <button class="btn ghost block" id="idleLogoutBtn" style="margin-top:8px">Sign out now</button>
   </div>
 </div>
-<!-- v1.6 — manager.html -->
+<!-- v1.7 — manager.html -->
 </body>
 </html>
