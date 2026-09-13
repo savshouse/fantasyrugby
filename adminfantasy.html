@@ -151,7 +151,7 @@
 
   .rp-team-title{font-family:'Barlow Condensed',sans-serif; font-size:1.15rem; font-weight:800; color:var(--navy); margin:16px 0 6px; text-transform:uppercase; letter-spacing:.03em}
   .rp-table{width:100%; border-collapse:collapse; font-size:.82rem; white-space:nowrap}
-  .rp-table th{text-align:right; font-size:.66rem; text-transform:uppercase; letter-spacing:.03em; color:var(--muted); padding:6px 8px; border-bottom:2px solid var(--line); cursor:pointer; user-select:none}
+  .rp-table th{text-align:right; font-size:.66rem; text-transform:uppercase; letter-spacing:.03em; color:var(--muted); padding:6px 8px; border-bottom:2px solid var(--line); cursor:pointer; user-select:none; position:sticky; top:0; z-index:3; background:var(--paper,#faf7f2)}
   .rp-table th:first-child, .rp-table th:nth-child(2), .rp-table th:nth-child(3){text-align:left}
   .rp-table th:hover{color:var(--crimson)}
   .rp-table th.sorted{color:var(--crimson)}
@@ -160,7 +160,7 @@
   .rp-table td.num{text-align:right; font-variant-numeric:tabular-nums; font-weight:700; color:var(--navy)}
   .rp-table td.name-cell{white-space:normal; min-width:140px}
   .rp-scroll{overflow-x:auto; -webkit-overflow-scrolling:touch}
-  .rp-table th:first-child{position:sticky; left:0; background:var(--paper,#faf7f2); z-index:2}
+  .rp-table th:first-child{position:sticky; left:0; top:0; background:var(--paper,#faf7f2); z-index:4}
   .rp-table.resizable{table-layout:fixed}
   .rp-table.resizable th:not(:first-child){position:relative; overflow:hidden; text-overflow:ellipsis}
   .rp-table.resizable td{overflow:hidden; text-overflow:ellipsis}
@@ -2247,6 +2247,7 @@ el('sptype_save') && (el('sptype_save').onclick = async ()=>{
 
 // ---------- Sponsorship invoices (header + line-item basket) ----------
 let allInvoices = [];
+let _spinvCreatorMap = {};
 let allSponsorships = [];
 let spBasket = []; // items being built for the current invoice: {sponsorship_type_id, player_id, amount}
 let spinvSortCol = 'invoice_date', spinvSortDir = -1;
@@ -2478,14 +2479,16 @@ async function saveSponsorDb(){
 
 async function loadSponsorships(){
   const box = el('spinv_list'); if(!box) return;
-  const [{ data: inv, error: e1 }, { data: items, error: e2 }] = await Promise.all([
+  const [{ data: inv, error: e1 }, { data: items, error: e2 }, { data: mgrNames }] = await Promise.all([
     sb.from('invoices').select('*').order('invoice_date', { ascending:false }),
-    sb.from('sponsorships').select('*')
+    sb.from('sponsorships').select('*'),
+    sb.from('managers').select('id,name')
   ]);
   if(e1){ toast(e1.message, true); return; }
   if(e2){ toast(e2.message, true); return; }
   allInvoices = inv || [];
   allSponsorships = items || [];
+  _spinvCreatorMap = Object.fromEntries((mgrNames||[]).map(m=>[m.id, m.name]));
   renderSponsorshipsList();
   renderSponsorTypesList();
   populateExistingSponsorDropdown();
@@ -2869,7 +2872,7 @@ function renderSponsorshipsList(){
         ${inv.emailed_at ? `<div class="muted" style="font-size:.7rem; color:#2a7a3b; margin-top:2px">✓ Emailed ${new Date(inv.emailed_at).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'})}</div>` : ''}
       </td>
       <td style="color:var(--muted); font-size:.85rem">${esc(inv.contact_name||'')}</td>
-      <td>${esc(inv.invoice_number)}</td>
+      <td title="${inv.created_by ? 'Created by: '+esc(_spinvCreatorMap[inv.created_by]||'Unknown') : 'Creator not recorded'}" style="cursor:help">${esc(inv.invoice_number)}</td>
       <td>${esc(inv.type_names)}</td>
       <td class="num">${inv.item_count}</td>
       <td class="num">£${inv.total.toFixed(2)}</td>
@@ -7047,6 +7050,6 @@ document.getElementById('rolesSaveBtn').onclick = async () => {
     </div>
   </div>
 </div>
-<!-- v1.37 — adminfantasy.html -->
+<!-- v1.38 — adminfantasy.html -->
 </body>
 </html>
