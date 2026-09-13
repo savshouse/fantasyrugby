@@ -49,10 +49,35 @@
     #loading{display:flex;align-items:center;justify-content:center;height:60vh;
       color:var(--muted);font-size:.9rem}
     #app{display:none}
+    #login-wrap{display:none}
+    #denied{display:none;padding:40px 0;text-align:center;color:var(--muted);font-size:.9rem}
+    #login-wrap input{width:100%;padding:11px 12px;border:1px solid var(--line);
+      border-radius:9px;font-size:.95rem;background:var(--paper);color:var(--ink);
+      margin-bottom:10px;appearance:none;-webkit-appearance:none;display:block}
+    .btn-login{width:100%;padding:14px;border:none;border-radius:10px;font-size:1rem;
+      font-weight:700;cursor:pointer;background:var(--crimson);color:#fff}
+    .login-err{color:var(--crimson);font-size:.82rem;margin-top:8px;min-height:18px}
   </style>
 </head>
 <body>
   <div id="loading">Checking access…</div>
+
+  <div id="login-wrap">
+    <h1 style="margin:18px 0 16px">Coach Invoice</h1>
+    <div class="card">
+      <label class="field-label">Email</label>
+      <input type="email" id="login_email" autocomplete="email" inputmode="email">
+      <label class="field-label">Password</label>
+      <input type="password" id="login_pass" autocomplete="current-password">
+      <button class="btn-login" id="btn_login">Sign in</button>
+      <div class="login-err" id="login_err"></div>
+    </div>
+  </div>
+
+  <div id="denied" class="card">
+    <p>This page is only available to Charlie Reed and admins.</p>
+  </div>
+
   <div id="app">
     <h1>Coach Invoice</h1>
 
@@ -121,12 +146,21 @@
     const el = id => document.getElementById(id);
 
     // ── Auth ─────────────────────────────────────────────────────────
+    async function checkAuth(user) {
+      if (!user) { el('loading').style.display = 'none'; el('login-wrap').style.display = 'block'; return; }
+      const { data: mgr } = await sb.from('managers').select('is_admin').eq('user_id', user.id).maybeSingle();
+      if (user.id !== CHARLIE_UID && !mgr?.is_admin) {
+        el('loading').style.display = 'none'; el('denied').style.display = 'block'; return;
+      }
+      showApp();
+    }
+
     async function init() {
       const { data: { user } } = await sb.auth.getUser();
-      if (!user) { location.href = 'landing.html'; return; }
-      const { data: mgr } = await sb.from('managers').select('is_admin').eq('user_id', user.id).maybeSingle();
-      if (user.id !== CHARLIE_UID && !mgr?.is_admin) { location.href = 'landing.html'; return; }
+      await checkAuth(user);
+    }
 
+    async function showApp() {
       el('loading').style.display = 'none';
       el('app').style.display = 'block';
 
@@ -344,6 +378,20 @@
       localStorage.setItem('charlie_inv_num', next);
       el('inv_num').value = next;
     }
+
+    el('btn_login').onclick = async () => {
+      const email = el('login_email').value.trim();
+      const pass  = el('login_pass').value;
+      el('login_err').textContent = '';
+      el('btn_login').disabled = true;
+      const { data, error } = await sb.auth.signInWithPassword({ email, password: pass });
+      el('btn_login').disabled = false;
+      if (error) { el('login_err').textContent = error.message; return; }
+      el('login-wrap').style.display = 'none';
+      el('loading').style.display = 'flex';
+      await checkAuth(data.user);
+    };
+    el('login_pass').onkeydown = e => { if (e.key === 'Enter') el('btn_login').click(); };
 
     init();
   </script>
