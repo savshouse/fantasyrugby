@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Coach Invoice</title>
+  <style>
+    :root {
+      --ink:#1a1a1a; --muted:#6b7280; --line:#e5e0d8; --paper:#f8f5f2;
+      --card:#fff; --crimson:#C41E3A; --navy:#1B2A4A;
+    }
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:system-ui,-apple-system,sans-serif;background:var(--paper);color:var(--ink);
+      padding:env(safe-area-inset-top,20px) 16px 40px;max-width:480px;margin:0 auto;min-height:100dvh}
+    h1{font-size:1.05rem;font-weight:700;color:var(--navy);margin:18px 0 16px}
+    .card{background:var(--card);border-radius:14px;padding:16px;margin-bottom:14px;
+      box-shadow:0 1px 4px rgba(0,0,0,.07)}
+    label.field-label{display:block;font-size:.68rem;text-transform:uppercase;letter-spacing:.06em;
+      color:var(--muted);font-weight:700;margin-bottom:5px}
+    input[type=number],select{width:100%;padding:11px 12px;border:1px solid var(--line);
+      border-radius:9px;font-size:.95rem;background:var(--paper);color:var(--ink);
+      appearance:none;-webkit-appearance:none}
+    .row{display:flex;gap:10px}
+    .row>*{flex:1}
+    .section-label{font-size:.68rem;text-transform:uppercase;letter-spacing:.06em;
+      color:var(--muted);font-weight:700;margin-bottom:8px}
+    .day-cols{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin-bottom:6px}
+    .day-col-head{text-align:center;font-size:.62rem;text-transform:uppercase;
+      letter-spacing:.05em;color:var(--muted);font-weight:700;padding-bottom:2px}
+    .session-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:5px}
+    .session-btn{display:flex;align-items:center;justify-content:center;gap:5px;
+      padding:9px 6px;border:1px solid var(--line);border-radius:8px;cursor:pointer;
+      font-size:.82rem;background:var(--paper);transition:background .12s,border-color .12s;
+      user-select:none;-webkit-tap-highlight-color:transparent}
+    .session-btn input{width:15px;height:15px;accent-color:var(--crimson);margin:0;flex-shrink:0}
+    .session-btn.on{background:#fdf0f0;border-color:var(--crimson);font-weight:600}
+    .session-btn.placeholder{visibility:hidden}
+    .action-row{display:flex;gap:8px;margin-bottom:8px}
+    .action-row button{flex:1;padding:7px;border:1px solid var(--line);border-radius:7px;
+      background:var(--paper);font-size:.78rem;cursor:pointer;color:var(--muted)}
+    .total-bar{display:flex;justify-content:space-between;align-items:center;
+      padding:12px 0 2px;border-top:1px solid var(--line);margin-top:10px}
+    .total-bar .t-label{font-size:.82rem;color:var(--muted)}
+    .total-bar .t-amount{font-size:1.25rem;font-weight:700;color:var(--navy)}
+    .btn-generate{display:block;width:100%;padding:15px;border:none;border-radius:12px;
+      font-size:1rem;font-weight:700;cursor:pointer;background:var(--crimson);color:#fff;
+      -webkit-tap-highlight-color:transparent;margin-top:4px}
+    .btn-generate:disabled{opacity:.45;cursor:default}
+    #loading{display:flex;align-items:center;justify-content:center;height:60vh;
+      color:var(--muted);font-size:.9rem}
+    #app{display:none}
+  </style>
+</head>
+<body>
+  <div id="loading">Checking access…</div>
+  <div id="app">
+    <h1>Coach Invoice</h1>
+
+    <div class="card">
+      <div class="row">
+        <div>
+          <label class="field-label">Month</label>
+          <select id="sel_month">
+            <option value="0">January</option><option value="1">February</option>
+            <option value="2">March</option><option value="3">April</option>
+            <option value="4">May</option><option value="5">June</option>
+            <option value="6">July</option><option value="7">August</option>
+            <option value="8">September</option><option value="9">October</option>
+            <option value="10">November</option><option value="11">December</option>
+          </select>
+        </div>
+        <div>
+          <label class="field-label">Year</label>
+          <select id="sel_year"></select>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="section-label">Sessions</div>
+      <div class="day-cols">
+        <div class="day-col-head">Tuesday</div>
+        <div class="day-col-head">Thursday</div>
+        <div class="day-col-head">Saturday</div>
+      </div>
+      <div class="action-row">
+        <button id="btn_all">Select all</button>
+        <button id="btn_none">Clear all</button>
+      </div>
+      <div class="session-grid" id="session_grid"></div>
+      <div class="total-bar">
+        <span class="t-label" id="session_count">0 sessions</span>
+        <span class="t-amount" id="total_amount">£0</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="row">
+        <div>
+          <label class="field-label">Rate per session (£)</label>
+          <input type="number" id="rate" value="100" min="1" step="1">
+        </div>
+        <div>
+          <label class="field-label">Invoice no.</label>
+          <input type="number" id="inv_num" value="1" min="1" step="1">
+        </div>
+      </div>
+    </div>
+
+    <button class="btn-generate" id="btn_generate" disabled>Download Invoice PDF</button>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+  <script>
+    const SUPABASE_URL = 'https://qcsxydxbtzcblugzdbjw.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFjc3h5ZHhidHpjYmx1Z3pkYmp3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMxNzk3MDMsImV4cCI6MjA5ODc1NTcwM30.zlrehItuExPe1DD0P2OA4whNfrY7kfPQDHz-HkH54E0';
+    const CHARLIE_UID = '35e0e776-8ce9-4484-b602-0d7b262d4ab6';
+
+    const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const el = id => document.getElementById(id);
+
+    // ── Auth ─────────────────────────────────────────────────────────
+    async function init() {
+      const { data: { user } } = await sb.auth.getUser();
+      if (!user) { location.href = 'landing.html'; return; }
+      const { data: mgr } = await sb.from('managers').select('is_admin').eq('user_id', user.id).maybeSingle();
+      if (user.id !== CHARLIE_UID && !mgr?.is_admin) { location.href = 'landing.html'; return; }
+
+      el('loading').style.display = 'none';
+      el('app').style.display = 'block';
+
+      setupYears();
+      setDefaultMonth();
+      loadStoredInvNum();
+      generateDates();
+
+      el('sel_month').onchange = generateDates;
+      el('sel_year').onchange = generateDates;
+      el('rate').oninput = updateTotal;
+      el('btn_all').onclick = () => {
+        el('session_grid').querySelectorAll('.session-btn:not(.placeholder) input').forEach(c => { c.checked = true; c.closest('.session-btn').classList.add('on'); });
+        updateTotal();
+      };
+      el('btn_none').onclick = () => {
+        el('session_grid').querySelectorAll('input[type=checkbox]').forEach(c => { c.checked = false; c.closest('.session-btn').classList.remove('on'); });
+        updateTotal();
+      };
+      el('btn_generate').onclick = generatePDF;
+    }
+
+    function setupYears() {
+      const now = new Date();
+      for (let y = now.getFullYear() - 1; y <= now.getFullYear() + 1; y++) {
+        const o = document.createElement('option');
+        o.value = y; o.textContent = y;
+        if (y === now.getFullYear()) o.selected = true;
+        el('sel_year').appendChild(o);
+      }
+    }
+
+    function setDefaultMonth() {
+      // Default to last month — invoices are sent after the month ends
+      const prev = new Date();
+      prev.setDate(1);
+      prev.setMonth(prev.getMonth() - 1);
+      el('sel_month').value = prev.getMonth();
+      el('sel_year').value = prev.getFullYear();
+    }
+
+    function loadStoredInvNum() {
+      const v = localStorage.getItem('charlie_inv_num');
+      if (v) el('inv_num').value = v;
+    }
+
+    // ── Date grid ────────────────────────────────────────────────────
+    function generateDates() {
+      const month = +el('sel_month').value;
+      const year = +el('sel_year').value;
+      const grid = el('session_grid');
+      grid.innerHTML = '';
+
+      const cols = [[], [], []]; // [tue, thu, sat]
+      const d = new Date(year, month, 1);
+      while (d.getMonth() === month) {
+        const dow = d.getDay();
+        const label = d.getDate() + ' ' + d.toLocaleString('en-GB', { month: 'short' });
+        if (dow === 2) cols[0].push(label);
+        else if (dow === 4) cols[1].push(label);
+        else if (dow === 6) cols[2].push(label);
+        d.setDate(d.getDate() + 1);
+      }
+
+      const rows = Math.max(cols[0].length, cols[1].length, cols[2].length);
+      for (let i = 0; i < rows; i++) {
+        cols.forEach(col => {
+          if (!col[i]) { const ph = document.createElement('div'); ph.className = 'session-btn placeholder'; grid.appendChild(ph); return; }
+          const lbl = document.createElement('label');
+          lbl.className = 'session-btn';
+          lbl.innerHTML = `<input type="checkbox"> ${col[i]}`;
+          lbl.querySelector('input').onchange = e => { lbl.classList.toggle('on', e.target.checked); updateTotal(); };
+          grid.appendChild(lbl);
+        });
+      }
+
+      updateTotal();
+    }
+
+    function updateTotal() {
+      const count = el('session_grid').querySelectorAll('input[type=checkbox]:checked').length;
+      const rate = parseFloat(el('rate').value) || 0;
+      el('session_count').textContent = count + ' session' + (count !== 1 ? 's' : '');
+      el('total_amount').textContent = '£' + (count * rate).toFixed(0);
+      el('btn_generate').disabled = count === 0;
+    }
+
+    function getCheckedLabels() {
+      const labels = [];
+      el('session_grid').querySelectorAll('.session-btn:not(.placeholder) input:checked').forEach(cb => {
+        labels.push(cb.parentElement.textContent.trim());
+      });
+      return labels;
+    }
+
+    // ── PDF ──────────────────────────────────────────────────────────
+    async function generatePDF() {
+      const { PDFDocument, StandardFonts, rgb } = PDFLib;
+
+      const month = +el('sel_month').value;
+      const year = +el('sel_year').value;
+      const rate = parseFloat(el('rate').value) || 100;
+      const invNum = parseInt(el('inv_num').value) || 1;
+      const sessions = getCheckedLabels();
+      const count = sessions.length;
+      const total = count * rate;
+
+      const monthName = new Date(year, month, 1).toLocaleString('en-GB', { month: 'long' });
+      const dateStr = new Date().toLocaleDateString('en-GB', { day:'2-digit', month:'2-digit', year:'numeric' }).replace(/\//g, '.');
+      const desc = `${count} Coaching Session${count !== 1 ? 's' : ''} in ${monthName}`;
+
+      const pdfDoc = await PDFDocument.create();
+      const page = pdfDoc.addPage([595.28, 841.89]);
+      const W = page.getWidth(), H = page.getHeight();
+
+      const reg  = await pdfDoc.embedFont(StandardFonts.Helvetica);
+      const bold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+
+      const black = rgb(0, 0, 0);
+      const grey  = rgb(0.55, 0.55, 0.55);
+
+      const ML = 60, MR = W - 60;
+
+      const txt = (text, x, y, font, size, color = black) =>
+        page.drawText(String(text), { x, y, font, size, color });
+
+      const txtR = (text, rightX, y, font, size, color = black) => {
+        const w = font.widthOfTextAtSize(String(text), size);
+        page.drawText(String(text), { x: rightX - w, y, font, size, color });
+      };
+
+      const txtC = (text, y, font, size, color = black) => {
+        const w = font.widthOfTextAtSize(String(text), size);
+        page.drawText(String(text), { x: (W - w) / 2, y, font, size, color });
+      };
+
+      const rule = (y, t = 0.5) =>
+        page.drawLine({ start: { x: ML, y }, end: { x: MR, y }, thickness: t, color: black });
+
+      // Header
+      txtC('C H A R L I E', H - 90, bold, 26);
+      txtC('R E E D', H - 121, bold, 26);
+
+      // Issued To / Invoice No block
+      const bY = H - 186;
+      txt('ISSUED TO:', ML, bY, bold, 8);
+      txt('Old Northamptonians Rugby Club', ML, bY - 16, reg, 10);
+
+      txtR('INVOICE NO:', MR, bY, bold, 8);
+      txtR(String(invNum), MR, bY - 16, bold, 12);
+      txtR(dateStr, MR, bY - 30, reg, 9, grey);
+
+      rule(H - 240);
+
+      // Table header
+      const thY = H - 260;
+      txt('DESCRIPTION', ML, thY, bold, 8);
+      const cpsCX = ML + (MR - ML) * 0.65;
+      const cpsLabel = 'COST PER SESSION';
+      txt(cpsLabel, cpsCX - bold.widthOfTextAtSize(cpsLabel, 8) / 2, thY, bold, 8);
+      txtR('TOTAL', MR, thY, bold, 8);
+
+      rule(H - 272);
+
+      // Row
+      const rY = H - 293;
+      txt(desc, ML, rY, reg, 10);
+      if (sessions.length) {
+        // Group by month for compact display
+        const datesLine = sessions.join(', ');
+        txt(datesLine, ML, rY - 15, reg, 8, grey);
+      }
+
+      const rateStr = '£' + rate.toFixed(0);
+      txt(rateStr, cpsCX - reg.widthOfTextAtSize(rateStr, 10) / 2, rY, reg, 10);
+      txtR(total.toFixed(0), MR, rY, bold, 10);
+
+      // Total footer
+      rule(H - 590);
+      txt('TOTAL', ML, H - 608, bold, 10);
+      txtR(total.toFixed(0), MR, H - 608, bold, 12);
+      rule(H - 622);
+
+      // Bank details
+      const bkY = H - 648;
+      txt('BANK DETAILS', ML, bkY, bold, 9);
+      [
+        'Santander Bank',
+        'Account Name: Charlie Reed',
+        'Account No.: 884944354',
+        'Sort Code: 09-01-28',
+        'Pay by: As soon as possible please'
+      ].forEach((line, i) => txt(line, ML, bkY - 15 - i * 13, reg, 9, grey));
+
+      // Save & download
+      const bytes = await pdfDoc.save();
+      const blob = new Blob([bytes], { type: 'application/pdf' });
+      const url = URL.createObjectURL(blob);
+      const filename = `Reed - £${total.toFixed(0)} - ${monthName} ${year}.pdf`;
+
+      // iOS opens PDF in Safari viewer (share from there); other browsers trigger download
+      const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent) ||
+        (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+      if (isIOS) {
+        window.open(url, '_blank');
+      } else {
+        const a = document.createElement('a');
+        a.href = url; a.download = filename;
+        document.body.appendChild(a); a.click(); document.body.removeChild(a);
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+      }
+
+      // Advance invoice number in localStorage
+      const next = invNum + 1;
+      localStorage.setItem('charlie_inv_num', next);
+      el('inv_num').value = next;
+    }
+
+    init();
+  </script>
+</body>
+</html>
