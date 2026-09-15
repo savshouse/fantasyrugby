@@ -2873,7 +2873,7 @@ function renderSponsorshipsList(){
       </td>
       <td style="color:var(--muted); font-size:.85rem">${esc(inv.contact_name||'')}</td>
       <td title="${inv.created_by ? 'Created by: '+esc(_spinvCreatorMap[inv.created_by]||'Unknown') : 'Creator not recorded'}" style="cursor:help">${esc(inv.invoice_number)}</td>
-      <td>${esc(inv.type_names)}</td>
+      <td title="${inv.items.map(i=>{const tn=esc((allSponsorTypes.find(t=>t.id===i.sponsorship_type_id)||{}).name||'—');const pn=i.player_id?esc(displayNamePlain(allPlayers.find(p=>p.id===i.player_id)||{name:'Unknown'})):'';return tn+(pn?' · '+pn:'')+'  —  £'+Number(i.amount).toFixed(2);}).join('&#10;')}" style="cursor:help">${esc(inv.type_names)}</td>
       <td class="num">${inv.item_count}</td>
       <td class="num">£${inv.total.toFixed(2)}</td>
       <td>${inv.invoice_date}</td>
@@ -7050,6 +7050,6 @@ document.getElementById('rolesSaveBtn').onclick = async () => {
     </div>
   </div>
 </div>
-<!-- v1.38 — adminfantasy.html -->
+<!-- v1.39 — adminfantasy.html -->
 </body>
 </html>
