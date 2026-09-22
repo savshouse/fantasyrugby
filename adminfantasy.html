@@ -4151,27 +4151,72 @@ function downloadCSV(filename, headers, rows){
   URL.revokeObjectURL(url);
 }
 function slugify(s){ return (s||'').toString().toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'') || 'manager'; }
-function exportManagerWeekCSV(gwId, mid){
+async function fetchGwStats(gwId){
+  const { data, error } = await sb.from('match_stats')
+    .select('player_id, appeared, tries, conversions, penalties, drop_goals, is_mom, is_dom, yellows, reds, fixtures!inner(result, gameweek_id)')
+    .eq('fixtures.gameweek_id', gwId);
+  if(error || !data) return {};
+  const byPlayer = {};
+  data.forEach(r=>{
+    const pid = r.player_id;
+    if(!byPlayer[pid]) byPlayer[pid] = { appeared:false, tries:0, conversions:0, penalties:0, drop_goals:0, is_mom:false, is_dom:false, yellows:0, reds:0, won:false };
+    const s = byPlayer[pid];
+    if(r.appeared) s.appeared = true;
+    s.tries += (r.tries||0);
+    s.conversions += (r.conversions||0);
+    s.penalties += (r.penalties||0);
+    s.drop_goals += (r.drop_goals||0);
+    if(r.is_mom) s.is_mom = true;
+    if(r.is_dom) s.is_dom = true;
+    s.yellows += (r.yellows||0);
+    s.reds += (r.reds||0);
+    if(r.appeared && r.fixtures?.result === 'win') s.won = true;
+  });
+  return byPlayer;
+}
+async function exportManagerWeekCSV(gwId, mid){
   const w = adminWeekData.find(x=>x.gw===gwId); if(!w) return;
   const mgr = w.rows.find(r=>r.mid===mid); if(!mgr) return;
+  const stats = await fetchGwStats(gwId);
+  const capBonusByPlayer = {};
+  mgr.items.forEach(r=>{ if(r.note==='Captain bonus'||r.note==='Vice-captain bonus') capBonusByPlayer[r.player_id]=(capBonusByPlayer[r.player_id]||0)+r.points; });
   const rows = auditLines(mgr.items).map(r=>{
     const p = allPlayers.find(x=>x.id===r.player_id);
-    return [w.number, mgr.name, p?displayNamePlain(p):'Unknown player', r.capNote||r.note||'', r.points];
+    const s = stats[r.player_id] || {};
+    const cap = capBonusByPlayer[r.player_id] || 0;
+    const base = r.points - cap;
+    return [w.number, mgr.name, p?displayNamePlain(p):'Unknown player', r.capNote||r.note||'',
+      s.appeared?'Yes':'No', s.tries||0, s.conversions||0, s.penalties||0, s.drop_goals||0,
+      s.is_mom?'Yes':'No', s.is_dom?'Yes':'No', s.yellows||0, s.reds||0, s.won?'Yes':'No',
+      base, cap, r.points];
   });
-  rows.push(['','','','TOTAL', mgr.total]);
-  downloadCSV(`week${w.number}-${slugify(mgr.name)}.csv`, ['Week','Manager','Player','Detail','Points'], rows);
+  rows.push(['','','','TOTAL','','','','','','','','','','','','',mgr.total]);
+  downloadCSV(`week${w.number}-${slugify(mgr.name)}.csv`,
+    ['Week','Manager','Player','Role','Appeared','Tries','Conversions','Penalties','Drop Goals','PoM','DoM','Yellows','Reds','Won','Base Pts','Cap Bonus','Total Pts'],
+    rows);
   toast('Exported '+mgr.name+' — Week '+w.number);
 }
-function exportWeekCSV(gwId){
+async function exportWeekCSV(gwId){
   const w = adminWeekData.find(x=>x.gw===gwId); if(!w) return;
+  const stats = await fetchGwStats(gwId);
   const rows = [];
   w.rows.forEach((mgr,i)=>{
+    const capBonusByPlayer = {};
+    mgr.items.forEach(r=>{ if(r.note==='Captain bonus'||r.note==='Vice-captain bonus') capBonusByPlayer[r.player_id]=(capBonusByPlayer[r.player_id]||0)+r.points; });
     auditLines(mgr.items).forEach(r=>{
       const p = allPlayers.find(x=>x.id===r.player_id);
-      rows.push([w.number, mgr.name, i+1, p?displayNamePlain(p):'Unknown player', r.capNote||r.note||'', r.points, mgr.total]);
+      const s = stats[r.player_id] || {};
+      const cap = capBonusByPlayer[r.player_id] || 0;
+      const base = r.points - cap;
+      rows.push([w.number, mgr.name, i+1, p?displayNamePlain(p):'Unknown player', r.capNote||r.note||'',
+        s.appeared?'Yes':'No', s.tries||0, s.conversions||0, s.penalties||0, s.drop_goals||0,
+        s.is_mom?'Yes':'No', s.is_dom?'Yes':'No', s.yellows||0, s.reds||0, s.won?'Yes':'No',
+        base, cap, r.points, mgr.total]);
     });
   });
-  downloadCSV(`week${w.number}-all-managers.csv`, ['Week','Manager','Rank','Player','Detail','Points','Manager Week Total'], rows);
+  downloadCSV(`week${w.number}-all-managers.csv`,
+    ['Week','Manager','Rank','Player','Role','Appeared','Tries','Conversions','Penalties','Drop Goals','PoM','DoM','Yellows','Reds','Won','Base Pts','Cap Bonus','Player Total','Manager Week Total'],
+    rows);
   toast('Exported Week '+w.number+' (all managers)');
 }
 function lbAvatar(r){
@@ -7055,6 +7100,6 @@ document.getElementById('rolesSaveBtn').onclick = async () => {
     </div>
   </div>
 </div>
-<!-- v1.41 — adminfantasy.html -->
+<!-- v1.42 — adminfantasy.html -->
 </body>
 </html>
