@@ -1756,6 +1756,8 @@ async function afterLogin(user){
     if(ins.error){ el('authMsg').textContent=ins.error.message; return; }
     mgr=ins.data;
     isNewManager = true;
+    const { data: matchResult } = await sb.rpc('auto_match_membership');
+    if(matchResult){ mgr = { ...mgr, membership_paid_until: '2027-05-31' }; }
   }
   if(mgr.active === false){
     el('authMsg').textContent = 'Your account has been archived. Get in touch with the club if you think this is a mistake.';
@@ -4123,6 +4125,6 @@ boot();
     <button class="btn ghost block" id="idleLogoutBtn" style="margin-top:8px">Sign out now</button>
   </div>
 </div>
-<!-- v1.8 — manager.html -->
+<!-- v1.9 — manager.html -->
 </body>
 </html>
