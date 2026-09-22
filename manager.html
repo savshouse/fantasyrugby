@@ -544,11 +544,9 @@
       <p style="margin-top:8px; font-size:.82rem" id="forgotWrap">
         <button class="linkbtn" id="forgotBtn" type="button">Forgot your password?</button>
       </p>
-      <div id="signupConsent" class="hide" style="margin-top:12px; padding:12px 14px; background:#f7f6f4; border:1.5px solid var(--line); border-radius:10px; font-size:.82rem; line-height:1.5; color:var(--ink)">
-        <label style="display:flex; align-items:flex-start; gap:10px; cursor:pointer">
-          <input type="checkbox" id="consentCheck" style="margin-top:2px; flex-shrink:0; accent-color:var(--crimson)">
-          <span style="flex:1; min-width:0; overflow-wrap:break-word">I have read and agree to the <a href="privacy.html" target="_blank" style="color:var(--crimson); font-weight:600">Privacy Notice</a>. I understand that my name, photo, and fantasy points will be visible to other competition participants, and that my data will be held for up to two years after the season ends.</span>
-        </label>
+      <div id="signupConsent" class="hide" style="margin-top:12px; padding:12px 14px; background:#f7f6f4; border:1.5px solid var(--line); border-radius:10px; font-size:.82rem; line-height:1.5; color:var(--ink); display:grid; grid-template-columns:16px 1fr; gap:10px; align-items:start">
+        <input type="checkbox" id="consentCheck" style="margin-top:3px; accent-color:var(--crimson); cursor:pointer">
+        <label for="consentCheck" style="cursor:pointer; overflow-wrap:break-word; word-break:break-word; margin:0">I have read and agree to the <a href="privacy.html" target="_blank" style="color:var(--crimson); font-weight:600">Privacy Notice</a>. I understand that my name, photo, and fantasy points will be visible to other competition participants, and that my data will be held for up to two years after the season ends.</label>
       </div>
       <div style="height:8px"></div>
       <button class="btn primary block" id="authBtn">Sign in</button>
