@@ -995,7 +995,7 @@
         <label for="duty_fixture">Match</label>
         <select id="duty_fixture"></select>
         <label class="inline" id="dutyShowAllWrap" style="display:none; margin-top:8px; font-size:.82rem; color:var(--muted); gap:7px; align-items:center">
-          <input type="checkbox" id="dutyShowAll" style="width:auto"> Show all fixtures (including future and already-approved)
+          <input type="checkbox" id="dutyShowAll" style="width:auto"> Show all weeks
         </label>
       </div>
       <div id="duty_status"></div>
@@ -3132,9 +3132,18 @@ async function initTeamDuty(){
 
   const showAllWrap = el('dutyShowAllWrap');
   const useAll = el('dutyShowAll')?.checked;
-  dutyFixtures = (useAll || !pending.length) ? dutyAllFixtures : pending;
 
-  if(showAllWrap) showAllWrap.style.display = pending.length ? '' : 'none';
+  // Default to current gameweek; fall back to most recent week in the list
+  const currentGwNum = activeGw?.number ?? (dutyAllFixtures[0]?.gameweeks?.number ?? null);
+  const currentFixtures = currentGwNum !== null
+    ? dutyAllFixtures.filter(f => (f.gameweeks?.number ?? null) === currentGwNum)
+    : dutyAllFixtures.slice(0, 3);
+
+  // Pending (past deadline, unapproved) takes priority; otherwise show current GW only
+  const defaultFixtures = pending.length ? pending : currentFixtures;
+  dutyFixtures = useAll ? dutyAllFixtures : defaultFixtures;
+
+  if(showAllWrap) showAllWrap.style.display = '';
 
   const sel = el('duty_fixture');
   const label = f => `Week ${f.gameweeks?.number||'?'} — ${esc(teamLabelById(f.team_id))} vs ${esc(f.opponent)}`;
