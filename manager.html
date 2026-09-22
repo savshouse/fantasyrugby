@@ -3145,11 +3145,19 @@ async function initTeamDuty(){
   const showAllWrap = el('dutyShowAllWrap');
   const useAll = el('dutyShowAll')?.checked;
 
-  // Default: current week only (most recent by number), plus any older weeks still pending submission
-  const distinctGwNums = [...new Set(dutyAllFixtures.map(f=>f.gameweeks?.number??0))].filter(n=>n>0).sort((a,b)=>b-a);
-  const currentGwSet = new Set(distinctGwNums.slice(0,1));
-  const currentFixtures = dutyAllFixtures.filter(f=>currentGwSet.has(f.gameweeks?.number??0));
+  // Find the current relevant week using deadline_at, not fixture number
+  // (all season's fixtures are pre-loaded, so highest number ≠ current week)
+  const _now = Date.now();
+  const gwDeadlineMap = {};
+  dutyAllFixtures.forEach(f=>{ const n=f.gameweeks?.number; if(n&&!gwDeadlineMap[n]) gwDeadlineMap[n]=f.gameweeks?.deadline_at?new Date(f.gameweeks.deadline_at).getTime():0; });
+  const allGwNums = Object.keys(gwDeadlineMap).map(Number);
+  const pastGwNums = allGwNums.filter(n=>gwDeadlineMap[n]&&gwDeadlineMap[n]<=_now);
+  const futureGwNums = allGwNums.filter(n=>!gwDeadlineMap[n]||gwDeadlineMap[n]>_now);
+  // Most recent past week (match played); fall back to earliest upcoming if season hasn't started
+  const relevantGwNum = pastGwNums.length ? Math.max(...pastGwNums) : (futureGwNums.length ? Math.min(...futureGwNums) : null);
+  const currentFixtures = relevantGwNum!==null ? dutyAllFixtures.filter(f=>f.gameweeks?.number===relevantGwNum) : [];
   const currentIds = new Set(currentFixtures.map(f=>f.id));
+  // Always show current week + any past unsubmitted weeks
   const defaultFixtures = [...currentFixtures, ...pending.filter(f=>!currentIds.has(f.id))]
     .sort((a,b)=>(b.gameweeks?.number||0)-(a.gameweeks?.number||0));
   dutyFixtures = useAll ? dutyAllFixtures : (defaultFixtures.length ? defaultFixtures : dutyAllFixtures.slice(0,3));
@@ -4165,6 +4173,6 @@ boot();
     <button class="btn ghost block" id="idleLogoutBtn" style="margin-top:8px">Sign out now</button>
   </div>
 </div>
-<!-- v1.13 — manager.html -->
+<!-- v1.14 — manager.html -->
 </body>
 </html>
