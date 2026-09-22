@@ -2433,8 +2433,8 @@ async function saveSponsorDb(){
   let logoUrl = el('sdb_logo_url').value.trim()||null;
   if(window._pendingSdbLogo){
     const ext = window._pendingSdbLogo.name.split('.').pop();
-    const path = `sponsor-logos/${name.replace(/[^a-z0-9]/gi,'_').toLowerCase()}.${ext}`;
-    const { data:upData, error:upErr } = await sb.storage.from('sponsor-assets').upload(path, window._pendingSdbLogo, { upsert:true, contentType:window._pendingSdbLogo.type });
+    const path = `sponsor-logos/${name.replace(/[^a-z0-9]/gi,'_').toLowerCase()}_${Date.now()}.${ext}`;
+    const { data:upData, error:upErr } = await sb.storage.from('sponsor-assets').upload(path, window._pendingSdbLogo, { contentType:window._pendingSdbLogo.type });
     if(upErr){ el('sdb_status').textContent=`Logo upload failed: ${upErr.message}`; return; }
     const { data:{ publicUrl } } = sb.storage.from('sponsor-assets').getPublicUrl(path);
     logoUrl = publicUrl;
@@ -3844,6 +3844,11 @@ async function loadStatPanel(){
     panel.querySelectorAll('.stat-row').forEach(r=> r.style.display = r.dataset.name.includes(q)?'':'none');
   };
   buildAwardSelects();
+  // Pre-select PoM/DoM from existing match_stats
+  const momPid = Object.entries(byP).find(([,s])=>s.is_mom)?.[0];
+  const domPid = Object.entries(byP).find(([,s])=>s.is_dom)?.[0];
+  if(momPid && el('st_mom')) el('st_mom').value = momPid;
+  if(domPid && el('st_dom')) el('st_dom').value = domPid;
   recalcCheck(fixture);
   wireAddPlayer(fixId, rowPlayers.map(p=>p.id));
   panel.querySelector('#st_save').onclick = ()=>saveStats(fixId);
@@ -7050,6 +7055,6 @@ document.getElementById('rolesSaveBtn').onclick = async () => {
     </div>
   </div>
 </div>
-<!-- v1.39 — adminfantasy.html -->
+<!-- v1.41 — adminfantasy.html -->
 </body>
 </html>
