@@ -547,7 +547,7 @@
       <div id="signupConsent" class="hide" style="margin-top:12px; padding:12px 14px; background:#f7f6f4; border:1.5px solid var(--line); border-radius:10px; font-size:.82rem; line-height:1.5; color:var(--ink)">
         <label style="display:flex; align-items:flex-start; gap:10px; cursor:pointer">
           <input type="checkbox" id="consentCheck" style="margin-top:2px; flex-shrink:0; accent-color:var(--crimson)">
-          <span>I have read and agree to the <a href="privacy.html" target="_blank" style="color:var(--crimson); font-weight:600">Privacy Notice</a>. I understand that my name, photo, and fantasy points will be visible to other competition participants, and that my data will be held for up to two years after the season ends.</span>
+          <span style="min-width:0">I have read and agree to the <a href="privacy.html" target="_blank" style="color:var(--crimson); font-weight:600">Privacy Notice</a>. I understand that my name, photo, and fantasy points will be visible to other competition participants, and that my data will be held for up to two years after the season ends.</span>
         </label>
       </div>
       <div style="height:8px"></div>
@@ -1666,7 +1666,7 @@ el('authBtn').onclick = async ()=>{
     if(!name){ el('authMsg').textContent='Please add your name.'; return; }
     if(!el('consentCheck').checked){ el('authMsg').textContent='Please read and accept the Privacy Notice to continue.'; return; }
     el('authMsg').textContent='Creating your account…';
-    const { data, error } = await sb.auth.signUp({ email, password:pw, options:{data:{name}} });
+    const { data, error } = await sb.auth.signUp({ email, password:pw, options:{data:{name}, emailRedirectTo: `${location.origin}/manager.html`} });
     if(error){ el('authMsg').textContent=error.message; return; }
     if(!data.session){ el('authMsg').textContent='Account created — check your email to confirm, then sign in.'; return; }
     await showWelcome(data.user);
@@ -4123,6 +4123,6 @@ boot();
     <button class="btn ghost block" id="idleLogoutBtn" style="margin-top:8px">Sign out now</button>
   </div>
 </div>
-<!-- v1.7 — manager.html -->
+<!-- v1.8 — manager.html -->
 </body>
 </html>
