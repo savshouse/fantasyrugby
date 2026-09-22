@@ -547,12 +547,13 @@
       <div id="signupConsent" class="hide" style="margin-top:12px; padding:12px 14px; background:#f7f6f4; border:1.5px solid var(--line); border-radius:10px; font-size:.82rem; line-height:1.5; color:var(--ink)">
         <label style="display:flex; align-items:flex-start; gap:10px; cursor:pointer">
           <input type="checkbox" id="consentCheck" style="margin-top:2px; flex-shrink:0; accent-color:var(--crimson)">
-          <span style="min-width:0">I have read and agree to the <a href="privacy.html" target="_blank" style="color:var(--crimson); font-weight:600">Privacy Notice</a>. I understand that my name, photo, and fantasy points will be visible to other competition participants, and that my data will be held for up to two years after the season ends.</span>
+          <span style="flex:1; min-width:0; overflow-wrap:break-word">I have read and agree to the <a href="privacy.html" target="_blank" style="color:var(--crimson); font-weight:600">Privacy Notice</a>. I understand that my name, photo, and fantasy points will be visible to other competition participants, and that my data will be held for up to two years after the season ends.</span>
         </label>
       </div>
       <div style="height:8px"></div>
       <button class="btn primary block" id="authBtn">Sign in</button>
-      <p class="muted" id="authMsg" style="margin-top:10px; font-size:.82rem"></p>
+      <p id="authMsg" style="margin-top:10px; font-size:.82rem"></p>
+      <p id="junkHint" class="hide" style="margin-top:8px; font-size:.78rem; color:var(--muted); line-height:1.4">Confirmation email not arrived? Check your <b>junk or spam</b> folder — it sometimes ends up there.</p>
       <p style="margin-top:14px; font-size:.85rem; color:var(--muted)">
         <span id="switchText">New here? </span>
         <button class="linkbtn" id="switchBtn">Create an account</button>
@@ -1615,7 +1616,9 @@ async function renderSignupNote(){
   const s = await loadPublicSettings();
   const note = s.membership_note ? `<div style="margin-top:6px">${esc(s.membership_note)}</div>` : '';
   const cta = s.membership_info ? `<div style="margin-top:8px">${membershipCta(s.membership_info)}</div>` : '';
-  box.innerHTML = `<b>Before you join:</b> A <b>£10 season entry fee</b> applies, and you must also be a <b>fully paid-up member of the rugby club</b> to appear on the leaderboard. You'll be prompted to pay the £10 right after signing up.${note}${cta}`;
+  const payUrl = s.payment_url || '';
+  const plat4rmBullet = `<li>Once signed up, you can look around and <b>pick your team straight away</b> — but you won't be formally entered or appear on the leaderboard until both the £10 entry fee and club membership are confirmed.</li><li>${payUrl?`<a href="${esc(payUrl)}" target="_blank" rel="noopener" style="color:var(--crimson);font-weight:600">This link</a> takes`:'The Plat4rm app takes'} you to the club shop where you can pay the <b>£10 entry fee</b>. This will be manually approved, so may take a short time to update.</li>`;
+  box.innerHTML = `<b>Before you join — good to know:</b><ul style="margin:8px 0 0;padding-left:18px;line-height:1.6">${plat4rmBullet}</ul>${note}${cta}`;
 }
 
 async function showWelcome(user){
@@ -1668,7 +1671,22 @@ el('authBtn').onclick = async ()=>{
     el('authMsg').textContent='Creating your account…';
     const { data, error } = await sb.auth.signUp({ email, password:pw, options:{data:{name}, emailRedirectTo: `${location.origin}/manager.html`} });
     if(error){ el('authMsg').textContent=error.message; return; }
-    if(!data.session){ el('authMsg').textContent='Account created — check your email to confirm, then sign in.'; return; }
+    if(!data.session){
+      // Switch back to sign-in mode so it's clear what to do next
+      mode='signin';
+      el('authTitle').textContent='Check your email';
+      el('authSub').textContent='';
+      el('authBtn').textContent='Sign in';
+      el('nameWrap').classList.add('hide');
+      el('signupNote').classList.add('hide');
+      el('signupConsent').classList.add('hide');
+      el('forgotWrap').classList.remove('hide');
+      el('switchText').textContent='New here? ';
+      el('switchBtn').textContent='Create an account';
+      el('authMsg').innerHTML='<div style="background:#f0fdf4;border:1.5px solid #86efac;border-radius:10px;padding:14px 16px;color:#166534;font-size:.87rem;line-height:1.5;margin-top:4px"><b>Account created!</b> We\'ve sent a confirmation email to <b>'+esc(email)+'</b>.<br><br>Click the link in that email, then come back here and sign in.<br><br><span style="opacity:.8">Can\'t see it? Check your <b>junk or spam</b> folder — it sometimes ends up there.</span></div>';
+      el('junkHint') && el('junkHint').classList.remove('hide');
+      return;
+    }
     await showWelcome(data.user);
   } else {
     el('authMsg').textContent='Signing in…';
@@ -1737,8 +1755,8 @@ function renderPayBanner(){
     ? `${memNote?`<div class="pay-note" style="margin-top:10px">${esc(memNote)}</div>`:''}${memInfo?`<div style="margin-top:8px"><a class="pay-btn" href="${/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(memInfo.trim())?'mailto:'+esc(memInfo.trim()):esc(memInfo.trim())}" ${/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(memInfo.trim())?'':'target="_blank" rel="noopener"'}>${/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(memInfo.trim())?'Contact us about membership':'Become a club member'}</a></div>`:''}`
     : '';
   box.innerHTML = `<div class="pay-banner">
-    <h3>${needEntry&&needMember?'Two steps to join in':'One step to join in'}</h3>
-    <p>You can look around, but to pick a team and appear on the leaderboard you'll need:</p>
+    <h3>${needEntry&&needMember?'Almost there — two things to sort':'Almost there — one thing to sort'}</h3>
+    <p>You can pick a team and look around — but you won't appear on the leaderboard until:</p>
     <ul>${items}</ul>
     ${payBtn}
     ${memBlock}
@@ -2470,7 +2488,6 @@ el('lbRefresh') && (el('lbRefresh').onclick = ()=>{ loadLeaderboard(); toast('Re
 
 // ── Save ──────────────────────────────────────────────────────
 async function saveTeam(){
-  if(!canCompete()){ toast('Complete your entry payment to pick a team',true); renderPayBanner(); window.scrollTo({top:0,behavior:'smooth'}); return; }
   if(!activeGw||!editable){toast('Picks are closed',true);return;}
   if(usedIds().length!==10){toast('Fill all 7 starters and 3 bench',true);return;}
   if(remaining()<0){toast('You are over budget',true);return;}
@@ -4125,6 +4142,6 @@ boot();
     <button class="btn ghost block" id="idleLogoutBtn" style="margin-top:8px">Sign out now</button>
   </div>
 </div>
-<!-- v1.9 — manager.html -->
+<!-- v1.10 — manager.html -->
 </body>
 </html>
