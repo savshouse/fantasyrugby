@@ -3423,11 +3423,16 @@ function renderAssignOverlayList(q){
 async function submitDuty(fixId, existingSub){
   const us = el('duty_us').value===''?null:parseInt(el('duty_us').value,10);
   const them = el('duty_them').value===''?null:parseInt(el('duty_them').value,10);
-  let result = null;
-  if(us!=null && them!=null) result = us>them?'win':us<them?'loss':'draw';
+  if(us===null || them===null){ toast('Please enter the final score before submitting', true); return; }
+  let result = us>them?'win':us<them?'loss':'draw';
   const momId = el('duty_mom').value, domId = el('duty_dom').value;
 
-  const lines = [...dutyAppeared].map(pid=>({
+  // Build lines from appeared players; also ensure PoM/DoM players are included
+  const appearedSet = new Set(dutyAppeared);
+  if(momId) appearedSet.add(momId);
+  if(domId) appearedSet.add(domId);
+
+  const lines = [...appearedSet].map(pid=>({
     player_id: pid, appeared: true,
     tries: dutyAssignments.tries[pid]||0,
     conversions: dutyAssignments.conversions[pid]||0,
@@ -4157,6 +4162,6 @@ boot();
     <button class="btn ghost block" id="idleLogoutBtn" style="margin-top:8px">Sign out now</button>
   </div>
 </div>
-<!-- v1.11 — manager.html -->
+<!-- v1.12 — manager.html -->
 </body>
 </html>
