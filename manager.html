@@ -3145,10 +3145,13 @@ async function initTeamDuty(){
   const showAllWrap = el('dutyShowAllWrap');
   const useAll = el('dutyShowAll')?.checked;
 
-  // Default: show the 2 most recent gameweeks by fixture number — avoids any deadline/status edge cases
+  // Default: current week only (most recent by number), plus any older weeks still pending submission
   const distinctGwNums = [...new Set(dutyAllFixtures.map(f=>f.gameweeks?.number??0))].filter(n=>n>0).sort((a,b)=>b-a);
-  const recentGwSet = new Set(distinctGwNums.slice(0,2));
-  const defaultFixtures = dutyAllFixtures.filter(f=>recentGwSet.has(f.gameweeks?.number??0));
+  const currentGwSet = new Set(distinctGwNums.slice(0,1));
+  const currentFixtures = dutyAllFixtures.filter(f=>currentGwSet.has(f.gameweeks?.number??0));
+  const currentIds = new Set(currentFixtures.map(f=>f.id));
+  const defaultFixtures = [...currentFixtures, ...pending.filter(f=>!currentIds.has(f.id))]
+    .sort((a,b)=>(b.gameweeks?.number||0)-(a.gameweeks?.number||0));
   dutyFixtures = useAll ? dutyAllFixtures : (defaultFixtures.length ? defaultFixtures : dutyAllFixtures.slice(0,3));
 
   if(showAllWrap) showAllWrap.style.display = dutyAllFixtures.length > defaultFixtures.length ? '' : 'none';
@@ -4162,6 +4165,6 @@ boot();
     <button class="btn ghost block" id="idleLogoutBtn" style="margin-top:8px">Sign out now</button>
   </div>
 </div>
-<!-- v1.12 — manager.html -->
+<!-- v1.13 — manager.html -->
 </body>
 </html>
