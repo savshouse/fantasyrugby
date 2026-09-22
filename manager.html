@@ -2160,7 +2160,19 @@ async function loadActiveGw(){
   if(activeGw){
     const cur=activeGw.number;
     if(byGw[cur]) seedFromSelections(byGw[cur]);
-    else{ const p=Object.keys(byGw).map(Number).filter(n=>n<cur).sort((a,b)=>b-a)[0]; if(p!=null) seedFromSelections(byGw[p]); }
+    else{
+      const p=Object.keys(byGw).map(Number).filter(n=>n<cur).sort((a,b)=>b-a)[0];
+      if(p!=null){
+        seedFromSelections(byGw[p]);
+        // Auto-carry: silently save last week's picks to this week if deadline hasn't passed
+        if(new Date(activeGw.deadline_at).getTime()>Date.now() && byGw[p].some(s=>s.is_captain)){
+          const carryRows=byGw[p].map(s=>({manager_id:me.id,gameweek_id:activeGw.id,player_id:s.player_id,role:s.role,bench_order:s.bench_order,is_captain:s.is_captain,is_vice:s.is_vice}));
+          sb.from('selections').delete().eq('manager_id',me.id).eq('gameweek_id',activeGw.id)
+            .then(()=>sb.from('selections').insert(carryRows))
+            .then(()=>{ toast('Team carried forward from Week '+p); });
+        }
+      }
+    }
     const prev=Object.keys(byGw).map(Number).filter(n=>n<cur).sort((a,b)=>b-a)[0];
     baselineIds=prev!=null?new Set(byGw[prev].map(s=>s.player_id)):new Set();
     editable=new Date(activeGw.deadline_at).getTime()>now;
@@ -3133,17 +3145,13 @@ async function initTeamDuty(){
   const showAllWrap = el('dutyShowAllWrap');
   const useAll = el('dutyShowAll')?.checked;
 
-  // Default to current gameweek; fall back to most recent week in the list
-  const currentGwNum = activeGw?.number ?? (dutyAllFixtures[0]?.gameweeks?.number ?? null);
-  const currentFixtures = currentGwNum !== null
-    ? dutyAllFixtures.filter(f => (f.gameweeks?.number ?? null) === currentGwNum)
-    : dutyAllFixtures.slice(0, 3);
+  // Default: show the 2 most recent gameweeks by fixture number — avoids any deadline/status edge cases
+  const distinctGwNums = [...new Set(dutyAllFixtures.map(f=>f.gameweeks?.number??0))].filter(n=>n>0).sort((a,b)=>b-a);
+  const recentGwSet = new Set(distinctGwNums.slice(0,2));
+  const defaultFixtures = dutyAllFixtures.filter(f=>recentGwSet.has(f.gameweeks?.number??0));
+  dutyFixtures = useAll ? dutyAllFixtures : (defaultFixtures.length ? defaultFixtures : dutyAllFixtures.slice(0,3));
 
-  // Pending (past deadline, unapproved) takes priority; otherwise show current GW only
-  const defaultFixtures = pending.length ? pending : currentFixtures;
-  dutyFixtures = useAll ? dutyAllFixtures : defaultFixtures;
-
-  if(showAllWrap) showAllWrap.style.display = '';
+  if(showAllWrap) showAllWrap.style.display = dutyAllFixtures.length > defaultFixtures.length ? '' : 'none';
 
   const sel = el('duty_fixture');
   const label = f => `Week ${f.gameweeks?.number||'?'} — ${esc(teamLabelById(f.team_id))} vs ${esc(f.opponent)}`;
@@ -4149,6 +4157,6 @@ boot();
     <button class="btn ghost block" id="idleLogoutBtn" style="margin-top:8px">Sign out now</button>
   </div>
 </div>
-<!-- v1.10 — manager.html -->
+<!-- v1.11 — manager.html -->
 </body>
 </html>
