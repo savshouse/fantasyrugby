@@ -1528,9 +1528,13 @@ function renderInbox(messages){
     }
   }
 
-  if(!messages.length){ box.innerHTML = '<p class="muted">No messages yet.</p>'; return; }
+  // Filter out anything older than 30 days
+  const cutoff = Date.now() - 30 * 24 * 60 * 60 * 1000;
+  const recent = messages.filter(m => !m.sent_at || new Date(m.sent_at).getTime() >= cutoff);
 
-  box.innerHTML = messages.map(m=>{
+  if(!recent.length){ box.innerHTML = '<p class="muted">No messages in the last 30 days.</p>'; return; }
+
+  function buildMsgHtml(m){
     const isRead = readIds.has(m.id);
     const sentFmt = m.sent_at ? new Date(m.sent_at).toLocaleDateString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}) : '';
     return `<div class="inbox-msg ${isRead?'inbox-read':''}" data-msg-id="${m.id}" ${m.url?`onclick="markMsgRead('${m.id}'); window.location.href='${esc(m.url)}'"`:''} style="cursor:${m.url?'pointer':'default'}">
@@ -1543,7 +1547,26 @@ function renderInbox(messages){
       </div>
       <div class="muted" style="font-size:.72rem; margin-top:6px">${sentFmt}</div>
     </div>`;
-  }).join('');
+  }
+
+  const top = recent.slice(0, 3);
+  const older = recent.slice(3);
+
+  let html = top.map(buildMsgHtml).join('');
+  if(older.length){
+    html += `<div id="inboxOlderToggle" style="text-align:center; padding:6px 0; cursor:pointer; font-size:.82rem; color:var(--crimson)">Show ${older.length} older message${older.length===1?'':'s'} ▾</div>
+             <div id="inboxOlder" style="display:none">${older.map(buildMsgHtml).join('')}</div>`;
+  }
+  box.innerHTML = html;
+
+  // Toggle older messages
+  const toggle = el('inboxOlderToggle');
+  if(toggle) toggle.onclick = ()=>{
+    const older2 = el('inboxOlder');
+    const open = older2.style.display !== 'none';
+    older2.style.display = open ? 'none' : '';
+    toggle.textContent = open ? `Show ${older.length} older message${older.length===1?'':'s'} ▾` : 'Hide older messages ▴';
+  };
 
   // Wire up read-on-tap for messages without a URL
   box.querySelectorAll('.inbox-msg').forEach(div=>{
@@ -4173,6 +4196,6 @@ boot();
     <button class="btn ghost block" id="idleLogoutBtn" style="margin-top:8px">Sign out now</button>
   </div>
 </div>
-<!-- v1.14 — manager.html -->
+<!-- v1.15 — manager.html -->
 </body>
 </html>
