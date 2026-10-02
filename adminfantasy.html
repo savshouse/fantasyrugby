@@ -1924,61 +1924,91 @@ async function loadReceivedMessages(){
   updateInboxBadge();
 }
 
+function buildRcvCard(m, typeLabel, isArchived){
+  const sentFmt = m.sent_at ? new Date(m.sent_at).toLocaleDateString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}) : '';
+  const fromName = m.managers?.name || '?';
+  const isPending = m.status === 'pending';
+  const statusPill = isArchived ? `<span class="pill inactive">${m.status}</span>` : '';
+  return `<div class="rcv-card ${isPending?'rcv-pending':''}" data-rcv-id="${m.id}">
+    <div class="rcv-summary" data-toggle="${m.id}" style="cursor:pointer">
+      <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap">
+        <span style="font-weight:600">${esc(fromName)}</span>
+        <span class="muted" style="font-size:.8rem">${esc(typeLabel[m.type]||m.type)}</span>
+        <span class="muted" style="font-size:.78rem">${sentFmt}</span>
+        ${statusPill}
+      </div>
+      <div style="color:var(--text); margin-top:4px; font-size:.9rem">${esc(m.message.slice(0,100))}${m.message.length>100?'…':''}</div>
+    </div>
+    <div class="rcv-detail" id="rcvdetail-${m.id}" style="display:none; border-top:1px solid var(--border); margin-top:10px; padding-top:10px">
+      <div style="white-space:pre-wrap; background:var(--sidebar); border-radius:6px; padding:10px; font-size:.9rem; margin-bottom:10px">${esc(m.message)}</div>
+      ${m.photo_url?`<a href="${esc(m.photo_url)}" target="_blank" class="btn sec small" style="margin-bottom:10px; display:inline-block">View photo</a>`:''}
+      ${m.admin_notes?`<div class="muted" style="font-size:.8rem; margin-bottom:8px">Notes: ${esc(m.admin_notes)}</div>`:''}
+      <div class="row" style="gap:8px; flex-wrap:wrap">
+        <button class="btn sec small" data-rcv-reply="${m.manager_id}" data-rcv-from="${esc(fromName)}">&#9166; Reply</button>
+        ${isPending?`<button class="btn navy small" data-rcv-done="${m.id}">Mark done</button><button class="btn sec small" data-rcv-archive="${m.id}">Archive</button>`:''}
+        ${isArchived?`<button class="btn sec small" data-rcv-unarchive="${m.id}">Unarchive</button>`:''}
+      </div>
+    </div>
+  </div>`;
+}
+function wireRcvCards(container){
+  container.querySelectorAll('[data-toggle]').forEach(el2=>el2.onclick=()=>{
+    const detail = el('rcvdetail-'+el2.dataset.toggle);
+    if(detail) detail.style.display = detail.style.display==='none'?'':'none';
+  });
+  container.querySelectorAll('[data-rcv-done]').forEach(btn=>btn.onclick=()=>resolveRequest(btn.dataset.rcvDone,'done'));
+  container.querySelectorAll('[data-rcv-archive]').forEach(btn=>btn.onclick=()=>resolveRequest(btn.dataset.rcvArchive,'archived'));
+  container.querySelectorAll('[data-rcv-unarchive]').forEach(btn=>btn.onclick=async()=>{
+    const res = await sb.from('manager_messages').update({ status:'pending', actioned_at:null, actioned_by:null }).eq('id', btn.dataset.rcvUnarchive);
+    if(res.error){ toast(res.error.message, true); return; }
+    toast('Message unarchived'); loadReceivedMessages();
+  });
+  container.querySelectorAll('[data-rcv-reply]').forEach(btn=>btn.onclick=()=>{
+    const audienceSel = el('msg_audience');
+    if(audienceSel) audienceSel.value = btn.dataset.rcvReply;
+    const titleInp = el('msg_title');
+    if(titleInp && !titleInp.value) titleInp.value = 'Re: your message';
+    el('msg_title')?.scrollIntoView({ behavior:'smooth', block:'center' });
+    toast('Reply to ' + btn.dataset.rcvFrom + ' — compose your message above');
+  });
+}
 function renderReceivedMessages(){
   const box = el('rcv_list'); if(!box) return;
   const q = (el('rcv_search')?.value||'').toLowerCase();
   const typeLabel = { profile_change:'Profile change', general:'General query', payment:'Payment query' };
-  let rows = allReceivedMessages.filter(m=>
+  const all = allReceivedMessages.filter(m=>
     !q || m.message.toLowerCase().includes(q) ||
     (m.managers?.name||'').toLowerCase().includes(q) ||
     (typeLabel[m.type]||'').toLowerCase().includes(q)
-  );
-  rows.sort((a,b)=>{ const av=a.sent_at, bv=b.sent_at; return av<bv?1:av>bv?-1:0; });
-  if(!rows.length){ box.innerHTML='<div class="empty">No messages received yet.</div>'; return; }
-  box.innerHTML = rows.map(m=>{
-    const sentFmt = m.sent_at ? new Date(m.sent_at).toLocaleDateString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}) : '';
-    const fromName = m.managers?.name || '?';
-    const statusPill = `<span class="pill ${m.status==='done'?'fwd':m.status==='dismissed'?'inactive':''}">${m.status}</span>`;
-    const isPending = m.status === 'pending';
-    return `<div class="rcv-card ${isPending?'rcv-pending':''}" data-rcv-id="${m.id}">
-      <div class="rcv-summary" data-toggle="${m.id}" style="cursor:pointer">
-        <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap">
-          <span style="font-weight:600">${esc(fromName)}</span>
-          <span class="muted" style="font-size:.8rem">${esc(typeLabel[m.type]||m.type)}</span>
-          <span class="muted" style="font-size:.78rem">${sentFmt}</span>
-          ${statusPill}
-        </div>
-        <div style="color:var(--text); margin-top:4px; font-size:.9rem">${esc(m.message.slice(0,100))}${m.message.length>100?'…':''}</div>
-      </div>
-      <div class="rcv-detail" id="rcvdetail-${m.id}" style="display:none; border-top:1px solid var(--border); margin-top:10px; padding-top:10px">
-        <div style="white-space:pre-wrap; background:var(--sidebar); border-radius:6px; padding:10px; font-size:.9rem; margin-bottom:10px">${esc(m.message)}</div>
-        ${m.photo_url?`<a href="${esc(m.photo_url)}" target="_blank" class="btn sec small" style="margin-bottom:10px; display:inline-block">View photo</a>`:''}
-        ${m.admin_notes?`<div class="muted" style="font-size:.8rem; margin-bottom:8px">Notes: ${esc(m.admin_notes)}</div>`:''}
-        <div class="row" style="gap:8px; flex-wrap:wrap">
-          <button class="btn sec small" data-rcv-reply="${m.manager_id}" data-rcv-from="${esc(fromName)}">&#9166; Reply</button>
-          ${isPending?`<button class="btn navy small" data-rcv-done="${m.id}">Mark done</button><button class="btn sec small" data-rcv-dismiss="${m.id}">Dismiss</button>`:''}
-        </div>
-      </div>
-    </div>`;
-  }).join('');
-  box.querySelectorAll('[data-toggle]').forEach(el2=>el2.onclick=()=>{
-    const detail = el('rcvdetail-'+el2.dataset.toggle);
-    if(detail) detail.style.display = detail.style.display==='none'?'':'none';
-  });
-  box.querySelectorAll('[data-rcv-done]').forEach(btn=>btn.onclick=()=>resolveRequest(btn.dataset.rcvDone,'done'));
-  box.querySelectorAll('[data-rcv-dismiss]').forEach(btn=>btn.onclick=()=>resolveRequest(btn.dataset.rcvDismiss,'dismissed'));
-  box.querySelectorAll('[data-rcv-reply]').forEach(btn=>btn.onclick=()=>{
-    const mid = btn.dataset.rcvReply;
-    const fromName = btn.dataset.rcvFrom;
-    const audienceSel = el('msg_audience');
-    if(audienceSel){ audienceSel.value = mid; }
-    const titleInp = el('msg_title');
-    if(titleInp && !titleInp.value) titleInp.value = 'Re: your message';
-    el('msg_body')?.focus();
-    // Scroll send form into view
-    el('msg_title')?.scrollIntoView({ behavior:'smooth', block:'center' });
-    toast('Reply to ' + fromName + ' — compose your message above');
-  });
+  ).sort((a,b)=>{ const av=a.sent_at, bv=b.sent_at; return av<bv?1:av>bv?-1:0; });
+
+  const pending  = all.filter(m=>m.status==='pending');
+  const archived = all.filter(m=>m.status!=='pending');
+
+  if(!all.length){ box.innerHTML='<div class="empty">No messages received yet.</div>'; return; }
+
+  const pendingHtml = pending.length
+    ? pending.map(m=>buildRcvCard(m, typeLabel, false)).join('')
+    : '<div class="empty">No pending messages.</div>';
+
+  const archiveHtml = archived.length
+    ? archived.map(m=>buildRcvCard(m, typeLabel, true)).join('')
+    : '<div class="empty" style="padding:8px 0">Nothing archived yet.</div>';
+
+  box.innerHTML = pendingHtml
+    + `<div class="collapsible-inbox" id="rcv_arch_toggle" style="margin-top:16px; cursor:pointer">
+        <span class="eyebrow" style="margin:0">Archive (${archived.length})</span>
+        <span class="lbw-caret" id="rcv_arch_caret">&#9656;</span>
+       </div>
+       <div id="rcv_arch_body" style="display:none; margin-top:8px">${archiveHtml}</div>`;
+
+  wireRcvCards(box);
+  el('rcv_arch_toggle').onclick=()=>{
+    const body=el('rcv_arch_body'), caret=el('rcv_arch_caret');
+    const open=body.style.display!=='none';
+    body.style.display=open?'none':'';
+    caret.innerHTML=open?'&#9656;':'&#9662;';
+  };
 }
 
 el('msg_send') && (el('msg_send').onclick = async ()=>{
@@ -4581,7 +4611,7 @@ function renderRequestList(rows){
 async function resolveRequest(id, status){
   const res = await sb.from('manager_messages').update({ status, actioned_at:new Date().toISOString(), actioned_by: me.id }).eq('id', id);
   if(res.error){ toast(res.error.message, true); return; }
-  toast(status==='done'?'Marked done':'Dismissed');
+  toast(status==='done'?'Marked done':status==='archived'?'Archived':'Dismissed');
   loadReceivedMessages();
   updateInboxBadge();
 }
@@ -7114,6 +7144,6 @@ document.getElementById('rolesSaveBtn').onclick = async () => {
     </div>
   </div>
 </div>
-<!-- v1.43 — adminfantasy.html -->
+<!-- v1.44 — adminfantasy.html -->
 </body>
 </html>
