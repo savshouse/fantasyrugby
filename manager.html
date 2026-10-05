@@ -754,6 +754,30 @@
         <p class="muted" style="font-size:.82rem; margin:4px 0 8px">Tap a week to see exactly who earned your points.</p>
         <div id="myWeeks"><div class="empty">No scored weeks yet.</div></div>
       </div>
+      <!-- Most picked players -->
+      <div class="card" id="mostPickedCard" style="margin-top:12px">
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:10px">
+          <div class="eyebrow">Most picked players</div>
+          <span id="mostPickedGwLabel" style="font-size:.75rem; color:var(--muted)"></span>
+        </div>
+        <p class="muted" style="font-size:.82rem; margin:4px 0 10px">Who the managers are backing this week.</p>
+        <div style="overflow-x:auto">
+          <table style="width:100%; border-collapse:collapse; font-size:.85rem">
+            <thead>
+              <tr style="border-bottom:2px solid var(--line)">
+                <th style="text-align:left; padding:6px 8px; color:var(--muted); font-weight:600">#</th>
+                <th style="text-align:left; padding:6px 8px; color:var(--muted); font-weight:600">Player</th>
+                <th style="text-align:center; padding:6px 8px; color:var(--muted); font-weight:600">Picked</th>
+                <th style="text-align:center; padding:6px 8px; color:var(--muted); font-weight:600">Captain</th>
+              </tr>
+            </thead>
+            <tbody id="mostPickedBody">
+              <tr><td colspan="4" style="text-align:center; padding:16px; color:var(--muted)">Loading…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
       <div id="lbSponsorBot"></div>
       <div class="sponsor-carousel-wrap" id="sponsorCarouselWrap_leaderboard" style="display:none">
         <p class="sponsor-carousel-title">Thank you to our sponsors</p>
@@ -2566,6 +2590,42 @@ async function loadLeaderboard(){
   renderPodium(lastLeaderboard);
   renderLbRest(lastLeaderboard);
   loadMyWeeks();
+  loadMostPicked();
+}
+async function loadMostPicked(){
+  const box = el('mostPickedBody');
+  if(!box) return;
+  const gwId = activeGw?.id;
+  if(!gwId){
+    box.innerHTML='<tr><td colspan="4" style="text-align:center;padding:16px;color:var(--muted)">No active gameweek</td></tr>';
+    return;
+  }
+  el('mostPickedGwLabel') && (el('mostPickedGwLabel').textContent = 'Week '+(activeGw.number||''));
+  const { data } = await sb.from('selections')
+    .select('player_id, is_captain, players(name, position)')
+    .eq('gameweek_id', gwId);
+  const counts = {};
+  (data||[]).forEach(s=>{
+    const k = s.player_id;
+    if(!counts[k]) counts[k] = { name: s.players?.name||'Unknown', position: s.players?.position||'', picked:0, captain:0 };
+    counts[k].picked++;
+    if(s.is_captain) counts[k].captain++;
+  });
+  const sorted = Object.values(counts).sort((a,b)=>b.picked-a.picked).slice(0,15);
+  if(!sorted.length){
+    box.innerHTML='<tr><td colspan="4" style="text-align:center;padding:16px;color:var(--muted)">No picks yet</td></tr>';
+    return;
+  }
+  box.innerHTML = sorted.map((p,i)=>`
+    <tr style="border-bottom:1px solid var(--line)">
+      <td style="padding:8px; color:var(--muted); font-size:.8rem">${i+1}</td>
+      <td style="padding:8px">
+        <div style="font-weight:600">${esc(p.name)}</div>
+        <div style="font-size:.75rem; color:var(--muted); text-transform:capitalize">${p.position}</div>
+      </td>
+      <td style="text-align:center; padding:8px; font-weight:700; color:var(--navy)">${p.picked}</td>
+      <td style="text-align:center; padding:8px; color:var(--gold)">${p.captain||'—'}</td>
+    </tr>`).join('');
 }
 // ── MANAGER: PLAYER SEASON LEADERBOARD ────────────────────────────────────────────
 let mgrPsData = [];
@@ -4196,6 +4256,6 @@ boot();
     <button class="btn ghost block" id="idleLogoutBtn" style="margin-top:8px">Sign out now</button>
   </div>
 </div>
-<!-- v1.15 — manager.html -->
+<!-- v1.16 — manager.html -->
 </body>
 </html>
