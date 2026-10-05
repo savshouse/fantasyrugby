@@ -1465,6 +1465,58 @@
         </div>
         <div id="sq_list" style="margin-top:12px"><div class="empty">No selections yet.</div></div>
       </div>
+
+      <!-- Enter team on behalf of manager -->
+      <div class="card" style="margin-top:12px">
+        <details id="et_details">
+          <summary style="list-style:none;display:flex;align-items:center;justify-content:space-between;cursor:pointer;padding:2px 0">
+            <div>
+              <div class="eyebrow" style="margin:0">Enter team on behalf of manager</div>
+              <p class="muted" style="font-size:.78rem;margin:2px 0 0">Use when a manager missed the deadline</p>
+            </div>
+            <span style="color:var(--muted);font-size:.9rem">&#9656;</span>
+          </summary>
+          <div style="margin-top:14px">
+            <p class="muted" style="margin-bottom:12px;font-size:.85rem">Overwrites any existing picks for the chosen manager and gameweek. Re-score afterwards to update the leaderboard.</p>
+            <div class="row">
+              <div style="flex:1">
+                <label>Manager</label>
+                <select id="et_mgr" style="font-size:16px;padding:9px;border:1px solid var(--line);border-radius:10px;width:100%">
+                  <option value="">Select manager…</option>
+                </select>
+              </div>
+              <div style="flex:1">
+                <label>Gameweek</label>
+                <select id="et_gw" style="font-size:16px;padding:9px;border:1px solid var(--line);border-radius:10px;width:100%">
+                  <option value="">Select gameweek…</option>
+                </select>
+              </div>
+            </div>
+            <div style="margin-top:12px">
+              <div class="section-title" style="font-size:.85rem;margin-bottom:6px">Starters (7)</div>
+              <div id="et_starters"></div>
+              <div class="section-title" style="font-size:.85rem;margin:10px 0 6px">Bench (3)</div>
+              <div id="et_bench"></div>
+              <div class="row" style="margin-top:12px">
+                <div style="flex:1">
+                  <label>Captain</label>
+                  <select id="et_cap" style="font-size:16px;padding:9px;border:1px solid var(--line);border-radius:10px;width:100%">
+                    <option value="">— select starters first —</option>
+                  </select>
+                </div>
+                <div style="flex:1">
+                  <label>Vice Captain</label>
+                  <select id="et_vc" style="font-size:16px;padding:9px;border:1px solid var(--line);border-radius:10px;width:100%">
+                    <option value="">— optional —</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+            <button class="btn navy block" id="et_save" style="margin-top:14px">Save team</button>
+            <div id="et_status" style="margin-top:8px;font-size:.85rem;color:var(--muted)"></div>
+          </div>
+        </details>
+      </div>
     </section>
 
     <!-- PLAYER SEASON STATS -->
@@ -6051,6 +6103,7 @@ async function loadSquads(){
   }
   const selectedId = gwSel?.value || gws[0]?.id;
   await loadSquadForGw(selectedId);
+  initEnterTeam();
 }
 async function loadSquadForGw(gwId){
   const box = el('sq_list'); if(!box||!gwId) return;
@@ -6106,6 +6159,72 @@ function toggleSquad(mid){
 }
 el('sq_search') && (el('sq_search').oninput = e=> renderSquads(e.target.value));
 el('sq_refresh') && (el('sq_refresh').onclick = ()=>{ loadSquads(); toast('Refreshed'); });
+let etInited = false;
+function initEnterTeam(){
+  if(etInited) return; etInited = true;
+  const mgrSel = el('et_mgr'), gwSel = el('et_gw');
+  if(!mgrSel || !gwSel) return;
+  mgrSel.innerHTML = '<option value="">Select manager…</option>' +
+    (allManagers||[]).filter(m=>!m.is_admin).sort((a,b)=>a.name.localeCompare(b.name))
+      .map(m=>`<option value="${m.id}">${esc(m.name)}</option>`).join('');
+  gwSel.innerHTML = '<option value="">Select gameweek…</option>' +
+    (gameweeks||[]).map(g=>`<option value="${g.id}">Week ${g.number}${g.status==='open'?' (open)':g.status==='scored'?' (scored)':''}</option>`).join('');
+  const playerOpts = '<option value="">— select player —</option>' +
+    (allPlayers||[]).filter(p=>p.active).sort((a,b)=>a.name.localeCompare(b.name))
+      .map(p=>`<option value="${p.id}">${esc(displayNamePlain(p))} (${p.position})</option>`).join('');
+  const sel = s=>`<select class="et-psel" style="font-size:15px;padding:8px;border:1px solid var(--line);border-radius:8px;width:100%;margin-bottom:6px">${playerOpts}</select>`;
+  el('et_starters').innerHTML = Array.from({length:7}, sel).join('');
+  el('et_bench').innerHTML    = Array.from({length:3}, sel).join('');
+  el('et_starters').querySelectorAll('select').forEach(s=>{ s.onchange = updateEtCaps; });
+  el('et_details').querySelector('summary').onclick = ()=>{
+    const open = el('et_details').open;
+    el('et_details').querySelector('summary span').innerHTML = open ? '&#9656;' : '&#9662;';
+  };
+}
+function updateEtCaps(){
+  const cap=el('et_cap'), vc=el('et_vc'); if(!cap||!vc) return;
+  const pCap=cap.value, pVc=vc.value;
+  const sel=[];
+  el('et_starters').querySelectorAll('select').forEach(s=>{ if(s.value){ const p=allPlayers.find(x=>x.id===s.value); if(p) sel.push({id:p.id,name:displayNamePlain(p)}); } });
+  const opts='<option value="">—</option>'+sel.map(p=>`<option value="${p.id}">${esc(p.name)}</option>`).join('');
+  cap.innerHTML=opts; vc.innerHTML=opts;
+  cap.value=pCap; vc.value=pVc;
+}
+el('et_save') && (el('et_save').onclick = async ()=>{
+  const mgrId=el('et_mgr')?.value, gwId=el('et_gw')?.value, capId=el('et_cap')?.value, vcId=el('et_vc')?.value||null;
+  if(!mgrId||!gwId){ toast('Select a manager and gameweek first',true); return; }
+  if(!capId){ toast('Please select a captain',true); return; }
+  const starters=[], bench=[], seen=new Set();
+  const starterSels=[...el('et_starters').querySelectorAll('select')];
+  const benchSels=[...el('et_bench').querySelectorAll('select')];
+  for(let i=0;i<starterSels.length;i++){
+    const v=starterSels[i].value;
+    if(!v){ toast(`Starter ${i+1} is empty`,true); return; }
+    if(seen.has(v)){ toast('Duplicate player in starters',true); return; }
+    seen.add(v); starters.push(v);
+  }
+  for(let i=0;i<benchSels.length;i++){
+    const v=benchSels[i].value;
+    if(!v){ toast(`Bench ${i+1} is empty`,true); return; }
+    if(seen.has(v)){ toast('Duplicate player (bench/starter)',true); return; }
+    seen.add(v); bench.push(v);
+  }
+  if(!starters.includes(capId)){ toast('Captain must be one of the 7 starters',true); return; }
+  const gw=gameweeks.find(g=>g.id===gwId);
+  const seasonId=gw?.season_id; if(!seasonId){ toast('Could not determine season',true); return; }
+  const rows=[];
+  starters.forEach(pid=>rows.push({manager_id:mgrId,gameweek_id:gwId,player_id:pid,role:'starter',bench_order:null,is_captain:pid===capId,is_vice:pid===vcId,season_id:seasonId}));
+  bench.forEach((pid,idx)=>rows.push({manager_id:mgrId,gameweek_id:gwId,player_id:pid,role:'bench',bench_order:idx+1,is_captain:false,is_vice:false,season_id:seasonId}));
+  el('et_status').textContent='Saving…';
+  const {error:de}=await sb.from('selections').delete().eq('manager_id',mgrId).eq('gameweek_id',gwId);
+  if(de){ toast('Delete failed: '+de.message,true); el('et_status').textContent=''; return; }
+  const {error:ie}=await sb.from('selections').insert(rows);
+  if(ie){ toast('Insert failed: '+ie.message,true); el('et_status').textContent=''; return; }
+  const mgrName=allManagers.find(m=>m.id===mgrId)?.name||'Manager';
+  toast('Team saved for '+mgrName+' — re-score to update points');
+  el('et_status').textContent='';
+  loadSquadForGw(gwId);
+});
 el('sq_export') && (el('sq_export').onclick = ()=>{
   if(!sqData.length){ toast('No squad data to export', true); return; }
   const rows = [];
@@ -7144,6 +7263,6 @@ document.getElementById('rolesSaveBtn').onclick = async () => {
     </div>
   </div>
 </div>
-<!-- v1.44 — adminfantasy.html -->
+<!-- v1.45 — adminfantasy.html -->
 </body>
 </html>
