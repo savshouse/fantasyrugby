@@ -1466,8 +1466,8 @@
         <div id="sq_list" style="margin-top:12px"><div class="empty">No selections yet.</div></div>
       </div>
 
-      <!-- Enter team on behalf of manager -->
-      <div class="card" style="margin-top:12px">
+      <!-- Enter team on behalf of manager — super admin only -->
+      <div class="card" id="et_card" style="margin-top:12px;display:none">
         <details id="et_details">
           <summary style="list-style:none;display:flex;align-items:center;justify-content:space-between;cursor:pointer;padding:2px 0">
             <div>
@@ -6161,11 +6161,14 @@ el('sq_search') && (el('sq_search').oninput = e=> renderSquads(e.target.value));
 el('sq_refresh') && (el('sq_refresh').onclick = ()=>{ loadSquads(); toast('Refreshed'); });
 let etInited = false;
 function initEnterTeam(){
+  const card = el('et_card');
+  if(!me?.role?.includes('super')){ if(card) card.style.display='none'; return; }
+  if(card) card.style.display='';
   if(etInited) return; etInited = true;
   const mgrSel = el('et_mgr'), gwSel = el('et_gw');
   if(!mgrSel || !gwSel) return;
   mgrSel.innerHTML = '<option value="">Select manager…</option>' +
-    (allManagers||[]).filter(m=>!m.is_admin).sort((a,b)=>a.name.localeCompare(b.name))
+    (allManagers||[]).filter(m=>m.active!==false).sort((a,b)=>a.name.localeCompare(b.name))
       .map(m=>`<option value="${m.id}">${esc(m.name)}</option>`).join('');
   gwSel.innerHTML = '<option value="">Select gameweek…</option>' +
     (gameweeks||[]).map(g=>`<option value="${g.id}">Week ${g.number}${g.status==='open'?' (open)':g.status==='scored'?' (scored)':''}</option>`).join('');
@@ -7263,6 +7266,6 @@ document.getElementById('rolesSaveBtn').onclick = async () => {
     </div>
   </div>
 </div>
-<!-- v1.45 — adminfantasy.html -->
+<!-- v1.46 — adminfantasy.html -->
 </body>
 </html>
