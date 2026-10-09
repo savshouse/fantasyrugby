@@ -3702,6 +3702,7 @@ const RUGBY_POSITIONS = {
 let squadAssignments = {}; // { shirtNumber: playerId }
 let squadSubsCount = 8;
 let squadFilterTeam = '', squadFilterPos = '', squadFilterName = '';
+let squadSwapFrom = null; // shirt number currently "picked up" for swapping
 
 async function toggleSquadPicker(fixtureId, teamId, gwId){
   const holder = el('squadpicker-'+teamId);
@@ -3717,7 +3718,7 @@ async function toggleSquadPicker(fixtureId, teamId, gwId){
   });
   const maxSub = Math.max(15, ...Object.keys(squadAssignments).map(Number));
   squadSubsCount = Math.max(8, maxSub - 15);
-  squadFilterTeam = ''; squadFilterPos = ''; squadFilterName = '';
+  squadFilterTeam = ''; squadFilterPos = ''; squadFilterName = ''; squadSwapFrom = null;
 
   renderSquadPicker(holder, fixtureId, teamId, gwId);
 }
@@ -3764,20 +3765,30 @@ function renderSquadPicker(holder, fixtureId, teamId, gwId){
     return opts;
   }
 
+  const swapBtn = n => {
+    const isActive = squadSwapFrom === n;
+    const hasPlayer = !!squadAssignments[n];
+    if(!hasPlayer) return '';
+    return `<button data-swap="${n}" title="${isActive ? 'Cancel swap' : 'Swap this player'}" style="flex:0 0 auto; padding:4px 7px; border-radius:8px; border:1px solid ${isActive ? 'var(--crimson)' : 'var(--line)'}; background:${isActive ? 'var(--crimson)' : 'transparent'}; color:${isActive ? '#fff' : 'var(--muted)'}; font-size:.85rem; cursor:pointer; line-height:1">⇅</button>`;
+  };
   let starterRows = '';
   for(let n=1; n<=15; n++){
-    starterRows += `<div class="row" style="align-items:center; gap:8px; margin-bottom:6px">
+    const isSwapTarget = squadSwapFrom !== null && squadSwapFrom !== n && squadAssignments[n];
+    starterRows += `<div class="row" style="align-items:center; gap:8px; margin-bottom:6px${isSwapTarget ? '; outline:2px dashed var(--gold); border-radius:8px; padding:2px 4px' : ''}">
       <div style="flex:0 0 34px; font-weight:800; font-family:'Barlow Condensed',sans-serif; color:var(--navy)">${n}</div>
       <div style="flex:0 0 150px" class="muted" style="font-size:.8rem">${RUGBY_POSITIONS[n]}</div>
       <select data-shirt="${n}" style="flex:1">${optionsFor(n)}</select>
+      ${swapBtn(n)}
     </div>`;
   }
   let subRows = '';
   for(let n=16; n<16+squadSubsCount; n++){
-    subRows += `<div class="row" style="align-items:center; gap:8px; margin-bottom:6px">
+    const isSwapTarget = squadSwapFrom !== null && squadSwapFrom !== n && squadAssignments[n];
+    subRows += `<div class="row" style="align-items:center; gap:8px; margin-bottom:6px${isSwapTarget ? '; outline:2px dashed var(--gold); border-radius:8px; padding:2px 4px' : ''}">
       <div style="flex:0 0 34px; font-weight:800; font-family:'Barlow Condensed',sans-serif; color:var(--navy)">${n}</div>
       <div style="flex:0 0 150px" class="muted" style="font-size:.8rem">Replacement</div>
       <select data-shirt="${n}" style="flex:1">${optionsFor(n)}</select>
+      ${swapBtn(n)}
     </div>`;
   }
 
@@ -3813,6 +3824,23 @@ function renderSquadPicker(holder, fixtureId, teamId, gwId){
     sel.onchange = ()=>{
       const n = parseInt(sel.dataset.shirt,10);
       squadAssignments[n] = sel.value || null;
+      squadSwapFrom = null;
+      renderSquadPicker(holder, fixtureId, teamId, gwId);
+    };
+  });
+  holder.querySelectorAll('button[data-swap]').forEach(btn=>{
+    btn.onclick = ()=>{
+      const n = parseInt(btn.dataset.swap, 10);
+      if(squadSwapFrom === null){
+        squadSwapFrom = n;
+      } else if(squadSwapFrom === n){
+        squadSwapFrom = null;
+      } else {
+        const tmp = squadAssignments[squadSwapFrom];
+        squadAssignments[squadSwapFrom] = squadAssignments[n];
+        squadAssignments[n] = tmp;
+        squadSwapFrom = null;
+      }
       renderSquadPicker(holder, fixtureId, teamId, gwId);
     };
   });

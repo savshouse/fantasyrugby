@@ -162,6 +162,9 @@
   .slot .price{font-variant-numeric:tabular-nums; font-weight:700; font-size:.9rem; color:var(--navy)}
   .rm-btn{background:none; border:0; color:#bbb; font-size:1.4rem; line-height:1; cursor:pointer; padding:2px 4px}
   .rm-btn:active{color:var(--crimson)}
+  .swap-btn{font-size:1rem; padding:2px 5px; border-radius:6px; border:1px solid var(--line); color:var(--muted)}
+  .swap-btn.active{background:var(--crimson); color:#fff; border-color:var(--crimson)}
+  .slot.swap-from{outline:2px solid var(--crimson); border-radius:10px}
 
   /* ── PITCH VIEW ── */
   .pitch-toggle{display:flex;background:var(--line);border-radius:20px;padding:3px;gap:0;margin:0 auto 14px;width:fit-content}
@@ -1644,6 +1647,7 @@ let me=null, settings=null, allPlayers=[], playerById={}, allTeams=[];
 let activeGw=null, baselineIds=new Set(), editable=false;
 let slots={ F:[null,null,null,null], B:[null,null,null], X:[null,null,null] };
 let captain=null, vice=null;
+let swapFrom=null; // {grp, i} of the slot currently picked up for swapping
 
 // ── Auth ──────────────────────────────────────────────────────
 // Public settings (payment/membership) — fetched for the auth screen before login
@@ -2354,8 +2358,24 @@ function renderPicker(){
     box.querySelectorAll('[data-slot]').forEach(b=>b.onclick=()=>{const[g,i]=b.dataset.slot.split('-');openChooser(g,parseInt(i,10));});
     box.querySelectorAll('[data-rm]').forEach(b=>b.onclick=()=>{
       const[g,i]=b.dataset.rm.split('-');const pid=slots[g][parseInt(i,10)];
-      slots[g][parseInt(i,10)]=null;
+      slots[g][parseInt(i,10)]=null; swapFrom=null;
       if(captain===pid)captain=null;if(vice===pid)vice=null;renderPicker();
+    });
+    box.querySelectorAll('[data-swap]').forEach(b=>b.onclick=e=>{
+      e.stopPropagation();
+      const[g,i]=b.dataset.swap.split('-'); const idx=parseInt(i,10);
+      if(!swapFrom){ swapFrom={grp:g,i:idx}; renderPicker(); return; }
+      if(swapFrom.grp===g&&swapFrom.i===idx){ swapFrom=null; renderPicker(); return; }
+      // position check: F slots need forwards, B slots need backs
+      const req={F:'forward',B:'back',X:null};
+      const fromId=slots[swapFrom.grp][swapFrom.i], toId=slots[g][idx];
+      const fromPos=(playerById[fromId]||{}).position, toPos=(playerById[toId]||{}).position;
+      if((req[g]&&fromPos!==req[g])||(req[swapFrom.grp]&&toPos!==req[swapFrom.grp])){
+        toast('Position mismatch — backs can\'t fill forward slots and vice versa',true);
+        swapFrom=null; renderPicker(); return;
+      }
+      slots[swapFrom.grp][swapFrom.i]=toId; slots[g][idx]=fromId;
+      swapFrom=null; renderPicker();
     });
   } else {
     box.querySelectorAll('[data-slot]').forEach(b=>b.onclick=()=>{const[g,i]=b.dataset.slot.split('-');openChooser(g,parseInt(i,10));});
@@ -2464,12 +2484,14 @@ function slotRow(grp,i,id,pos){
   }
   const p=playerById[id]||{};
   const cap=id===captain?'<span class="pill C">C</span>':id===vice?'<span class="pill V">VC</span>':'';
-  return `<div class="slot">
+  const isFrom=swapFrom&&swapFrom.grp===grp&&swapFrom.i===i;
+  return `<div class="slot${isFrom?' swap-from':''}">
     ${avatarHtml(p,'avatar-sm')}
     <span class="nm">${nameHtml(p)} ${cap}</span>
     <span class="pill xv">${esc(teamLabel(p))}</span>
     <span class="muted" style="font-size:.72rem; font-weight:700; white-space:nowrap">${p.season_points||0} pts</span>
     <span class="price">${p.price}</span>
+    ${editable?`<button class="rm-btn swap-btn${isFrom?' active':''}" data-swap="${grp}-${i}" aria-label="Swap player" title="Swap this player">⇅</button>`:''}
     ${editable?`<button class="rm-btn" data-rm="${grp}-${i}" aria-label="Remove">×</button>`:''}
   </div>`;
 }
@@ -2480,7 +2502,7 @@ let chooserCtx=null, chooserPlayers=[], overlayMode='chooser', chooserSquad='', 
 function openChooser(grp,i){
   if(!editable) return;
   overlayMode='chooser';
-  chooserSquad='';
+  chooserSquad=''; swapFrom=null;
   chooserCtx={grp,i};
   const wantPos=grp==='F'?'forward':grp==='B'?'back':null;
   const used=new Set(usedIds());
