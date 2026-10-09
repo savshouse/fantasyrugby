@@ -3677,7 +3677,7 @@ const RUGBY_POSITIONS = {
 };
 let squadAssignments = {}; // { shirtNumber: playerId }
 let squadSubsCount = 8;
-let squadFilterTeam = '', squadFilterPos = '';
+let squadFilterTeam = '', squadFilterPos = '', squadFilterName = '';
 
 async function toggleSquadPicker(fixtureId, teamId, gwId){
   const holder = el('squadpicker-'+teamId);
@@ -3693,7 +3693,7 @@ async function toggleSquadPicker(fixtureId, teamId, gwId){
   });
   const maxSub = Math.max(15, ...Object.keys(squadAssignments).map(Number));
   squadSubsCount = Math.max(8, maxSub - 15);
-  squadFilterTeam = teamId; squadFilterPos = '';
+  squadFilterTeam = ''; squadFilterPos = ''; squadFilterName = '';
 
   renderSquadPicker(holder, fixtureId, teamId, gwId);
 }
@@ -3705,6 +3705,17 @@ function squadEligiblePlayers(){
     if(squadFilterPos && p.position!==squadFilterPos) return false;
     return true;
   }).sort((a,b)=>a.name.localeCompare(b.name));
+}
+function filterSquadPickerOptions(holder){
+  const term = squadFilterName.toLowerCase();
+  holder.querySelectorAll('select[data-shirt]').forEach(sel=>{
+    const cur = sel.value;
+    Array.from(sel.options).forEach(opt=>{
+      if(!opt.value){ opt.hidden=false; return; }
+      if(opt.value===cur){ opt.hidden=false; return; }
+      opt.hidden = !!(term && !opt.textContent.toLowerCase().includes(term));
+    });
+  });
 }
 
 function renderSquadPicker(holder, fixtureId, teamId, gwId){
@@ -3723,7 +3734,8 @@ function renderSquadPicker(holder, fixtureId, teamId, gwId){
     eligible.forEach(p=>{
       if(seenIds.has(p.id)) return;
       if(assignedIds.has(p.id) && p.id!==currentId) return; // already used in another slot
-      opts += `<option value="${p.id}">${namePlainStripped(p)}</option>`;
+      const suffix = squadFilterTeam ? '' : ` · ${teamName(p.team_id)||'?'}`;
+      opts += `<option value="${p.id}">${namePlainStripped(p)}${suffix}</option>`;
     });
     return opts;
   }
@@ -3749,6 +3761,7 @@ function renderSquadPicker(holder, fixtureId, teamId, gwId){
 
   holder.innerHTML = `
     <div class="filter-bar" style="margin-top:10px">
+      <input type="text" data-squad-filter-name value="${esc(squadFilterName)}" placeholder="Search by name…" style="flex:2; min-width:120px">
       <select data-squad-filter-team><option value="">All teams</option>${teamOpts}</select>
       <select data-squad-filter-pos>
         <option value="">All positions</option>
@@ -3756,7 +3769,7 @@ function renderSquadPicker(holder, fixtureId, teamId, gwId){
         <option value="back" ${squadFilterPos==='back'?'selected':''}>Backs</option>
       </select>
     </div>
-    <p class="muted" style="font-size:.78rem; margin:4px 0 8px">Filters only narrow the dropdown lists below — they don't remove anyone already picked.</p>
+    <p class="muted" style="font-size:.78rem; margin:4px 0 8px">All active players shown by default — use the name box to find anyone quickly. Team shown next to each name when "All teams" is selected.</p>
     <div class="section-title" style="font-size:1rem; margin-bottom:6px">Starting XV</div>
     ${starterRows}
     <div class="inline" style="margin:14px 0 6px">
@@ -3779,8 +3792,10 @@ function renderSquadPicker(holder, fixtureId, teamId, gwId){
       renderSquadPicker(holder, fixtureId, teamId, gwId);
     };
   });
+  holder.querySelector('[data-squad-filter-name]').oninput = (e)=>{ squadFilterName = e.target.value; filterSquadPickerOptions(holder); };
   holder.querySelector('[data-squad-filter-team]').onchange = (e)=>{ squadFilterTeam = e.target.value; renderSquadPicker(holder, fixtureId, teamId, gwId); };
   holder.querySelector('[data-squad-filter-pos]').onchange = (e)=>{ squadFilterPos = e.target.value; renderSquadPicker(holder, fixtureId, teamId, gwId); };
+  filterSquadPickerOptions(holder);
   holder.querySelector('[data-subs-count]').onchange = (e)=>{
     squadSubsCount = Math.max(0, parseInt(e.target.value||'0',10));
     renderSquadPicker(holder, fixtureId, teamId, gwId);
@@ -7266,6 +7281,6 @@ document.getElementById('rolesSaveBtn').onclick = async () => {
     </div>
   </div>
 </div>
-<!-- v1.46 — adminfantasy.html -->
+<!-- v1.47 — adminfantasy.html -->
 </body>
 </html>
