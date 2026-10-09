@@ -158,7 +158,8 @@
   .slot.empty{border-style:dashed; border-color:#c8c0b8; justify-content:center;
     color:var(--muted); font-weight:600; font-size:.9rem; cursor:pointer; padding:14px 12px}
   .slot.empty:active{background:#f5f0eb}
-  .slot .nm{flex:1; font-weight:600; font-size:.92rem}
+  .slot-info{flex:1; display:flex; flex-direction:column; gap:2px; min-width:0}
+  .slot .nm{font-weight:600; font-size:.92rem; white-space:normal}
   .slot .price{font-variant-numeric:tabular-nums; font-weight:700; font-size:.9rem; color:var(--navy)}
   .rm-btn{background:none; border:0; color:#bbb; font-size:1.4rem; line-height:1; cursor:pointer; padding:2px 4px}
   .rm-btn:active{color:var(--crimson)}
@@ -2487,8 +2488,10 @@ function slotRow(grp,i,id,pos){
   const isFrom=swapFrom&&swapFrom.grp===grp&&swapFrom.i===i;
   return `<div class="slot${isFrom?' swap-from':''}">
     ${avatarHtml(p,'avatar-sm')}
-    <span class="nm">${nameHtml(p)} ${cap}</span>
-    <span class="pill xv">${esc(teamLabel(p))}</span>
+    <div class="slot-info">
+      <span class="nm">${nameHtml(p)} ${cap}</span>
+      <span class="pill xv" style="align-self:flex-start">${esc(teamLabel(p))}</span>
+    </div>
     <span class="muted" style="font-size:.72rem; font-weight:700; white-space:nowrap">${p.season_points||0} pts</span>
     <span class="price">${p.price}</span>
     ${editable?`<button class="rm-btn swap-btn${isFrom?' active':''}" data-swap="${grp}-${i}" aria-label="Swap player" title="Swap this player">⇅</button>`:''}
