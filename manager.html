@@ -725,6 +725,11 @@
           </table>
         </div>
       </div>
+      <!-- Instagram posts -->
+      <div id="igFixCard" style="display:none; margin-top:4px">
+        <div style="font-size:.7rem; font-weight:700; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); padding:0 2px 8px">From Instagram</div>
+        <div id="igFixScroll" style="display:flex; gap:12px; overflow-x:auto; padding-bottom:4px; -webkit-overflow-scrolling:touch"></div>
+      </div>
       <div class="sponsor-carousel-wrap" id="sponsorCarouselWrap_fixtures" style="display:none">
         <p class="sponsor-carousel-title">Thank you to our sponsors</p>
         <div class="sponsor-carousel" id="sponsorCarousel_fixtures"></div>
@@ -3747,6 +3752,29 @@ async function loadFixturesTab(){
   renderFixNav();
   renderFixCards();
   renderFixForm();
+  loadIgPostsMgr();
+}
+
+let igEmbedLoaded = false;
+async function loadIgPostsMgr(){
+  const card = el('igFixCard'); if(!card) return;
+  const { data } = await sb.from('instagram_posts').select('*').order('sort_order').order('created_at', {ascending:false}).limit(8);
+  if(!data || !data.length){ card.style.display='none'; return; }
+  card.style.display='';
+  const scroll = el('igFixScroll');
+  scroll.innerHTML = data.map(p=>`
+    <blockquote class="instagram-media"
+      data-instgrm-permalink="${esc(p.post_url)}"
+      data-instgrm-version="14"
+      style="flex:0 0 auto; min-width:260px; max-width:328px; border:0; border-radius:3px; box-shadow:0 0 1px 0 rgba(0,0,0,.5),0 1px 10px 0 rgba(0,0,0,.15); margin:0; padding:0; width:100%">
+      <a href="${esc(p.post_url)}" target="_blank" rel="noopener" style="color:var(--crimson); font-size:.82rem">${esc(p.caption||'View on Instagram')}</a>
+    </blockquote>`).join('');
+  if(window.instgrm){ window.instgrm.Embeds.process(); }
+  else if(!igEmbedLoaded){
+    igEmbedLoaded = true;
+    const s = document.createElement('script'); s.async=true; s.src='//www.instagram.com/embed.js';
+    document.body.appendChild(s);
+  }
 }
 
 function fixRule(code){
@@ -4256,6 +4284,6 @@ boot();
     <button class="btn ghost block" id="idleLogoutBtn" style="margin-top:8px">Sign out now</button>
   </div>
 </div>
-<!-- v1.16 — manager.html -->
+<!-- v1.17 — manager.html -->
 </body>
 </html>

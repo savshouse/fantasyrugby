@@ -1436,6 +1436,30 @@
         <div class="eyebrow">All links</div>
         <div id="lk_list"><div class="empty">No links yet.</div></div>
       </div>
+
+      <!-- Instagram posts -->
+      <div class="card">
+        <div class="eyebrow">Instagram posts</div>
+        <p class="muted">Paste any public Instagram post URL — shown on the manager app (Fixtures tab) and the public landing page.</p>
+        <input type="hidden" id="ig_id">
+        <label for="ig_url">Post URL</label>
+        <input id="ig_url" type="url" placeholder="https://www.instagram.com/p/…">
+        <label for="ig_caption">Caption <span style="text-transform:none;font-weight:400">(optional — shown above the embed)</span></label>
+        <input id="ig_caption" placeholder="e.g. 1st XV team sheet vs Bedford">
+        <div class="row">
+          <div><label for="ig_sort">Display order</label><input id="ig_sort" type="number" inputmode="numeric" value="10" style="width:80px"></div>
+        </div>
+        <label class="inline" style="margin-top:12px"><input type="checkbox" class="chk" id="ig_active" checked> Active</label>
+        <div style="height:12px"></div>
+        <div class="row">
+          <button class="btn" id="ig_save">Save post</button>
+          <button class="btn sec" id="ig_clear">Clear</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="eyebrow">All Instagram posts</div>
+        <div id="ig_list"><div class="empty">No posts yet.</div></div>
+      </div>
     </section>
 
     <!-- SQUADS REPORT -->
@@ -1777,7 +1801,7 @@ async function afterLogin(user){
   wireNavButtons();
   applyNavPermissions();
   await loadTeams();
-  loadPlayers(); loadGameweeks(); loadLinks(); loadSponsors(); loadSettings(); await loadManagers(); loadLeaderboard(); loadSquads(); loadSquadFixtures(); loadPlayerStats(); loadTotw();
+  loadPlayers(); loadGameweeks(); loadLinks(); loadIgAdmin(); loadSponsors(); loadSettings(); await loadManagers(); loadLeaderboard(); loadSquads(); loadSquadFixtures(); loadPlayerStats(); loadTotw();
   loadApprovals(); loadReports();
   updateInboxBadge();
   startInboxPolling();
@@ -5871,6 +5895,57 @@ el('lk_save').onclick = async ()=>{
   toast(id?'Link updated':'Link added'); el('lk_clear').click(); loadLinks();
 };
 
+// ── INSTAGRAM POSTS ──────────────────────────────────────────
+let allIgPosts = [];
+async function loadIgAdmin(){
+  const box = el('ig_list'); if(!box) return;
+  const { data } = await sb.from('instagram_posts').select('*').order('sort_order').order('created_at', {ascending:false});
+  allIgPosts = data || [];
+  if(!allIgPosts.length){ box.innerHTML='<div class="empty">No posts yet.</div>'; return; }
+  box.innerHTML = allIgPosts.map(p=>`
+    <div class="sp-item" style="flex-wrap:wrap; gap:6px; align-items:center">
+      <div style="flex:1; min-width:0">
+        <div style="font-size:.85rem; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis">${esc(p.caption||'(no caption)')}</div>
+        <div class="muted" style="font-size:.75rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis">${esc(p.post_url)}</div>
+      </div>
+      <div style="display:flex; gap:6px; flex-shrink:0; align-items:center">
+        ${p.active?'<span class="pill ok" style="font-size:.7rem">Active</span>':'<span class="pill inactive" style="font-size:.7rem">Hidden</span>'}
+        <button class="btn sec small" data-ig-edit="${p.id}">Edit</button>
+        <button class="btn sec small" data-ig-del="${p.id}">Delete</button>
+      </div>
+    </div>`).join('');
+  box.querySelectorAll('[data-ig-edit]').forEach(b=>{
+    b.onclick = ()=>{
+      const p = allIgPosts.find(x=>x.id===b.dataset.igEdit); if(!p) return;
+      el('ig_id').value=p.id; el('ig_url').value=p.post_url; el('ig_caption').value=p.caption||'';
+      el('ig_sort').value=p.sort_order; el('ig_active').checked=p.active;
+      el('ig_url').scrollIntoView({behavior:'smooth', block:'center'});
+    };
+  });
+  box.querySelectorAll('[data-ig-del]').forEach(b=>{
+    b.onclick = async()=>{
+      if(!confirm('Delete this post?')) return;
+      await sb.from('instagram_posts').delete().eq('id', b.dataset.igDel);
+      toast('Post deleted'); loadIgAdmin();
+    };
+  });
+}
+el('ig_clear') && (el('ig_clear').onclick=()=>{
+  el('ig_id').value=''; el('ig_url').value=''; el('ig_caption').value='';
+  el('ig_sort').value='10'; el('ig_active').checked=true;
+});
+el('ig_save') && (el('ig_save').onclick=async()=>{
+  const url = el('ig_url').value.trim();
+  if(!url || !url.includes('instagram.com')){ toast('Paste a valid Instagram post URL', true); return; }
+  const rec = { post_url: url, caption: el('ig_caption').value.trim()||null,
+    sort_order: parseInt(el('ig_sort').value||'10',10), active: el('ig_active').checked };
+  const id = el('ig_id').value;
+  const res = id ? await sb.from('instagram_posts').update(rec).eq('id',id)
+                 : await sb.from('instagram_posts').insert(rec);
+  if(res.error){ toast(res.error.message, true); return; }
+  toast(id?'Post updated':'Post saved'); el('ig_clear').click(); loadIgAdmin();
+});
+
 // ── SETTINGS ──────────────────────────────────────────────────
 let currentSettings = null;
 
@@ -7281,6 +7356,6 @@ document.getElementById('rolesSaveBtn').onclick = async () => {
     </div>
   </div>
 </div>
-<!-- v1.47 — adminfantasy.html -->
+<!-- v1.48 — adminfantasy.html -->
 </body>
 </html>

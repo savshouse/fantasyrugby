@@ -395,6 +395,16 @@ footer a{color:var(--gold)}
   <!-- ── SPONSOR BOT ── -->
   <div id="landingSponsorBot"></div>
 
+  <!-- ── INSTAGRAM ── -->
+  <div id="igSection" style="display:none">
+    <hr class="divider">
+    <div class="section" style="padding-bottom:32px">
+      <h2 class="section-title">From Instagram</h2>
+      <p class="section-sub">Latest team sheets and club news.</p>
+      <div id="igLandingScroll" style="display:flex; gap:16px; overflow-x:auto; padding-bottom:8px; -webkit-overflow-scrolling:touch; scroll-snap-type:x mandatory"></div>
+    </div>
+  </div>
+
   <hr class="divider">
 
   <!-- ── ENTRY (moved above How it works to hero the cost) ── -->
@@ -1289,6 +1299,29 @@ async function loadAll(){
 }
 
 loadAll();
+loadIgPostsLanding();
+
+let _igEmbedLoaded = false;
+async function loadIgPostsLanding(){
+  const { data } = await sb.from('instagram_posts').select('*').order('sort_order').order('created_at', {ascending:false}).limit(8);
+  const section = document.getElementById('igSection'); if(!section) return;
+  if(!data || !data.length){ section.style.display='none'; return; }
+  section.style.display='';
+  const scroll = document.getElementById('igLandingScroll');
+  scroll.innerHTML = data.map(p=>`
+    <blockquote class="instagram-media"
+      data-instgrm-permalink="${esc(p.post_url)}"
+      data-instgrm-version="14"
+      style="flex:0 0 auto; min-width:260px; max-width:340px; border:0; border-radius:3px; box-shadow:0 0 1px 0 rgba(0,0,0,.5),0 1px 10px 0 rgba(0,0,0,.15); margin:0; padding:0; scroll-snap-align:start; width:100%">
+      <a href="${esc(p.post_url)}" target="_blank" rel="noopener" style="color:#C41E3A; font-size:.82rem">${esc(p.caption||'View on Instagram')}</a>
+    </blockquote>`).join('');
+  if(window.instgrm){ window.instgrm.Embeds.process(); }
+  else if(!_igEmbedLoaded){
+    _igEmbedLoaded = true;
+    const s = document.createElement('script'); s.async=true; s.src='//www.instagram.com/embed.js';
+    document.body.appendChild(s);
+  }
+}
 
 // Floating manager login button — appears once scrolled past the hero
 (function(){
@@ -1316,6 +1349,6 @@ document.addEventListener('click', e => {
   }
 });
 </script>
-<!-- v1.3 — landing.html -->
+<!-- v1.4 — landing.html -->
 </body>
 </html>
