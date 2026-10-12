@@ -3176,207 +3176,126 @@ function drawShareRow(ctx, i, nameStr, teamStr, ptsStr, W, y){
 }
 
 async function generateStandingsCard(){
-  if(!lastLeaderboard.length){ toast('No standings yet', true); return; }
-  const rows = lastLeaderboard.slice(0,5);
-  const W=1080, H=200+rows.length*130+80;
-  const ctx = makeShareCanvas(W,H);
-  canvasHeader(ctx, W, 'Season Standings');
-  let y=198;
-  rows.forEach((r,i)=>{ y+=130; drawShareRow(ctx,i,r.name,'',r.total_points+' pts',W,y); });
-  canvasFooter(ctx, W, H);
-  await shareOrDownload(el('shareCanvas'), 'standings.png', "ONs' Fantasy — Season Standings", 'Check out the current standings!');
+  if(!lastLeaderboard.length){ toast('No standings yet',true); return; }
+  const rows15=lastLeaderboard.slice(0,15).map(r=>({name:r.name,sub:'',pts:r.total_points,avatar_url:r.avatar_url}));
+  await generatePodiumCard(rows15,'Season Standings','standings.png',"ONs' Fantasy — Season Standings",'Check out the current standings!');
 }
 
 // ── SHARE PLAYER LEADERBOARD ──────────────────────────────────
 async function generatePlayersCard(){
-  if(!mgrPsData.length){ toast('No player stats yet', true); return; }
-  const rows = mgrPsData.slice(0,5);
-  const W=1080, H=200+rows.length*130+80;
-  const ctx = makeShareCanvas(W,H);
-  canvasHeader(ctx, W, 'Player Season Leaderboard');
-  let y=198;
-  rows.forEach((r,i)=>{ y+=130; drawShareRow(ctx,i,namePlain(r),teamLabel(r),r.pts+' pts',W,y); });
-  canvasFooter(ctx, W, H);
-  await shareOrDownload(el('shareCanvas'), 'player-leaderboard.png', "ONs' Fantasy — Top Players", 'Top performers on the pitch this season!');
+  if(!mgrPsData.length){ toast('No player stats yet',true); return; }
+  const rows15=mgrPsData.slice(0,15).map(r=>({name:namePlain(r),sub:teamLabel(r),pts:r.pts,avatar_url:r.avatar_url}));
+  await generatePodiumCard(rows15,'Top Players','player-leaderboard.png',"ONs' Fantasy — Top Players",'Top performers on the pitch this season!');
+}
+
+// ── SHARED PODIUM CARD BUILDER ────────────────────────────────
+// rows15: [{name, sub, pts, avatar_url}] up to 15 items, sorted best first
+async function generatePodiumCard(rows15, cardSubtitle, filename, shareTitle, shareText){
+  await document.fonts.ready;
+  const W=1080, PB=740;
+  const PX=[190,540,890], PR=[70,90,60], PBH=[100,160,60];
+  const RANK_LABELS=['2ND','1ST','3RD'];
+  const RING_COLS=['rgba(200,204,212,.85)','#D4A017','rgba(214,154,92,.85)'];
+  const BLOCK_COLS=['rgba(200,204,212,.25)','rgba(212,160,23,.25)','rgba(214,154,92,.22)'];
+  const MEDALS=['🥈','🥇','🥉'];
+  const podRows=[rows15[1],rows15[0],rows15[2]];
+
+  async function loadImg(url){
+    if(!url) return null;
+    return new Promise(res=>{ const i=new Image(); i.crossOrigin='anonymous'; i.onload=()=>res(i); i.onerror=()=>res(null); i.src=url; });
+  }
+  const podImgs=await Promise.all(podRows.map(r=>loadImg(r?.avatar_url)));
+
+  const GS=PB+38, GRID_ROWS=6, ROW_H=74;
+  const H=GS+58+GRID_ROWS*ROW_H+78;
+  const ctx=makeShareCanvas(W,H);
+  canvasHeader(ctx,W,cardSubtitle);
+
+  function fillRoundedTop(x,y,w,h,r){ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.lineTo(x+w-r,y); ctx.arcTo(x+w,y,x+w,y+r,r); ctx.lineTo(x+w,y+h); ctx.lineTo(x,y+h); ctx.arcTo(x,y,x+r,y,r); ctx.closePath(); ctx.fill(); }
+
+  podRows.forEach((row,idx)=>{
+    if(!row) return;
+    const x=PX[idx],r=PR[idx],bh=PBH[idx];
+    const blockTop=PB-bh;
+    const ptsY=blockTop-16;
+    const subY=row.sub?(ptsY-38):0;
+    const nameY=row.sub?(subY-36):(ptsY-48);
+    const avBot=nameY-44;  // clear gap between avatar bottom and name
+    const avCy=avBot-r;
+    const medalY=avCy-r-14;
+
+    ctx.fillStyle=BLOCK_COLS[idx];
+    fillRoundedTop(x-92,blockTop,184,bh,6);
+    ctx.font=`900 ${Math.max(24,Math.round(bh*.38))}px 'Barlow Condensed',sans-serif`;
+    ctx.fillStyle=RING_COLS[idx]; ctx.textAlign='center';
+    ctx.fillText(RANK_LABELS[idx],x,blockTop+bh*.62);
+
+    ctx.save(); ctx.beginPath(); ctx.arc(x,avCy,r,0,Math.PI*2); ctx.clip();
+    const img=podImgs[idx];
+    if(img){ ctx.drawImage(img,x-r,avCy-r,r*2,r*2); }
+    else { ctx.fillStyle='#1B2A4A'; ctx.fillRect(x-r,avCy-r,r*2,r*2); ctx.font=`900 ${Math.round(r*.62)}px 'Barlow Condensed',sans-serif`; ctx.fillStyle='#fff'; ctx.textAlign='center'; ctx.fillText(initials(row.name||''),x,avCy+r*.25); }
+    ctx.restore();
+
+    ctx.strokeStyle=RING_COLS[idx]; ctx.lineWidth=idx===1?5:3;
+    ctx.beginPath(); ctx.arc(x,avCy,r,0,Math.PI*2); ctx.stroke();
+
+    ctx.font=`${Math.round(r*.52)}px sans-serif`; ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText(MEDALS[idx],x,medalY); ctx.textBaseline='alphabetic';
+
+    const nameFull=(row.name||'').toUpperCase();
+    ctx.font=`800 ${Math.round(r*.43)}px 'Barlow Condensed',sans-serif`; ctx.fillStyle='#fff'; ctx.textAlign='center';
+    let nm=nameFull; while(ctx.measureText(nm).width>182&&nm.length>3)nm=nm.slice(0,-1); if(nm.length<nameFull.length)nm+='…';
+    ctx.fillText(nm,x,nameY);
+
+    if(row.sub){
+      ctx.font=`600 ${Math.round(r*.31)}px 'Barlow Condensed',sans-serif`; ctx.fillStyle='rgba(255,255,255,.6)';
+      let sb=(row.sub||'').toUpperCase(); while(ctx.measureText(sb).width>182&&sb.length>3)sb=sb.slice(0,-1); ctx.fillText(sb,x,subY);
+    }
+
+    ctx.font=`900 ${Math.round(r*.48)}px 'Barlow Condensed',sans-serif`; ctx.fillStyle='#D4A017';
+    ctx.fillText(row.pts+' pts',x,ptsY);
+  });
+
+  ctx.strokeStyle='rgba(255,255,255,.15)'; ctx.lineWidth=1.5;
+  ctx.beginPath(); ctx.moveTo(60,GS+12); ctx.lineTo(W-60,GS+12); ctx.stroke();
+  ctx.font="600 28px 'Barlow Condensed',sans-serif"; ctx.fillStyle='rgba(255,255,255,.5)'; ctx.textAlign='center';
+  ctx.fillText('POSITIONS 4 – 15',W/2,GS+44);
+
+  const COL_L=52,COL_R=568,COL_W=468,gridY0=GS+62;
+  ctx.strokeStyle='rgba(255,255,255,.12)'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(536,gridY0-6); ctx.lineTo(536,gridY0+GRID_ROWS*ROW_H-8); ctx.stroke();
+
+  for(let i=0;i<12&&(i+3)<rows15.length;i++){
+    const row=rows15[i+3];
+    const col=i<6?COL_L:COL_R, ri=i<6?i:i-6;
+    const gy=gridY0+ri*ROW_H+ROW_H/2, rank=i+4;
+    if(ri%2===0){ctx.fillStyle='rgba(255,255,255,.04)';ctx.fillRect(col,gridY0+ri*ROW_H,COL_W,ROW_H);}
+    if(ri<GRID_ROWS-1){ctx.strokeStyle='rgba(255,255,255,.08)';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(col+4,gridY0+(ri+1)*ROW_H);ctx.lineTo(col+COL_W-4,gridY0+(ri+1)*ROW_H);ctx.stroke();}
+    ctx.font="700 28px 'Barlow Condensed',sans-serif";ctx.fillStyle='rgba(255,255,255,.4)';ctx.textAlign='right';ctx.fillText(rank,col+46,gy+9);
+    const ax=col+72,ay=gy;
+    ctx.fillStyle='#1B2A4A';ctx.beginPath();ctx.arc(ax,ay,26,0,Math.PI*2);ctx.fill();
+    ctx.strokeStyle='rgba(255,255,255,.2)';ctx.lineWidth=1.5;ctx.beginPath();ctx.arc(ax,ay,26,0,Math.PI*2);ctx.stroke();
+    ctx.font="800 19px 'Barlow Condensed',sans-serif";ctx.fillStyle='#fff';ctx.textAlign='center';ctx.fillText(initials(row.name||''),ax,ay+7);
+    const nameX=col+106;
+    ctx.font="700 29px 'Barlow Condensed',sans-serif";ctx.fillStyle='#fff';ctx.textAlign='left';
+    let gn=(row.name||'').toUpperCase();while(ctx.measureText(gn).width>220&&gn.length>3)gn=gn.slice(0,-1);if(gn.length<(row.name||'').length)gn+='…';
+    ctx.fillText(gn,nameX,row.sub?gy+5:gy+9);
+    if(row.sub){ctx.font="500 20px 'Barlow Condensed',sans-serif";ctx.fillStyle='rgba(255,255,255,.5)';ctx.fillText((row.sub||'').toUpperCase(),nameX,gy+27);}
+    ctx.font="900 31px 'Barlow Condensed',sans-serif";ctx.fillStyle='#D4A017';ctx.textAlign='right';ctx.fillText(row.pts+' pts',col+COL_W-8,gy+9);
+  }
+
+  canvasFooter(ctx,W,H);
+  await shareOrDownload(el('shareCanvas'),filename,shareTitle,shareText);
 }
 
 // ── SHARE TEAM OF THE WEEK ────────────────────────────────────
 async function generateTotwCard(){
-  const gw = el('mgr_tw_gw'); if(!gw||!gw.value){ toast('Select a week first', true); return; }
-  const scored = window._totwScored||[];
-  if(!scored.length){ toast('No team of the week data loaded yet', true); return; }
-  const gwText = gw.options[gw.selectedIndex]?.text||'';
-  await document.fonts.ready;
-
-  const W = 1080;
-  const PB = 740; // podium bottom Y
-  // display order: left=2nd, centre=1st, right=3rd
-  const PX  = [190, 540, 890];
-  const PR  = [70,   90,  60];  // avatar radii
-  const PBH = [100, 160,  60];  // block heights
-  const RANK_LABELS = ['2ND','1ST','3RD'];
-  const RING_COLS   = ['rgba(200,204,212,.85)','#D4A017','rgba(214,154,92,.85)'];
-  const BLOCK_COLS  = ['rgba(200,204,212,.25)','rgba(212,160,23,.25)','rgba(214,154,92,.22)'];
-  const MEDALS      = ['🥈','🥇','🥉'];
-
-  // Scores in display order: [2nd, 1st, 3rd]
-  const podScored = [scored[1], scored[0], scored[2]];
-
-  // Load top 3 avatar images
-  async function loadImg(url){
-    if(!url) return null;
-    return new Promise(res=>{
-      const img=new Image(); img.crossOrigin='anonymous';
-      img.onload=()=>res(img); img.onerror=()=>res(null); img.src=url;
-    });
-  }
-  const podImgs = await Promise.all(podScored.map(s=>loadImg(s?.p?.avatar_url)));
-
-  // Canvas height: header(~158) + podium(PB) + grid section + footer
-  const GS = PB + 38;
-  const GRID_ROWS = 6, ROW_H = 74;
-  const H = GS + 58 + GRID_ROWS * ROW_H + 78;
-  const ctx = makeShareCanvas(W, H);
-  canvasHeader(ctx, W, 'Team of the Week — ' + gwText);
-
-  // ── Podium ──
-  function fillRoundedTop(x, y, w, h, r){
-    ctx.beginPath();
-    ctx.moveTo(x+r, y); ctx.lineTo(x+w-r, y);
-    ctx.arcTo(x+w, y, x+w, y+r, r); ctx.lineTo(x+w, y+h);
-    ctx.lineTo(x, y+h); ctx.arcTo(x, y, x+r, y, r);
-    ctx.closePath(); ctx.fill();
-  }
-
-  podScored.forEach((s, idx)=>{
-    if(!s) return;
-    const x=PX[idx], r=PR[idx], bh=PBH[idx];
-    const blockTop = PB - bh;
-    // Stack upward from block top
-    const ptsY    = blockTop - 16;
-    const teamY   = ptsY - 36;
-    const nameY   = teamY - 34;
-    const avBot   = nameY - 22;
-    const avCy    = avBot - r;
-    const medalY  = avCy - r - 14;
-
-    // Block
-    ctx.fillStyle = BLOCK_COLS[idx];
-    fillRoundedTop(x-92, blockTop, 184, bh, 6);
-
-    // Rank label inside block
-    ctx.font=`900 ${Math.max(24,Math.round(bh*.38))}px 'Barlow Condensed',sans-serif`;
-    ctx.fillStyle=RING_COLS[idx]; ctx.textAlign='center';
-    ctx.fillText(RANK_LABELS[idx], x, blockTop + bh*.62);
-
-    // Avatar (clip circle, then image or initials)
-    ctx.save();
-    ctx.beginPath(); ctx.arc(x, avCy, r, 0, Math.PI*2); ctx.clip();
-    const img=podImgs[idx];
-    if(img){
-      ctx.drawImage(img, x-r, avCy-r, r*2, r*2);
-    } else {
-      ctx.fillStyle='#1B2A4A';
-      ctx.fillRect(x-r, avCy-r, r*2, r*2);
-      ctx.font=`900 ${Math.round(r*.62)}px 'Barlow Condensed',sans-serif`;
-      ctx.fillStyle='#fff'; ctx.textAlign='center';
-      ctx.fillText(initials(s.p?.name||''), x, avCy + r*.25);
-    }
-    ctx.restore();
-
-    // Ring
-    ctx.strokeStyle=RING_COLS[idx]; ctx.lineWidth=idx===1?5:3;
-    ctx.beginPath(); ctx.arc(x, avCy, r, 0, Math.PI*2); ctx.stroke();
-
-    // Medal emoji
-    ctx.font=`${Math.round(r*.52)}px sans-serif`;
-    ctx.textAlign='center'; ctx.textBaseline='middle';
-    ctx.fillText(MEDALS[idx], x, medalY);
-    ctx.textBaseline='alphabetic';
-
-    // Name (truncated)
-    const nameFull = namePlain(s.p||{}).toUpperCase();
-    ctx.font=`800 ${Math.round(r*.43)}px 'Barlow Condensed',sans-serif`;
-    ctx.fillStyle='#fff'; ctx.textAlign='center';
-    let nm=nameFull;
-    while(ctx.measureText(nm).width>182 && nm.length>3) nm=nm.slice(0,-1);
-    if(nm.length<nameFull.length) nm+='…';
-    ctx.fillText(nm, x, nameY);
-
-    // Team
-    ctx.font=`600 ${Math.round(r*.31)}px 'Barlow Condensed',sans-serif`;
-    ctx.fillStyle='rgba(255,255,255,.6)';
-    let tm=teamLabel(s.p||{}).toUpperCase();
-    while(ctx.measureText(tm).width>182 && tm.length>3) tm=tm.slice(0,-1);
-    if(tm.length<teamLabel(s.p||{}).length) tm+='…';
-    ctx.fillText(tm, x, teamY);
-
-    // Points
-    ctx.font=`900 ${Math.round(r*.48)}px 'Barlow Condensed',sans-serif`;
-    ctx.fillStyle='#D4A017';
-    ctx.fillText(s.pts+' pts', x, ptsY);
-  });
-
-  // ── Divider ──
-  ctx.strokeStyle='rgba(255,255,255,.15)'; ctx.lineWidth=1.5;
-  ctx.beginPath(); ctx.moveTo(60,GS+12); ctx.lineTo(W-60,GS+12); ctx.stroke();
-
-  // ── Grid label ──
-  ctx.font="600 28px 'Barlow Condensed',sans-serif";
-  ctx.fillStyle='rgba(255,255,255,.5)'; ctx.textAlign='center';
-  ctx.fillText('POSITIONS 4 – 15', W/2, GS+44);
-
-  // ── Two-column grid (4-9 left, 10-15 right) ──
-  const COL_L=52, COL_R=568, COL_W=468;
-  const gridY0 = GS + 62;
-
-  // Column separator
-  ctx.strokeStyle='rgba(255,255,255,.12)'; ctx.lineWidth=1;
-  ctx.beginPath(); ctx.moveTo(536,gridY0-6); ctx.lineTo(536,gridY0+GRID_ROWS*ROW_H-8); ctx.stroke();
-
-  for(let i=0; i<12 && (i+3)<scored.length; i++){
-    const s=scored[i+3];
-    const col = i<6 ? COL_L : COL_R;
-    const row = i<6 ? i : i-6;
-    const gy  = gridY0 + row*ROW_H + ROW_H/2;
-    const rank = i+4;
-
-    // Alternating row tint
-    if(row%2===0){ ctx.fillStyle='rgba(255,255,255,.04)'; ctx.fillRect(col,gridY0+row*ROW_H,COL_W,ROW_H); }
-
-    // Row divider
-    if(row<GRID_ROWS-1){ ctx.strokeStyle='rgba(255,255,255,.08)'; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(col+4,gridY0+(row+1)*ROW_H); ctx.lineTo(col+COL_W-4,gridY0+(row+1)*ROW_H); ctx.stroke(); }
-
-    // Rank
-    ctx.font="700 28px 'Barlow Condensed',sans-serif"; ctx.fillStyle='rgba(255,255,255,.4)'; ctx.textAlign='right';
-    ctx.fillText(rank, col+46, gy+9);
-
-    // Initials circle
-    const ax=col+72, ay=gy;
-    ctx.fillStyle='#1B2A4A'; ctx.beginPath(); ctx.arc(ax,ay,26,0,Math.PI*2); ctx.fill();
-    ctx.strokeStyle='rgba(255,255,255,.2)'; ctx.lineWidth=1.5; ctx.beginPath(); ctx.arc(ax,ay,26,0,Math.PI*2); ctx.stroke();
-    ctx.font="800 19px 'Barlow Condensed',sans-serif"; ctx.fillStyle='#fff'; ctx.textAlign='center';
-    ctx.fillText(initials(s.p?.name||''), ax, ay+7);
-
-    // Name
-    const nameX=col+106;
-    ctx.font="700 29px 'Barlow Condensed',sans-serif"; ctx.fillStyle='#fff'; ctx.textAlign='left';
-    let gn=namePlain(s.p||{}).toUpperCase();
-    while(ctx.measureText(gn).width>220 && gn.length>3) gn=gn.slice(0,-1);
-    if(gn.length<namePlain(s.p||{}).length) gn+='…';
-    ctx.fillText(gn, nameX, gy+5);
-
-    // Team
-    ctx.font="500 20px 'Barlow Condensed',sans-serif"; ctx.fillStyle='rgba(255,255,255,.5)';
-    ctx.fillText(teamLabel(s.p||{}).toUpperCase(), nameX, gy+27);
-
-    // Points
-    ctx.font="900 31px 'Barlow Condensed',sans-serif"; ctx.fillStyle='#D4A017'; ctx.textAlign='right';
-    ctx.fillText(s.pts+' pts', col+COL_W-8, gy+9);
-  }
-
-  canvasFooter(ctx, W, H);
-  await shareOrDownload(el('shareCanvas'), 'team-of-week.png', "ONs' Fantasy — Team of the Week", 'This week\'s top performers!');
+  const gw=el('mgr_tw_gw'); if(!gw||!gw.value){toast('Select a week first',true);return;}
+  const scored=window._totwScored||[];
+  if(!scored.length){toast('No team of the week data loaded yet',true);return;}
+  const gwText=gw.options[gw.selectedIndex]?.text||'';
+  const rows15=scored.map(r=>({name:namePlain(r.p||{}),sub:teamLabel(r.p||{}),pts:r.pts,avatar_url:r.p?.avatar_url}));
+  await generatePodiumCard(rows15,'Team of the Week — '+gwText,'team-of-week.png',"ONs' Fantasy — Team of the Week",'This week\'s top performers!');
 }
 
 // ── Team Duty (match-day submission for team managers) ─────────
