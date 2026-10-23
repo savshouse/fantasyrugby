@@ -4012,14 +4012,14 @@ function renderFixForm(){
   el('fixFormHdrRow').innerHTML=`<th>Team</th>${hdrCells}`;
   // Body rows
   el('fixFormBody').innerHTML = teams.map(t=>{
-    const dots = weeks.map(w=>{
+    const cells = weeks.map(w=>{
       const r=resultMap[`${w.id}_${t.id}`];
       const letter=r==='win'?'W':r==='loss'?'L':r==='draw'?'D':null;
-      if(!letter) return `<span class="form-dot blank" title="No fixture">·</span>`;
+      if(!letter) return `<td><span class="form-dot blank" title="No fixture"></span></td>`;
       const tip=letter==='W'?'Win':letter==='L'?'Loss':'Draw';
-      return `<span class="form-dot ${letter}" title="${tip}">${letter}</span>`;
+      return `<td><span class="form-dot ${letter}" title="${tip}">${letter}</span></td>`;
     }).join('');
-    return `<tr><td>${esc(t.name)}</td><td><div class="form-dots">${dots}</div></td></tr>`;
+    return `<tr><td>${esc(t.name)}</td>${cells}</tr>`;
   }).join('');
   el('fixFormSub').textContent=`Last ${weeks.length} scored week${weeks.length!==1?'s':''}`;
   el('fixForm').style.display='';
