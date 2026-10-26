@@ -1167,8 +1167,15 @@ async function loadAll(){
   const calcPts=p=>breakdown(p).reduce((t,b)=>t+b.sub,0);
 
   // Manager leaderboard
-  const [{data:pl},{data:mgrs},{data:gwList}]=await Promise.all([
-    sb.from('point_log').select('manager_id,points,gameweek_id').eq('season_id',season),
+  let pl=[], plFrom=0, plPage=1000;
+  while(true){
+    const {data,error}=await sb.from('point_log').select('manager_id,points,gameweek_id').eq('season_id',season).range(plFrom,plFrom+plPage-1);
+    if(error) break;
+    pl=pl.concat(data||[]);
+    if(!data||data.length<plPage) break;
+    plFrom+=plPage;
+  }
+  const [{data:mgrs},{data:gwList}]=await Promise.all([
     sb.from('managers').select('id,name,avatar_url').eq('active',true).eq('subs_paid',true),
     sb.from('gameweeks').select('id,number')
   ]);
@@ -1349,6 +1356,6 @@ document.addEventListener('click', e => {
   }
 });
 </script>
-<!-- v1.4 — landing.html -->
+<!-- v1.5 — landing.html -->
 </body>
 </html>
