@@ -1337,6 +1337,12 @@
         <p class="muted" id="sc_status" style="margin-top:10px"></p>
       </div>
       <div class="card">
+        <div class="eyebrow">Auto-rollover missing teams</div>
+        <p class="muted">Copies each manager's most recent saved team into the selected gameweek — only for managers who haven't saved a team yet. Uses the gameweek selected above.</p>
+        <button class="btn sec" id="ro_preview">Preview rollover</button>
+        <div id="ro_preview_box" style="margin-top:12px"></div>
+      </div>
+      <div class="card">
         <div class="inline" style="justify-content:space-between; align-items:center">
           <div class="eyebrow">Season leaderboard</div>
           <button class="btn sec small" id="lb_refresh">&#8635; Refresh</button>
@@ -4173,6 +4179,72 @@ async function saveStats(fixId){
   }
   toast('Stats saved for '+recs.length+' players');
 }
+
+// ---------- Auto-rollover ----------
+let _roplan = []; // [{manager, fromGwId, fromGwNum, rows:[]}]
+el('ro_preview').onclick = async ()=>{
+  const gwId = el('sc_gw').value; if(!gwId){ toast('Pick a gameweek first', true); return; }
+  const box = el('ro_preview_box');
+  box.innerHTML = '<p class="muted">Checking…</p>';
+  _roplan = [];
+
+  // All active managers
+  const { data: mgrs } = await sb.from('managers').select('id,name').eq('active',true).order('name');
+  if(!mgrs?.length){ box.innerHTML='<p class="muted">No active managers found.</p>'; return; }
+
+  // Which managers already have selections for this GW?
+  const { data: existing } = await sb.from('selections').select('manager_id').eq('gameweek_id', gwId);
+  const hasSaved = new Set((existing||[]).map(r=>r.manager_id));
+  const missing = mgrs.filter(m=>!hasSaved.has(m.id));
+
+  if(!missing.length){
+    box.innerHTML='<p class="muted" style="color:var(--green-ok,#1d7a4c)">All managers have saved a team for this week — nothing to roll over.</p>';
+    return;
+  }
+
+  // For each missing manager, find their most recent previous GW selections
+  const gwNum = (gameweeks.find(g=>g.id===gwId)||{}).number||0;
+  const prevGws = gameweeks.filter(g=>g.number<gwNum).sort((a,b)=>b.number-a.number);
+
+  for(const m of missing){
+    let found = null;
+    for(const pg of prevGws){
+      const { data: rows } = await sb.from('selections').select('*').eq('manager_id',m.id).eq('gameweek_id',pg.id);
+      if(rows&&rows.length){ found={fromGwId:pg.id,fromGwNum:pg.number,rows}; break; }
+    }
+    _roplan.push({manager:m, fromGwId:found?.fromGwId||null, fromGwNum:found?.fromGwNum||null, rows:found?.rows||[]});
+  }
+
+  const canRoll = _roplan.filter(p=>p.rows.length);
+  const noHistory = _roplan.filter(p=>!p.rows.length);
+
+  let html = `<p style="font-weight:700; margin-bottom:8px">${missing.length} manager${missing.length!==1?'s':''} have no team saved for this week:</p><ul style="margin:0 0 12px 18px; font-size:.9rem">`;
+  canRoll.forEach(p=>{ html+=`<li><b>${esc(p.manager.name)}</b> — will copy their Week ${p.fromGwNum} team</li>`; });
+  noHistory.forEach(p=>{ html+=`<li style="color:var(--muted)"><b>${esc(p.manager.name)}</b> — no previous team found, will be skipped</li>`; });
+  html+='</ul>';
+  if(canRoll.length){
+    html+=`<button class="btn gold" id="ro_confirm">Copy ${canRoll.length} team${canRoll.length!==1?'s':''} into this week</button>`;
+  }
+  box.innerHTML = html;
+  if(canRoll.length){
+    el('ro_confirm').onclick = async ()=>{
+      const gwId2 = el('sc_gw').value;
+      let done=0, errs=[];
+      for(const p of _roplan.filter(x=>x.rows.length)){
+        const newRows = p.rows.map(r=>({
+          manager_id:r.manager_id, gameweek_id:gwId2,
+          player_id:r.player_id, role:r.role,
+          bench_order:r.bench_order, is_captain:r.is_captain, is_vice:r.is_vice
+        }));
+        const { error } = await sb.from('selections').insert(newRows);
+        if(error) errs.push(p.manager.name+': '+error.message);
+        else done++;
+      }
+      if(errs.length) toast('Errors: '+errs.join('; '), true);
+      else { toast(done+' team'+( done!==1?'s':'')+' rolled over'); box.innerHTML=`<p style="color:var(--green-ok,#1d7a4c)">Done — ${done} team${done!==1?'s':''} copied.</p>`; _roplan=[]; }
+    };
+  }
+};
 
 // ---------- Score ----------
 el('sc_run').onclick = async ()=>{
@@ -7384,6 +7456,6 @@ document.getElementById('rolesSaveBtn').onclick = async () => {
     </div>
   </div>
 </div>
-<!-- v1.48 — adminfantasy.html -->
+<!-- v1.49 — adminfantasy.html -->
 </body>
 </html>
