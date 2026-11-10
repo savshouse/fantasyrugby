@@ -3993,6 +3993,10 @@ async function loadStatPanel(){
     <div class="stat-legend">T tries · C conversions · P penalties · D drop goals · Y yellow · R red &nbsp;—&nbsp; dimmed rows didn't play</div>
     <input class="search" id="st_addsearch" placeholder="+ Add a player not in the squad (last-minute change)…" style="margin-top:10px">
     <div id="st_addlist"></div>
+    <div class="row" style="align-items:center; gap:12px; margin-top:12px; flex-wrap:wrap">
+      <label style="margin:0; font-size:.85rem; white-space:nowrap">Penalty tries (7 pts, unattributed):</label>
+      <input id="st_pen_tries" type="number" inputmode="numeric" min="0" value="${fixture.penalty_tries||0}" style="width:60px; font-size:16px; text-align:center; padding:7px 4px; border:1px solid var(--line); border-radius:7px">
+    </div>
     <div id="st_check"></div>
     <div class="row" style="margin-top:12px">
       <div><label>Player of the Match</label><select id="st_mom"></select></div>
@@ -4008,6 +4012,8 @@ async function loadStatPanel(){
     r.querySelectorAll('input[type=number]').forEach(inp=> inp.addEventListener('input', ()=>recalcCheck(fixture)));
     r.querySelector('[data-remove-row]').onclick = ()=>{ r.remove(); buildAwardSelects(); recalcCheck(fixture); };
   });
+  const penTryInp = panel.querySelector('#st_pen_tries');
+  if(penTryInp) penTryInp.addEventListener('input', ()=>recalcCheck(fixture));
   panel.querySelector('#st_search').oninput = (e)=>{
     const q = e.target.value.toLowerCase();
     panel.querySelectorAll('.stat-row').forEach(r=> r.style.display = r.dataset.name.includes(q)?'':'none');
@@ -4134,13 +4140,15 @@ function recalcCheck(fixture){
     pens += parseInt(r.querySelector('.f-pen').value||'0',10);
     drops += parseInt(r.querySelector('.f-drop').value||'0',10);
   });
-  const calc = tries*5 + cons*2 + pens*3 + drops*3;
+  const penTries = parseInt(el('st_pen_tries')?.value||'0',10)||0;
+  const calc = tries*5 + cons*2 + pens*3 + drops*3 + penTries*7;
   const recorded = fixture.our_score;
   const match = calc === recorded;
   setSaveLock(match, "Stats must total "+recorded+" to save");
+  const penPart = penTries ? ` + Pen tries ${penTries}×7` : '';
   box.innerHTML = `<div class="checkband ${match?'ok':'warn'}">
     ${match ? '✅ Stats match the recorded score' : "⚠️ Stats don't match the recorded score — saving is blocked until they do"}
-    <div class="detail">Tries ${tries}×5 + Cons ${cons}×2 + Pens ${pens}×3 + Drops ${drops}×3 = <b>${calc} pts</b> calculated vs <b>${recorded}</b> recorded (${fixture.opponent||'opponent'} ${fixture.their_score??'?'})</div>
+    <div class="detail">Tries ${tries}×5 + Cons ${cons}×2 + Pens ${pens}×3 + Drops ${drops}×3${penPart} = <b>${calc} pts</b> calculated vs <b>${recorded}</b> recorded (${fixture.opponent||'opponent'} ${fixture.their_score??'?'})</div>
   </div>`;
 }
 async function saveStats(fixId){
@@ -4155,7 +4163,8 @@ async function saveStats(fixId){
     gp+=parseInt(r.querySelector('.f-pen').value||'0',10);
     gd+=parseInt(r.querySelector('.f-drop').value||'0',10);
   });
-  if(gt*5+gc*2+gp*3+gd*3 !== fx.our_score){
+  const gpt = parseInt(el('st_pen_tries')?.value||'0',10)||0;
+  if(gt*5+gc*2+gp*3+gd*3+gpt*7 !== fx.our_score){
     toast("Stats must add up to the recorded score ("+fx.our_score+") before saving", true); return;
   }
   const momId = el('st_mom').value, domId = el('st_dom').value;
@@ -4177,7 +4186,8 @@ async function saveStats(fixId){
     const ins = await sb.from('match_stats').insert(recs);
     if(ins.error){ toast(ins.error.message, true); return; }
   }
-  toast('Stats saved for '+recs.length+' players');
+  await sb.from('fixtures').update({penalty_tries: gpt}).eq('id', fixId);
+  toast('Stats saved for '+recs.length+' players'+(gpt?` + ${gpt} penalty tr${gpt===1?'y':'ies'}`:''));
 }
 
 // ---------- Auto-rollover ----------
@@ -7464,6 +7474,6 @@ document.getElementById('rolesSaveBtn').onclick = async () => {
     </div>
   </div>
 </div>
-<!-- v1.50 — adminfantasy.html -->
+<!-- v1.51 — adminfantasy.html -->
 </body>
 </html>
