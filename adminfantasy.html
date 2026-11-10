@@ -4702,7 +4702,7 @@ async function approveSubmission(subId){
   if(!sub){ toast('Submission not found', true); return; }
   if(!confirm('Approve this result and these stats? They will overwrite any existing score/stats for this fixture.')) return;
 
-  const fixUpd = await sb.from('fixtures').update({ our_score: sub.our_score, their_score: sub.their_score, result: sub.result }).eq('id', sub.fixture_id);
+  const fixUpd = await sb.from('fixtures').update({ our_score: sub.our_score, their_score: sub.their_score, result: sub.result, penalty_tries: sub.penalty_tries||0 }).eq('id', sub.fixture_id);
   if(fixUpd.error){ toast(fixUpd.error.message, true); return; }
 
   const { data: subStats } = await sb.from('submission_stats').select('*').eq('submission_id', subId);
@@ -7475,6 +7475,6 @@ document.getElementById('rolesSaveBtn').onclick = async () => {
     </div>
   </div>
 </div>
-<!-- v1.52 — adminfantasy.html -->
+<!-- v1.53 — adminfantasy.html -->
 </body>
 </html>

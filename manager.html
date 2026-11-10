@@ -3428,12 +3428,14 @@ async function loadDutyForm(){
 
   const us = latest?.our_score ?? fixture.our_score ?? '';
   const them = latest?.their_score ?? fixture.their_score ?? '';
+  const penTries = latest?.penalty_tries ?? 0;
 
   let html = `<div class="card">
     <div class="eyebrow">Result</div>
-    <div class="row" style="display:flex; gap:10px">
-      <div style="flex:1"><label>Our score</label><input id="duty_us" type="number" inputmode="numeric" value="${us}"></div>
-      <div style="flex:1"><label>Their score</label><input id="duty_them" type="number" inputmode="numeric" value="${them}"></div>
+    <div class="row" style="display:flex; gap:10px; flex-wrap:wrap">
+      <div style="flex:1; min-width:100px"><label>Our score</label><input id="duty_us" type="number" inputmode="numeric" value="${us}"></div>
+      <div style="flex:1; min-width:100px"><label>Their score</label><input id="duty_them" type="number" inputmode="numeric" value="${them}"></div>
+      <div style="flex:1; min-width:120px"><label>Penalty tries <span style="font-size:.75rem; color:var(--muted); font-weight:400">(7 pts, no scorer)</span></label><input id="duty_pen_tries" type="number" inputmode="numeric" min="0" value="${penTries}"></div>
     </div>
   </div>
   <div class="card">
@@ -3631,6 +3633,7 @@ async function submitDuty(fixId, existingSub){
   const us = el('duty_us').value===''?null:parseInt(el('duty_us').value,10);
   const them = el('duty_them').value===''?null:parseInt(el('duty_them').value,10);
   if(us===null || them===null){ toast('Please enter the final score before submitting', true); return; }
+  const penTries = parseInt(el('duty_pen_tries')?.value||'0',10)||0;
   let result = us>them?'win':us<them?'loss':'draw';
   const momId = el('duty_mom').value, domId = el('duty_dom').value;
 
@@ -3652,12 +3655,12 @@ async function submitDuty(fixId, existingSub){
 
   let submissionId;
   if(existingSub && existingSub.status==='pending'){
-    const upd = await sb.from('fixture_submissions').update({ our_score:us, their_score:them, result, submitted_at:new Date().toISOString() }).eq('id', existingSub.id);
+    const upd = await sb.from('fixture_submissions').update({ our_score:us, their_score:them, result, penalty_tries:penTries, submitted_at:new Date().toISOString() }).eq('id', existingSub.id);
     if(upd.error){ toast(upd.error.message, true); return; }
     submissionId = existingSub.id;
     await sb.from('submission_stats').delete().eq('submission_id', submissionId);
   } else {
-    const ins = await sb.from('fixture_submissions').insert({ fixture_id: fixId, submitted_by: me.id, our_score:us, their_score:them, result, status:'pending' }).select().single();
+    const ins = await sb.from('fixture_submissions').insert({ fixture_id: fixId, submitted_by: me.id, our_score:us, their_score:them, result, penalty_tries:penTries, status:'pending' }).select().single();
     if(ins.error){ toast(ins.error.message, true); return; }
     submissionId = ins.data.id;
   }
@@ -4392,6 +4395,6 @@ boot();
     <button class="btn ghost block" id="idleLogoutBtn" style="margin-top:8px">Sign out now</button>
   </div>
 </div>
-<!-- v1.18 — manager.html -->
+<!-- v1.19 — manager.html -->
 </body>
 </html>
